@@ -39,11 +39,14 @@ Done in 3.4.0:
   Games & Apps → Check for updates, or `npm run check-upstreams` (`-- --get` to bring them in). Makers credited in NOTICE.md.
 - ✅ LICENSE (AETHER-ENGINEERS) added; NOTICE.md credits everything else.
 
+- ✅ Music (3.5.0): your folders and files, internet radio, queue, visualizers (bars, scope, Milkdrop with imported
+  presets), lowering under voices, a `music` tool, and songs commented on after a short listen (off by default).
+  Streaming services: Spotify (Premium + a developer client ID) and Apple Music (MusicKit, Apple Developer membership)
+  can come later; YouTube by its player; Amazon Music has no web playback. Classic Milkdrop `.milk` presets need
+  converting to Butterchurn's `.json` first.
+
 Still to build:
 - Hangout: a third look, full avatar (Live2D / VRM) when a character has one, and uploading or changing avatars. (moderate)
-- Music player: internet radio, your music library (add folders or files), small controls, Winamp-style visualizers
-  (Milkdrop through Butterchurn, import presets), and characters that read tags and file names, or listen
-  through the audio analyser, and talk about what's playing. (moderate)
 - Tabbed open-source web browser inside the desktop. (moderate)
 - XDC Studio: import assets, and an asset view. (moderate)
 - Voice: download free (FOSS) voice models (Piper, Kokoro) or add your own. (low)

@@ -7,6 +7,7 @@ import { stopSpeaking } from "../lib/voice.ts";
 /** A speaker button with a small panel: voices on/off, voice volume, game and app volume. */
 export function VolumeControl({ className = "icon-btn", size = 16 }: { className?: string; size?: number }) {
   const v = useDesk((s) => s.voice);
+  const music = useDesk((s) => s.music);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -50,6 +51,10 @@ export function VolumeControl({ className = "icon-btn", size = 16 }: { className
           <label className="vol-row">
             <span>Voices</span>
             <Num min={0} max={1} step={0.05} value={v.volume} disabled={!v.on} onChange={(n) => set({ volume: n })} aria-label="Voice volume" percent />
+          </label>
+          <label className="vol-row">
+            <span>Music</span>
+            <Num min={0} max={1} step={0.05} value={music.volume} onChange={(n) => desk().set({ music: { ...desk().music, volume: n } })} aria-label="Music volume" percent />
           </label>
           <label className="vol-row">
             <span>Games & apps</span>

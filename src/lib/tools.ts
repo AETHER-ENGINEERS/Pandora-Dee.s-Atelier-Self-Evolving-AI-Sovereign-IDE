@@ -756,6 +756,59 @@ const NOTES_TOOLS: Tool[] = [
   },
 ];
 
+const MUSIC_TOOL: Tool = {
+  name: "music",
+  description:
+    "The desktop's music player. now: what's playing; play / pause / next / previous; search: songs in the library (title, artist, album, genre); play_song: play matching songs (query); queue: add matching songs after the current one; stations: saved radio stations; play_station: a saved station by name. Only when your locksmith asks, or clearly would like it.",
+  parameters: obj(
+    {
+      action: { type: "string", description: "now, play, pause, next, previous, search, play_song, queue, stations or play_station" },
+      query: { type: "string", description: "search / play_song / queue: words from the title, artist, album or genre · play_station: the station's name" },
+    },
+    ["action"],
+  ),
+  run: async (_id, a) => {
+    const m = await import("./music.ts");
+    const act = str(a.action).toLowerCase();
+    const q = str(a.query);
+    if (!m.useMusic.getState().loaded) await m.loadLibrary().catch(() => undefined);
+    if (act === "now") return m.nowPlayingText();
+    if (act === "play" || act === "pause") {
+      const playing = m.useMusic.getState().playing;
+      if ((act === "play") !== playing) m.toggle();
+      return act === "play" ? `Playing. ${m.nowPlayingText()}` : "Paused.";
+    }
+    if (act === "next" || act === "previous") {
+      if (act === "next") await m.next();
+      else m.previous();
+      await new Promise((r) => setTimeout(r, 300));
+      return m.nowPlayingText();
+    }
+    if (act === "stations") {
+      const st = desk().music.stations;
+      return st.length ? st.map((s) => `- ${s.name}${s.tags ? ` (${s.tags.split(",").slice(0, 3).join(", ")})` : ""}`).join("\n") : "No saved stations.";
+    }
+    if (act === "play_station") {
+      const st = desk().music.stations;
+      const i = st.findIndex((s) => s.name.toLowerCase().includes(q.toLowerCase()));
+      if (i < 0) return `No saved station called ${q}.`;
+      m.playList(st.map((s) => ({ kind: "radio", ...s })), i);
+      return `Playing ${st[i].name}.`;
+    }
+    const hits = m.searchLibrary(q, act === "search" ? 25 : 200);
+    if (act === "search") return hits.length ? hits.map((t) => `- ${t.title}${t.artist ? ` · ${t.artist}` : ""}${t.album ? ` (${t.album})` : ""}`).join("\n") : "Nothing in the library matches.";
+    if (!hits.length) return "Nothing in the library matches.";
+    const items = hits.map((t) => ({ kind: "track" as const, ...t }));
+    if (act === "queue") {
+      m.useMusic.setState((s) => ({ queue: [...s.queue.slice(0, s.index + 1), ...items, ...s.queue.slice(s.index + 1)] }));
+      if (m.useMusic.getState().index < 0) m.playList(items);
+      return `Queued ${items.length} song${items.length === 1 ? "" : "s"}.`;
+    }
+    m.playList(items);
+    return `Playing ${hits.length} song${hits.length === 1 ? "" : "s"}: ${hits[0].title}${hits.length > 1 ? " first" : ""}.`;
+  },
+};
+
 /** Classic's names for the note tools. */
 const NOTE_ALIASES: Record<string, string> = { read: "note_read", write: "note_write", edit: "note_edit", notify_owner: "notify_locksmith" };
 
@@ -772,7 +825,7 @@ export function toolsFor(ctx: TurnCtx): Tool[] {
     if (web) list.push(WEB[0]);
     return list;
   }
-  const list = [...BASE, MEMORY, SKILL, ...NOTES_TOOLS, APPS, NOTIFY];
+  const list = [...BASE, MEMORY, SKILL, ...NOTES_TOOLS, MUSIC_TOOL, APPS, NOTIFY];
   if (web) list.push(...WEB, HTTP);
   if (vector) list.push(VECTOR_TOOL);
   if (discord) list.push(DISCORD_TOOL, DISCORD_HISTORY);
@@ -803,6 +856,7 @@ export function describeCall(name: string, args: Record<string, unknown>) {
     files_search: "searched files for",
     remember: "remembered",
     memory: "used memory",
+    music: "used the music player",
     note_read: "read the note",
     note_write: "wrote the note",
     note_edit: "edited the note",

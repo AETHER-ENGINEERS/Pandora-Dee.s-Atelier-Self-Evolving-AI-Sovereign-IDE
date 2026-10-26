@@ -9,6 +9,7 @@ import { classicRelayScript, helperScript, webxdcScript } from "./inject.mjs";
 import { sshOp } from "./ssh.mjs";
 import { inbound } from "./inbound.mjs";
 import { relay } from "./relay.mjs";
+import { createMusic } from "./music.mjs";
 import { checkUpdates, download } from "./upstreams.mjs";
 import * as aicordAuth from "./oauth.mjs";
 import { findCurl, findPython, forgetPrograms } from "./programs.mjs";
@@ -59,6 +60,8 @@ export function deskServer() {
   let dataDir = "";
   let publicDir = "";
   let lib;
+  let mus;
+  const music = () => (mus ??= createMusic(dataDir));
   const library = () => {
     if (!lib) {
       lib = createLibrary(dataDir);
@@ -145,6 +148,25 @@ export function deskServer() {
       const py = findPython(url.searchParams.get("python") || "");
       const curl = findCurl();
       return send(res, 200, { python: py && { path: py.cmd + (py.args.length ? ` ${py.args.join(" ")}` : ""), version: py.version }, curl: curl && { path: curl.cmd, version: curl.version } });
+    }
+    if (parts[0] === "music") {
+      const M = music();
+      if (parts[1] === "library" && m === "GET") return send(res, 200, M.list());
+      if (parts[1] === "scan" && m === "POST") {
+        const b = JSON.parse((await readBody(req, 100_000)).toString("utf8") || "{}");
+        return send(res, 200, await M.scan(Array.isArray(b.folders) ? b.folders.map(String) : M.folders()));
+      }
+      if (parts[1] === "file") return M.serve(req, res, String(url.searchParams.get("id") || ""));
+      if (parts[1] === "cover") return void (await M.cover(res, String(url.searchParams.get("id") || "")));
+      if (parts[1] === "radio") return void (await M.radio(req, res, String(url.searchParams.get("url") || "")));
+      if (parts[1] === "upload" && m === "POST") {
+        try {
+          const name = M.upload(decodeURIComponent(String(req.headers["x-filename"] || "track")), await readBody(req, 500_000_000));
+          return send(res, 200, { ok: true, name });
+        } catch (e) {
+          return send(res, 400, { error: e instanceof Error ? e.message : String(e) });
+        }
+      }
     }
     if (parts[0] === "relay" && m === "POST") return relay(req, res, JSON.parse((await readBody(req, 60_000_000)).toString("utf8") || "{}"));
     if (parts[0] === "info") return send(res, 200, { dataDir, xdcDir: L.root, fromEnv: Boolean(process.env.PDD_DATA) });

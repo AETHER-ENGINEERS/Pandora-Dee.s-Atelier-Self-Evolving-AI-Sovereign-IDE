@@ -12,6 +12,7 @@ import {
   MessagesSquare,
   GripVertical,
   NotebookPen,
+  Music2,
   Settings as SettingsIcon,
   ShieldAlert,
   SquareTerminal,
@@ -47,6 +48,8 @@ import { PresenceApp } from "../apps/Presence.tsx";
 import { CastApp } from "../apps/Cast.tsx";
 import { FilesApp } from "../apps/Files.tsx";
 import { NotesApp } from "../apps/Notes.tsx";
+import { MusicApp } from "../apps/Music.tsx";
+import "../lib/musicTalk.ts";
 import { JournalApp } from "../apps/Journal.tsx";
 import { TerminalApp } from "../apps/Terminal.tsx";
 import { GameBack, GameBar, GamesApp } from "../apps/Games.tsx";
@@ -63,6 +66,7 @@ export const ICONS: Record<AppId, (size: number) => ReactNode> = {
   cast: (s) => <Users size={s} />,
   files: (s) => <FolderOpen size={s} />,
   notes: (s) => <NotebookPen size={s} />,
+  music: (s) => <Music2 size={s} />,
   journal: (s) => <BookOpen size={s} />,
   terminal: (s) => <SquareTerminal size={s} />,
   games: (s) => <Gamepad2 size={s} />,
@@ -80,6 +84,7 @@ const BODIES: Record<AppId, () => ReactNode> = {
   cast: () => <CastApp />,
   files: () => <FilesApp />,
   notes: () => <NotesApp />,
+  music: () => <MusicApp />,
   journal: () => <JournalApp />,
   terminal: () => <TerminalApp />,
   games: () => <GamesApp />,

@@ -61,10 +61,12 @@ Commercial games (RuneScape, Jazz Jackrabbit, Half-Life) are never included: peo
 | fflate | MIT |
 | lucide-react | ISC |
 | ssh2 | MIT |
+| music-metadata | MIT |
+| Butterchurn, butterchurn-presets (Milkdrop) | MIT |
 | Vite, TypeScript (build tools) | MIT, Apache-2.0 |
 
 ## Services it can talk to
 
-Ollama, Groq, OpenRouter, LM Studio, llama.cpp, AICord, SearXNG, DuckDuckGo, Wikipedia, r.jina.ai and any MCP
+Ollama, Groq, OpenRouter, LM Studio, llama.cpp, AICord, radio-browser.info (and the radio stations), SearXNG, DuckDuckGo, Wikipedia, r.jina.ai and any MCP
 server are separate services with their own terms; nothing reaches them unless you set them up and allow it in
 Privacy.

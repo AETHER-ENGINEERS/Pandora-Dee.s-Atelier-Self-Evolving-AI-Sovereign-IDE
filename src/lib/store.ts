@@ -8,6 +8,7 @@ import { MAX_IN_ROOM, type Message, type Source } from "./room.ts";
 import { VOICE_DEFAULT, type VoicePrefs } from "./voice.ts";
 import type { Sealed } from "./secure.ts";
 import { pythonFrom, type Via } from "./outbound.ts";
+import { MUSIC_DEFAULT, type MusicPrefs } from "./musicPrefs.ts";
 import { CLOCK_DEFAULT, type ClockPrefs } from "./clock.ts";
 
 export type AppId =
@@ -16,6 +17,7 @@ export type AppId =
   | "cast"
   | "files"
   | "notes"
+  | "music"
   | "journal"
   | "terminal"
   | "games"
@@ -31,6 +33,7 @@ export const APPS: { id: AppId; title: string; hint: string }[] = [
   { id: "presence", title: "Presence", hint: "See who's talking" },
   { id: "cast", title: "Characters", hint: "Who's here, who's available, and their profiles" },
   { id: "notes", title: "Notes", hint: "Your notes: links, tags, tasks, graph" },
+  { id: "music", title: "Music", hint: "Your music, internet radio and visualizers" },
   { id: "files", title: "Files", hint: "Each character's own files" },
   { id: "journal", title: "Journal", hint: "Quest journals and memory" },
   { id: "terminal", title: "Terminal", hint: "A shell over a character's files" },
@@ -328,6 +331,7 @@ export type DockPrefs = {
   items: DockItem[];
   /** Set once Notes has been offered a place in the dock. */
   notesAdded?: boolean;
+  musicAdded?: boolean;
 };
 
 export const DOCK_DEFAULT: DockPrefs = {
@@ -335,7 +339,7 @@ export const DOCK_DEFAULT: DockPrefs = {
   autoHide: false,
   size: 46,
   labels: false,
-  items: ["room", "presence", "cast", "|", "notes", "files", "journal", "terminal", "games", "studio", "|", "connections", "sentry", "keys", "settings", "|", "hangout", "classic"],
+  items: ["room", "presence", "cast", "|", "notes", "music", "files", "journal", "terminal", "games", "studio", "|", "connections", "sentry", "keys", "settings", "|", "hangout", "classic"],
 };
 
 export type LibView = "grid" | "covers" | "list" | "compact";
@@ -394,6 +398,7 @@ export type State = {
   chatId: string;
   chat: ChatPrefs;
   notes: NotesPrefs;
+  music: MusicPrefs;
   /** Shortcut bindings the person changed, by action id. */
   keys: Record<string, string>;
   touch: { edgeSwipe: boolean; doubleTapScene: boolean; longPress: boolean };
@@ -426,13 +431,18 @@ export type State = {
 
 const W = (x: number, y: number, w: number, h: number, open = false): Win => ({ open, min: false, max: false, x, y, w, h, z: 1 });
 
-/** Notes arrived in 3.4: put it in a dock someone already arranged, once. */
+/** New apps (Notes in 3.4, Music in 3.5) join a dock someone already arranged, once each. */
 function withNotes(d: DockPrefs): DockPrefs {
-  if (d.items.includes("notes") || d.notesAdded) return { ...d, notesAdded: true };
-  const at = d.items.indexOf("files");
   const items = [...d.items];
-  items.splice(at < 0 ? items.length : at, 0, "notes");
-  return { ...d, items, notesAdded: true };
+  if (!items.includes("notes") && !d.notesAdded) {
+    const at = items.indexOf("files");
+    items.splice(at < 0 ? items.length : at, 0, "notes");
+  }
+  if (!items.includes("music") && !d.musicAdded) {
+    const at = items.indexOf("notes");
+    items.splice(at < 0 ? items.length : at + 1, 0, "music");
+  }
+  return { ...d, items, notesAdded: true, musicAdded: true };
 }
 
 export function defaultWins(): Record<AppId, Win> {
@@ -451,6 +461,7 @@ export function defaultWins(): Record<AppId, Win> {
     cast: W(12, 12, castW || 260, Math.max(320, vh - 20), wide),
     files: W(140, 80, 760, 520),
     notes: W(110, 30, Math.min(1080, vw - 40), Math.min(700, vh - 10)),
+    music: W(150, 40, Math.min(960, vw - 40), Math.min(620, vh - 10)),
     journal: W(180, 90, 640, 520),
     terminal: W(200, 120, 640, 400),
     games: W(160, 40, Math.min(980, vw - 40), Math.min(660, vh - 10)),
@@ -557,6 +568,7 @@ const INITIAL: State = {
   chatId: "room",
   chat: CHAT_DEFAULT,
   notes: NOTES_DEFAULT,
+  music: MUSIC_DEFAULT,
   keys: {},
   touch: { edgeSwipe: true, doubleTapScene: true, longPress: true },
   spots: {},
@@ -795,6 +807,7 @@ export const useDesk = create<Store>()(
           bar: { edge: "top", autoHide: false, ...(p.bar ?? {}) },
           chat: { ...CHAT_DEFAULT, ...(p.chat ?? {}) },
           notes: { ...NOTES_DEFAULT, ...(p.notes ?? {}) },
+          music: { ...MUSIC_DEFAULT, ...(p.music ?? {}) },
           flood: { ...FLOOD_DEFAULT, ...(p.flood ?? {}) },
         };
       },

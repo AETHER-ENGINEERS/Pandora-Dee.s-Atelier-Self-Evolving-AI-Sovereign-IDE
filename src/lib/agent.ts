@@ -428,6 +428,22 @@ export async function editAndResend(id: string, text: string): Promise<string> {
   return "";
 }
 
+/**
+ * The character in focus says one thing on their own (a song came on…), when nobody's mid-conversation.
+ * Returns false when it was skipped.
+ */
+export async function remark(instruction: string): Promise<boolean> {
+  const s = desk();
+  if (running || s.flood.shut) return false;
+  const room = s.roomCharacters();
+  const c = room.find((x) => x.id === s.focus) ?? room[0];
+  if (!c) return false;
+  await withRun(async () => {
+    await takeTurn(c, { scope: "locksmith", instruction });
+  });
+  return true;
+}
+
 export async function letThemTalk() {
   const s = desk();
   if (s.flood.shut) {
