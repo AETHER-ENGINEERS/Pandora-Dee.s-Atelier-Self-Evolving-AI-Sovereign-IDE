@@ -134,11 +134,12 @@ function Avatar({
   const hang = useDesk((s) => s.hang);
   const look = useDesk((s) => s.charPrefs[c.id]?.look);
   const el = useRef<HTMLDivElement>(null);
-  const style = look === "chibi" || (hang.style === "chibi" && look !== "talking" && look !== "photo") ? "chibi" : "talking";
+  // their own look first (right-click → Show as), then the scene's style
+  const style = look === "photo" && c.art.portrait ? "photo" : look === "chibi" || (hang.style === "chibi" && look !== "talking" && look !== "photo") ? "chibi" : "talking";
   const sc = c.art.scene;
-  const still = sc ? (style === "chibi" ? sc.chibi ?? sc.still : sc.still) : c.art.portrait || c.art.still;
+  const still = style === "photo" ? c.art.portrait : sc ? (style === "chibi" ? sc.chibi ?? sc.still : sc.still) : c.art.portrait || c.art.still;
   const open = sc && style === "talking" ? sc.open : undefined;
-  const framed = !sc;
+  const framed = style === "photo" || !sc;
 
   const down = (e: React.PointerEvent) => {
     if (!interactive || e.button > 0) return;
@@ -178,7 +179,7 @@ function Avatar({
   return (
     <div
       ref={el}
-      className={`avatar-sprite ${style}${talking ? " talking" : ""}${focus ? " focus" : ""}${framed ? " framed" : ""}`}
+      className={`avatar-sprite ${style}${talking ? " speaking" : ""}${focus ? " focus" : ""}${framed ? " framed" : ""}`}
       style={{ left: `${x * 100}%`, top: `${y * 100}%`, height: `${hang.size * 100}vh`, ["--c" as string]: c.accent }}
       onPointerDown={down}
       onContextMenu={(e) => {

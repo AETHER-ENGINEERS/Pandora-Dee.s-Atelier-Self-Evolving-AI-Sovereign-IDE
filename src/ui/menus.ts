@@ -30,13 +30,26 @@ function openFiles(id: string) {
   desk().openApp("files");
 }
 
+/** Talking, Chibi or Photo: how a character is shown everywhere (scene, Presence, avatars). */
+export function lookItems(id: string): MenuItem[] {
+  const s = desk();
+  const c = s.character(id);
+  const look = s.charPrefs[id]?.look ?? "talking";
+  const set = (l: "talking" | "chibi" | "photo") => s.setCharPrefs(id, { look: l });
+  return [
+    { heading: "Show as" },
+    { label: "Talking", checked: look === "talking", run: () => set("talking") },
+    { label: "Chibi", checked: look === "chibi", disabled: !c?.art.chibi && !c?.art.scene?.chibi, run: () => set("chibi") },
+    { label: "Photo", checked: look === "photo", disabled: !c?.art.portrait, run: () => set("photo") },
+  ];
+}
+
 /** A character, wherever they appear: chips, tiles, cards, the scene. */
 export function characterMenu(id: string): MenuItem[] {
   const s = desk();
   const c = s.character(id);
   if (!c) return [];
   const inRoom = s.members.includes(id);
-  const look = s.charPrefs[id]?.look ?? "talking";
   return [
     { heading: c.name },
     ...(inRoom
@@ -57,9 +70,7 @@ export function characterMenu(id: string): MenuItem[] {
       },
     },
     { sep: true },
-    { label: "Talking", checked: look === "talking", run: () => s.setCharPrefs(id, { look: "talking" }) },
-    { label: "Chibi", checked: look === "chibi", run: () => s.setCharPrefs(id, { look: "chibi" }) },
-    { label: "Photo", checked: look === "photo", run: () => s.setCharPrefs(id, { look: "photo" }) },
+    ...lookItems(id),
     { sep: true },
     { label: "Save their backup", run: () => download(`${c.id}-backup.json`, makeBackup(c, s.filesOf(id))) },
     ...(inRoom ? [{ label: "Step out of the room", danger: true, run: () => s.leave(id) } as MenuItem] : []),
@@ -99,6 +110,8 @@ export function messageMenu(m: Message, extra: { edit?: () => void; retry?: bool
             },
           },
           { label: `Reply to ${c.short}`, run: () => (s.setFocus(c.id), focusComposer()) },
+          { sep: true },
+          ...lookItems(c.id),
           { sep: true },
           ...characterMenu(c.id).slice(1, 4),
         ] as MenuItem[])

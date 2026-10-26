@@ -78,8 +78,10 @@ export function Markdown({ text, className = "", from, onTask }: { text: string;
   );
 }
 
+/** A character's small picture, in the look chosen for them (Talking, Chibi or Photo). */
 export function CharAvatar({ c, size = 24 }: { c: Character; size?: number }) {
-  const src = c.art.portrait || c.art.still;
+  const look = useDesk((s) => s.charPrefs[c.id]?.look ?? "talking");
+  const src = look === "photo" ? c.art.portrait || c.art.still : look === "chibi" ? c.art.chibi || c.art.still || c.art.portrait : c.art.still || c.art.portrait;
   return (
     <span className="avatar" style={{ width: size, height: size, background: c.accent, color: "#000" }}>
       {src ? <img src={src} alt="" /> : initials(c.name)}

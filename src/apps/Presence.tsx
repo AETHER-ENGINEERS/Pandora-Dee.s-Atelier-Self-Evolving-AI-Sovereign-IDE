@@ -100,7 +100,7 @@ export function PresenceApp() {
               }}
               aria-label={`Show ${c.short}`}
             >
-              <Face c={c} look={look(c) === "chibi" ? "chibi" : "talking"} mouth={sp.who === c.id ? sp.mouth : 0} speaking={sp.who === c.id} />
+              <Face c={c} look={look(c)} mouth={sp.who === c.id ? sp.mouth : 0} speaking={sp.who === c.id} />
               <span className="lbl">{c.short}</span>
             </button>
           ))}
