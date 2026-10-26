@@ -20,3 +20,15 @@ test("versions of one app group together", () => {
   assert.equal(appKeyOf("The Path of the Fool: Deep Descent"), "the-path-of-the-fool-deep-descent");
   assert.equal(appKeyOf("XDC-Chess"), appKeyOf("xdc chess"));
 });
+
+import { compareVersions, repoOf } from "./upstreams.mjs";
+
+test("update check: source links and versions", () => {
+  assert.deepEqual(repoOf("https://github.com/th2tran/chess-webxdc"), { host: "github.com", owner: "th2tran", repo: "chess-webxdc", url: "https://github.com/th2tran/chess-webxdc" });
+  assert.equal(repoOf("https://codeberg.org/durian/colors.git")?.repo, "colors");
+  assert.equal(repoOf("https://claude.ai"), null);
+  assert.ok(compareVersions("0.7.1", "0.7.0+48") > 0);
+  assert.ok(compareVersions("v1.5.0", "1.5.0") === 0);
+  assert.ok(compareVersions("0.10.0.256", "0.6.199") > 0);
+  assert.ok(compareVersions("3.0.0", "v1.4.4") > 0);
+});

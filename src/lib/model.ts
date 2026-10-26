@@ -109,7 +109,8 @@ export type Turn =
 
 export type ToolSpec = { name: string; description: string; parameters: Record<string, unknown> };
 
-export type StreamResult = { text: string; toolCalls: ToolCall[] };
+/** `thinking`: what a reasoning model sent as its reasoning (apart from the reply). */
+export type StreamResult = { text: string; toolCalls: ToolCall[]; thinking: string };
 
 function base(url: string) {
   return url.trim().replace(/\/+$/, "");
@@ -263,7 +264,7 @@ export async function streamOnce(
   temperature: number,
   onToken: (piece: string) => void,
   signal?: AbortSignal,
-  extra: { numCtx?: number } = {},
+  extra: { numCtx?: number; think?: boolean; onThink?: (piece: string) => void } = {},
 ): Promise<StreamResult> {
   if (!model) throw new Error(`No model chosen for ${c.label}. Pick one in Settings → AI.`);
 
@@ -279,14 +280,14 @@ export async function streamOnce(
     if (!res.ok) throw await failure(res, c.label);
     const j = (await res.json()) as { text?: string };
     if (j.text) onToken(j.text);
-    return { text: j.text ?? "", toolCalls: [] };
+    return { text: j.text ?? "", toolCalls: [], thinking: "" };
   }
 
   const ollama = c.kind === "ollama";
   const url = ollama ? `${base(c.baseUrl)}/api/chat` : `${base(c.baseUrl)}/chat/completions`;
   const toolDefs = tools.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.parameters } }));
   const body = ollama
-    ? { model, messages: toOllama(turns), stream: true, options: { temperature, ...(extra.numCtx ? { num_ctx: extra.numCtx } : {}) }, ...(toolDefs.length ? { tools: toolDefs } : {}) }
+    ? { model, messages: toOllama(turns), stream: true, options: { temperature, ...(extra.numCtx ? { num_ctx: extra.numCtx } : {}) }, ...(toolDefs.length ? { tools: toolDefs } : {}), ...(extra.think ? { think: true } : {}) }
     : { model, messages: toOpenAI(turns), stream: true, temperature, ...(toolDefs.length ? { tools: toolDefs } : {}) };
   const res = await outbound(url, { method: "POST", headers: authHeaders(c.kind, key), body: JSON.stringify(body), signal }, c.via);
   if (!res.ok || !res.body) {
@@ -305,6 +306,12 @@ export async function streamOnce(
   let text = "";
   const calls: ToolCall[] = [];
   const partial = new Map<number, { id: string; name: string; args: string }>();
+  let thinking = "";
+  const think = (piece: string | undefined | null) => {
+    if (!piece) return;
+    thinking += piece;
+    extra.onThink?.(piece);
+  };
   const take = (piece: string | undefined | null) => {
     if (!piece) return;
     text += piece;
@@ -322,10 +329,11 @@ export async function streamOnce(
       if (!line) continue;
       if (ollama) {
         const row = JSON.parse(line) as {
-          message?: { content?: string; tool_calls?: { function?: { name?: string; arguments?: unknown } }[] };
+          message?: { content?: string; thinking?: string; tool_calls?: { function?: { name?: string; arguments?: unknown } }[] };
           error?: string;
         };
         if (row.error) throw new Error(row.error);
+        think(row.message?.thinking);
         take(row.message?.content);
         for (const tc of row.message?.tool_calls ?? []) {
           if (tc.function?.name) calls.push({ id: newCallId(), name: tc.function.name, args: parseArgs(tc.function.arguments) });
@@ -335,11 +343,12 @@ export async function streamOnce(
         const data = line.slice(5).trim();
         if (data === "[DONE]") continue;
         const row = JSON.parse(data) as {
-          choices?: { delta?: { content?: string | null; tool_calls?: { index?: number; id?: string; function?: { name?: string; arguments?: string } }[] } }[];
+          choices?: { delta?: { content?: string | null; reasoning_content?: string | null; reasoning?: string | null; tool_calls?: { index?: number; id?: string; function?: { name?: string; arguments?: string } }[] } }[];
           error?: { message?: string };
         };
         if (row.error) throw new Error(row.error.message ?? "The model returned an error.");
         const delta = row.choices?.[0]?.delta;
+        think(delta?.reasoning_content ?? delta?.reasoning);
         take(delta?.content);
         for (const tc of delta?.tool_calls ?? []) {
           const i = tc.index ?? 0;
@@ -355,7 +364,7 @@ export async function streamOnce(
   for (const p of [...partial.entries()].sort((a, b) => a[0] - b[0]).map((e) => e[1])) {
     if (p.name) calls.push({ id: p.id || newCallId(), name: p.name, args: parseArgs(p.args) });
   }
-  return { text, toolCalls: calls };
+  return { text, toolCalls: calls, thinking };
 }
 
 /** A one-message chat request to this connection, exactly as the desktop would send it (for "Copy as…"). */

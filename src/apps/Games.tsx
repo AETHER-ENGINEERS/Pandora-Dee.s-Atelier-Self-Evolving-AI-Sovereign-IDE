@@ -22,7 +22,7 @@ import {
 import { desk, useDesk, type AppPrefs, type LibSection, type LibSort, type LibView } from "../lib/store.ts";
 import { gameScreen } from "../lib/bus.ts";
 import { gameTurn } from "../lib/agent.ts";
-import { appOrigin, bridge, groupApps, library, readScreen, type Pkg } from "../lib/xdc.ts";
+import { appOrigin, bridge, groupApps, library, readScreen, type Pkg, type UpdateRow } from "../lib/xdc.ts";
 import { slug } from "../lib/characters.ts";
 import { CharAvatar, Confirm } from "../ui/common.tsx";
 import { openMenu, type MenuItem } from "../ui/ContextMenu.tsx";
@@ -177,6 +177,32 @@ function Library() {
     });
   const selected = items.find((it) => it.key === open);
 
+  const [updates, setUpdates] = useState<UpdateRow[] | "checking" | null>(null);
+  const [getting, setGetting] = useState("");
+  const checkUpdates = async () => {
+    setUpdates("checking");
+    try {
+      setUpdates(await library.newerReleases());
+    } catch (e) {
+      setUpdates(null);
+      desk().say(e instanceof Error ? e.message : "Couldn't check for updates.");
+    }
+  };
+  const getUpdate = async (u: UpdateRow) => {
+    if (!u.asset) return;
+    setGetting(u.repo);
+    try {
+      const r = await library.fetchUpdate(u.asset.url);
+      desk().say(r.added.length ? `${u.name} ${u.latest} is in your library.` : r.duplicates ? "You already have that version." : r.errors[0] ?? "Nothing was added.");
+      libraryChanged();
+      setUpdates((prev) => (Array.isArray(prev) ? prev.map((x) => (x.repo === u.repo ? { ...x, local: u.latest, newer: false, note: "just added" } : x)) : prev));
+    } catch (e) {
+      desk().say(e instanceof Error ? e.message : "Couldn't get it.");
+    } finally {
+      setGetting("");
+    }
+  };
+
   const doImport = async (files: FileList | File[]) => {
     const all = [...files].filter((f) => /\.(xdc|zip)$/i.test(f.name));
     if (!all.length) return desk().say("Pick .xdc files, or a .zip of them.");
@@ -257,6 +283,9 @@ function Library() {
         <button className="btn small" onClick={() => desk().openApp("studio")}>
           <Code2 size={14} /> XDC Studio
         </button>
+        <button className="btn small" disabled={updates === "checking"} onClick={() => void checkUpdates()} data-tip="Look for newer releases where your apps are made (GitHub, Codeberg)">
+          <RefreshCw size={14} /> Check for updates
+        </button>
         {state === "offline" ? <p className="small faint">The desktop server isn't running, so Vector apps can't load. Start the desktop with npm run dev.</p> : null}
       </nav>
       <section className="lib-main">
@@ -286,6 +315,43 @@ function Library() {
         </div>
         <Players />
         {busy ? <div className="note small" style={{ margin: 8 }}>{busy}</div> : null}
+        {updates && updates !== "checking" ? (
+          <div className="note small updates-panel">
+            <div className="row" style={{ alignItems: "center", marginBottom: 6 }}>
+              <b>Updates where your apps are made</b>
+              <span className="grow" />
+              <button className="icon-btn" aria-label="Close" onClick={() => setUpdates(null)}>
+                ×
+              </button>
+            </div>
+            {updates.map((u) => (
+              <div key={u.repo} className="update-row">
+                <span className={u.newer ? "" : "muted"}>
+                  <b>{u.name}</b> · here {u.local || "?"}
+                  {u.latest ? ` · there ${u.latest}` : ""}
+                  {u.prerelease ? " (pre-release)" : ""}
+                </span>
+                <span className="grow" />
+                {u.newer && u.asset ? (
+                  <button className="btn small primary" disabled={getting === u.repo} onClick={() => void getUpdate(u)}>
+                    {getting === u.repo ? "Getting…" : `Get ${u.latest}`}
+                  </button>
+                ) : (
+                  <span className="faint">{u.note ?? (u.newer ? "" : "up to date")}</span>
+                )}
+                <a className="faint" href={u.repo} target="_blank" rel="noreferrer">
+                  source
+                </a>
+              </div>
+            ))}
+            {!updates.length ? <div className="faint">None of your apps name a GitHub or Codeberg source.</div> : null}
+            <p className="faint" style={{ margin: "6px 0 0" }}>Getting one adds it as a new version: the versions you have stay, with their game state.</p>
+          </div>
+        ) : updates === "checking" ? (
+          <div className="note small" style={{ margin: 8 }}>
+            Checking where your apps are made…
+          </div>
+        ) : null}
         <Grid list={list} view={s.libView} gridRef={gridRef} onOpen={setOpen} onPlay={play} />
       </section>
       {selected ? <Details item={selected} onClose={() => setOpen(null)} onPlay={play} /> : null}

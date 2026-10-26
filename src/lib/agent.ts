@@ -29,7 +29,7 @@ import type { Role } from "./flood.ts";
 import { currentChat } from "./chats.ts";
 import { compact, shouldCompact } from "./context.ts";
 import { record } from "./trajectories.ts";
-import { isImage, type Attachment } from "./room.ts";
+import { isImage, splitThink, type Attachment } from "./room.ts";
 
 let controller: AbortController | null = null;
 let running = false;
@@ -54,6 +54,14 @@ function setBusy(id: string, what: string | null) {
 function keyFor(c: Connection) {
   return credential(c, desk().env);
 }
+
+/**
+ * Connections that just failed rest for a few minutes: turns go straight to the next one instead of
+ * waiting on them every time, and they're tried first again once the rest is over.
+ */
+const REST_MS = 3 * 60_000;
+const resting = new Map<string, number>();
+const isResting = (id: string) => (resting.get(id) ?? 0) > Date.now();
 
 /** Connections to try for this character, in order, with the reason any were skipped. */
 export function chainFor(charId: string): { list: { conn: Connection; model: string }[]; skipped: string[] } {
@@ -81,7 +89,9 @@ export function chainFor(charId: string): { list: { conn: Connection; model: str
     skipped.push(`${conn.label}: ${blockedBecause(s.privacy, feature)}`);
     return false;
   });
-  return { list, skipped };
+  // resting ones go last (still tried if nothing else answers)
+  const order = [...list.filter((x) => !isResting(x.conn.id)), ...list.filter((x) => isResting(x.conn.id))];
+  return { list: order, skipped };
 }
 
 async function ensureModel(conn: Connection, model: string, signal: AbortSignal) {
@@ -156,6 +166,9 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
     length: aiFor(me.id).length,
     summary: meta?.summary,
     skillRouter: s.chat.skillRouter,
+    memoryFocus: s.chat.rankMemory
+      ? { query: history.filter((m) => !m.pass && !m.quiet).slice(-8).map((m) => m.text).join("\n"), k: s.chat.memoryTopK }
+      : undefined,
   });
   const base: Turn[] = [
     { role: "system", content: sys },
@@ -196,15 +209,26 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
       let tools = ai.tools ? toolsFor(ctx) : [];
       const turns = [...base];
       let final = "";
+      let thought = "";
       for (let step = 0; step <= ai.maxSteps; step++) {
         let streamed = "";
+        let reasoning = "";
         let result;
         try {
           result = await streamOnce(conn, model, keyFor(conn), turns, step < ai.maxSteps ? tools : [], ai.temperature, (piece) => {
             streamed += piece;
-            setBusy(me.id, "typing");
-            patch({ text: tidyReply(me, shown + streamed, room) });
-          }, signal, { numCtx: s.chat.numCtx || undefined });
+            const parts = splitThink(shown + streamed);
+            setBusy(me.id, parts.text.trim() ? "typing" : "thinking");
+            patch({ text: tidyReply(me, shown + streamed, room), thinking: [thought, reasoning, parts.thinking].filter(Boolean).join("\n\n") || undefined });
+          }, signal, {
+            numCtx: s.chat.numCtx || undefined,
+            think: s.chat.askThink && conn.kind === "ollama",
+            onThink: (piece) => {
+              reasoning += piece;
+              setBusy(me.id, "thinking");
+              patch({ thinking: [thought, reasoning].filter(Boolean).join("\n\n") });
+            },
+          });
         } catch (e) {
           if ((e as { noTools?: boolean }).noTools && tools.length) {
             tools = [];
@@ -213,6 +237,7 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
           }
           throw e;
         }
+        thought = [thought, result.thinking.trim()].filter(Boolean).join("\n\n");
         if (!result.toolCalls.length) {
           final = shown + result.text;
           turns.push({ role: "assistant", content: result.text });
@@ -232,7 +257,9 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
       }
       const text = tidyReply(me, final, room);
       const pass = isPass(text) || (!text && !used.length);
-      patch({ text: pass ? "" : text, pass, via: `${conn.label} · ${model}`, tools: used.length ? used : undefined });
+      const thinking = [thought, splitThink(final).thinking].filter(Boolean).join("\n\n").trim();
+      patch({ text: pass ? "" : text, pass, via: `${conn.label} · ${model}`, tools: used.length ? used : undefined, thinking: thinking || undefined });
+      resting.delete(conn.id);
       setBusy(me.id, null);
       if (msgId && !pass)
         record({
@@ -252,6 +279,12 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
     } catch (e) {
       lastErr = explainError(e, conn);
       if (signal.aborted) break;
+      // rest it, and say so once, when another connection is there to take over
+      const first = !isResting(conn.id);
+      resting.set(conn.id, Date.now() + REST_MS);
+      const next = list[list.indexOf(list.find((x) => x.conn.id === conn.id)!) + 1];
+      if (first && next && !opts.silent)
+        desk().post({ kind: "notice", who: "desk", name: "Desk", source: "desk", quiet: true, text: `${conn.label} isn't answering (${lastErr.slice(0, 120)}). Using ${next.conn.label} for now; ${conn.label} gets tried again in 3 minutes.` });
       if (shown || used.length) break; // already said something; don't repeat it elsewhere
     }
   }

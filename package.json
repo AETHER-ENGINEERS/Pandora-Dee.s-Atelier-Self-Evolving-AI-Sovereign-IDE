@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/lib/logic.test.ts server/xdc.test.mjs"
+    "test": "node --experimental-strip-types --test src/lib/logic.test.ts server/xdc.test.mjs",
+    "check-upstreams": "node scripts/check-upstreams.mjs"
   },
   "dependencies": {
     "dompurify": "^3.2.6",

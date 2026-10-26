@@ -202,6 +202,14 @@ export type ChatPrefs = {
   trajectories: boolean;
   /** With many skills: hide the list and let characters look skills up with find. */
   skillRouter: boolean;
+  /** A reasoning model's thinking: folded above the reply, open, or not shown. */
+  thinking: "collapsed" | "open" | "hidden";
+  /** Ask Ollama's reasoning models to think (think: true). */
+  askThink: boolean;
+  /** Only the MEMORY.md lines that fit what's being talked about go in the prompt. */
+  rankMemory: boolean;
+  /** How many lines when ranking. */
+  memoryTopK: number;
 };
 
 export const CHAT_DEFAULT: ChatPrefs = {
@@ -217,6 +225,10 @@ export const CHAT_DEFAULT: ChatPrefs = {
   learnFacts: false,
   trajectories: false,
   skillRouter: false,
+  thinking: "collapsed",
+  askThink: false,
+  rankMemory: false,
+  memoryTopK: 12,
 };
 
 /** Notes: where daily notes and templates live, and how notes open. */

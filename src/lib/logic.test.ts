@@ -229,3 +229,22 @@ test("templates fill in dates and file details, and leave code for later", () =>
   assert.equal(r.cursor, "# Trip · 2026-10-27\n- [ ] ".length);
   assert.equal(r.skipped, 1);
 });
+
+import { rankMemory, splitThink } from "./room.ts";
+
+test("thinking comes apart from the reply, even while it's still streaming", () => {
+  assert.deepEqual(splitThink("<think>plan it</think>Hello!"), { text: "Hello!", thinking: "plan it" });
+  assert.deepEqual(splitThink("<think>still going"), { text: "", thinking: "still going" });
+  assert.deepEqual(splitThink("no thoughts"), { text: "no thoughts", thinking: "" });
+});
+
+test("ranked memory keeps the lines that fit, in order, under their headings", () => {
+  const mem = "# Memory\n## What I've learned\n- Sam loves green tea\n- The garden needs water on Fridays\n## Notes to self\n- Sam's cat is called Biscuit\n- Keep replies short";
+  const out = rankMemory(mem, "what tea should I make for Sam", 2);
+  assert.match(out, /green tea/);
+  assert.match(out, /Biscuit/);
+  assert.doesNotMatch(out, /garden/);
+  assert.match(out, /## What I've learned\n- Sam loves green tea/);
+  assert.match(out, /2 more lines/);
+  assert.equal(rankMemory(mem, "anything", 10), mem);
+});

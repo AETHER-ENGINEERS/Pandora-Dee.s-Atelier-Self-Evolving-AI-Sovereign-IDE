@@ -1094,6 +1094,34 @@ function ConversationSection() {
         <span>Put the date and time on every message the characters read</span>
       </label>
 
+      <h4 style={{ marginTop: 14 }}>Thinking (reasoning models)</h4>
+      <p className="small faint">Models like DeepSeek R1, Qwen3 and gpt-oss think before they answer. Their thinking shows above the reply, and is never sent back to them.</p>
+      <Seg
+        value={c.thinking}
+        onChange={(thinking) => set({ thinking })}
+        options={[
+          { id: "collapsed", label: "Folded (click to read)" },
+          { id: "open", label: "Open" },
+          { id: "hidden", label: "Don't show" },
+        ]}
+      />
+      <label className="check" style={{ marginTop: 6 }}>
+        <input type="checkbox" checked={c.askThink} onChange={(e) => set({ askThink: e.target.checked })} />
+        <span>Ask Ollama's reasoning models to think (slower, often better answers)</span>
+      </label>
+
+      <h4 style={{ marginTop: 14 }}>Memory</h4>
+      <label className="check">
+        <input type="checkbox" checked={c.rankMemory} onChange={(e) => set({ rankMemory: e.target.checked })} />
+        <span>Rank memories: only the lines of a character's MEMORY.md that fit what's being talked about go in the prompt (saves context once memories grow long)</span>
+      </label>
+      {c.rankMemory ? (
+        <label className="field" style={{ maxWidth: 420 }}>
+          <span>How many lines</span>
+          <Num min={1} max={100} typedMax={1000} value={c.memoryTopK} onChange={(n) => set({ memoryTopK: n })} />
+        </label>
+      ) : null}
+
       <h4 style={{ marginTop: 14 }}>Compacting long chats</h4>
       <p className="small faint">Older messages are summarised and the summary is sent instead. You still see every message. /compact does it by hand; /context shows how full it is.</p>
       <label className="field" style={{ maxWidth: 420 }}>

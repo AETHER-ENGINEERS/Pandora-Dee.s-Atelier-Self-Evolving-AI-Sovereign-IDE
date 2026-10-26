@@ -38,6 +38,20 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
+export type UpdateRow = {
+  name: string;
+  appKey: string;
+  repo: string;
+  local: string;
+  latest: string;
+  newer: boolean;
+  sourceAhead?: boolean;
+  prerelease?: boolean;
+  published?: string;
+  note?: string;
+  asset?: { name: string; url: string; size: number };
+};
+
 export const library = {
   available: async () => {
     try {
@@ -49,6 +63,9 @@ export const library = {
   },
   info: () => api<{ dataDir: string; xdcDir: string }>("info"),
   list: () => api<Pkg[]>("xdc"),
+  /** Newer releases where the apps are made (GitHub, Codeberg). Only when asked. */
+  newerReleases: () => api<UpdateRow[]>("xdc/updates", { method: "POST" }),
+  fetchUpdate: (url: string) => api<{ added: Pkg[]; duplicates: number; errors: string[] }>("xdc/fetch-update", { method: "POST", body: JSON.stringify({ url }) }),
   import: (file: File, onProgress?: (text: string) => void) => {
     onProgress?.(`Reading ${file.name}…`);
     return api<{ added: Pkg[]; duplicates: number; errors: string[] }>("xdc/import", {

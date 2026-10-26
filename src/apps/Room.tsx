@@ -304,6 +304,14 @@ export function RoomApp() {
                     ))}
                   </div>
                 ) : null}
+                {c && m.thinking && s.chat.thinking !== "hidden" ? (
+                  <details className="thinking" open={s.chat.thinking === "open" || (Boolean(s.busy[c.id]) && !text)}>
+                    <summary>
+                      {s.busy[c.id] && !text ? "Thinking…" : "Thinking"} <span className="faint">· {m.thinking.split(/\s+/).length} words</span>
+                    </summary>
+                    <Markdown className="thinking-text" text={m.thinking} />
+                  </details>
+                ) : null}
                 {editing?.id === m.id ? (
                   <div className="edit-box">
                     <textarea

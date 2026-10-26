@@ -9,6 +9,7 @@ import { classicRelayScript, helperScript, webxdcScript } from "./inject.mjs";
 import { sshOp } from "./ssh.mjs";
 import { inbound } from "./inbound.mjs";
 import { relay } from "./relay.mjs";
+import { checkUpdates, download } from "./upstreams.mjs";
 import * as aicordAuth from "./oauth.mjs";
 import { findCurl, findPython, forgetPrograms } from "./programs.mjs";
 
@@ -173,6 +174,17 @@ export function deskServer() {
     if (parts[0] === "xdc") {
       const [, id, what] = parts;
       if (!id && m === "GET") return send(res, 200, L.list());
+      // Newer releases where the apps are made (GitHub, Codeberg), checked only when asked
+      if (id === "updates" && m === "POST") return send(res, 200, await checkUpdates(L.list()));
+      if (id === "fetch-update" && m === "POST") {
+        const b = JSON.parse((await readBody(req, 10_000)).toString("utf8") || "{}");
+        try {
+          const f = await download(String(b.url || ""));
+          return send(res, 200, L.importAny(f.bytes, f.name));
+        } catch (e) {
+          return send(res, 400, { error: e instanceof Error ? e.message : String(e) });
+        }
+      }
       if (id === "import" && m === "POST") {
         const name = decodeURIComponent(String(req.headers["x-filename"] || "upload.xdc"));
         const bytes = await readBody(req);

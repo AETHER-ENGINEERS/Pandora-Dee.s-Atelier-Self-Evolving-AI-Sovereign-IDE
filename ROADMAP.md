@@ -32,6 +32,13 @@ Done in 3.4.0:
 - ✅ Hangout scene: the chosen scene is also the desktop wallpaper, with a preview. (moderate)
 - ✅ SSH for you: `ssh <host>` in the Terminal; `~.` hangs up. (moderate)
 
+- ✅ Thinking from reasoning models, folded above the reply (Settings → Conversations).
+- ✅ After a fallback, the failed connection rests 3 minutes, then is tried first again.
+- ✅ Rank memories (top-k), off until turned on.
+- ✅ Updates for webxdc apps from where they're made (GitHub, Codeberg; manifest source_code_url), only when asked:
+  Games & Apps → Check for updates, or `npm run check-upstreams` (`-- --get` to bring them in). Makers credited in NOTICE.md.
+- ✅ LICENSE (AETHER-ENGINEERS) added; NOTICE.md credits everything else.
+
 Still to build:
 - Hangout: a third look, full avatar (Live2D / VRM) when a character has one, and uploading or changing avatars. (moderate)
 - Music player: internet radio, your music library (add folders or files), small controls, Winamp-style visualizers

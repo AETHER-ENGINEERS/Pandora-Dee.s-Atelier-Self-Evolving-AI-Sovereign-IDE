@@ -646,3 +646,12 @@ p { line-height: 1.55; margin: 0 0 10px; }
 .bar-bottom.dock-float .workspace { bottom: var(--menu-h); }
 .phone .dock.float { left: 0 !important; right: 0; top: auto !important; bottom: 0; }
 .no-menu .dock.float.vertical { max-height: calc(100vh - 16px); }
+
+.updates-panel { margin: 8px; max-height: 50%; overflow-y: auto; }
+.update-row { display: flex; gap: 8px; align-items: center; padding: 4px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
+
+.msg details.thinking { margin: 4px 0 6px; border-left: 2px solid var(--line-strong); padding: 2px 0 2px 10px; }
+.msg details.thinking summary { cursor: pointer; font-size: .82em; color: var(--muted); list-style: none; user-select: none; }
+.msg details.thinking summary::before { content: "▸ "; }
+.msg details.thinking[open] summary::before { content: "▾ "; }
+.msg .thinking-text { font-size: .86em; color: var(--muted); max-height: 320px; overflow-y: auto; margin-top: 4px; }

@@ -48,9 +48,9 @@ and their slash commands. The rule: nothing is dropped; where the two differ, yo
 | Context window (`num_ctx`), max tool rounds, temperature | | ✅ | Settings → Conversations |
 | Context guard: compact after N turns, keep recent turns, compact at % full, compaction model | | ✅ | Off until set |
 | Date and time on every message | | ✅ | Option, off by default |
-| Include thinking (reasoning models) | | ❌ | Thinking is stripped |
+| Include thinking (reasoning models) | | ✅ | Folded above the reply (or open, or hidden); `<think>`, Ollama and OpenAI-style reasoning |
 | SYSTEM.md replaces the base prompt | | ✅ | Per character |
-| Model remembered per provider; checks the primary again after a fallback | | 🟡 | Fallback yes |
+| Model remembered per provider; checks the primary again after a fallback | | ✅ | Each connection keeps its model; a failed one rests 3 minutes, then is tried first again |
 | Trajectory log, 👍/👎 filter, export JSONL (OpenAI tools or ShareGPT) | | ✅ | Off until turned on; kept in the vault |
 
 ## 3. Memory, journal, skills
@@ -59,7 +59,7 @@ and their slash commands. The rule: nothing is dropped; where the two differ, yo
 | --- | --- | --- | --- |
 | Memory.md read every chat | | ✅ | Per character |
 | Memory tool: save, list, search, forget | | ✅ | `memory` tool; `remember` stays |
-| Rank memories: only matching lines go in the prompt (top-k) | | ❌ | |
+| Rank memories: only matching lines go in the prompt (top-k) | | ✅ | Off until turned on (Settings → Conversations) |
 | Journal finished chats automatically, learn facts from them | | ✅ | Off until turned on; runs in the background when a chat ends |
 | Embeddings (Ollama `/api/embed`), hybrid keyword + meaning search, sqlite-vec index | | ❌ | |
 | `embeddings` tool: search, add, index notes, remove, compare, status | J | ❌ | |

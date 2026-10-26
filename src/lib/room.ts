@@ -23,6 +23,8 @@ export type Message = {
   bridge?: { chatId: string; msgId?: string; author?: string; isGroup?: boolean };
   /** Which connection and model answered. */
   via?: string;
+  /** A reasoning model's thinking, shown folded above the reply; never sent back to the models. */
+  thinking?: string;
   /** 👍 or 👎 from the person at the computer. */
   rating?: 1 | -1;
   /** Shown to you only, never sent to the characters (slash command answers). */
@@ -131,7 +133,48 @@ export type PromptContext = {
   summary?: string;
   /** Hide a long skills list behind the skill tool's find. */
   skillRouter?: boolean;
+  /** Rank memories: only the k MEMORY.md lines that best fit `query` (what's being talked about). */
+  memoryFocus?: { query: string; k: number };
 };
+
+const STOP = new Set("the and for are but not you your yours with this that what when where which who will would could should have has had was were been being from they them their there here then than into onto about just also very really like some any all can its it's i'm i've don't didn't does did our out".split(" "));
+// ("Sam's" counts as "sam")
+const wordsOf = (s: string) => new Set(s.toLowerCase().replace(/['’]s\b/g, "").match(/[\p{L}\p{N}]{3,}/gu)?.filter((w) => !STOP.has(w)) ?? []);
+
+/**
+ * The memory lines that fit what's being talked about, best k, kept in their original order under their
+ * headings. A memory with k lines or fewer comes back whole.
+ */
+export function rankMemory(memory: string, query: string, k: number): string {
+  const lines = memory.split("\n");
+  const bullets = lines.map((l, i) => ({ l, i })).filter((x) => /^\s*[-*]\s+/.test(x.l));
+  if (bullets.length <= k) return memory;
+  const q = wordsOf(query);
+  const scored = bullets.map((b, n) => {
+    const w = wordsOf(b.l);
+    let hit = 0;
+    for (const x of w) if (q.has(x)) hit++;
+    // a small lean toward newer lines, so ties keep what was learned last
+    return { ...b, score: hit + n / bullets.length / 10 };
+  });
+  const keep = new Set(scored.sort((a, b) => b.score - a.score).slice(0, k).map((x) => x.i));
+  const out: string[] = [];
+  let heading = "";
+  let headingShown = false;
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    if (/^#{1,6}\s/.test(l)) {
+      heading = l;
+      headingShown = false;
+      if (/^#\s/.test(l)) (out.push(l), (headingShown = true));
+      continue;
+    }
+    if (!keep.has(i)) continue;
+    if (heading && !headingShown) (out.push(heading), (headingShown = true));
+    out.push(l);
+  }
+  return `${out.join("\n")}\n(${bullets.length - k} more lines kept in MEMORY.md; search them with the memory tool.)`;
+}
 
 const BUDGET = 14_000;
 
@@ -156,7 +199,8 @@ export function systemPrompt(ctx: PromptContext): string {
   if (own) parts.push(own);
   parts.push(stripComments(files["SOUL.md"] ?? `# ${me.name}`));
   if (files["AGENTS.md"]) parts.push(stripComments(files["AGENTS.md"]));
-  const memory = stripComments(files["MEMORY.md"] ?? "");
+  const whole = stripComments(files["MEMORY.md"] ?? "");
+  const memory = ctx.memoryFocus ? rankMemory(whole, ctx.memoryFocus.query, ctx.memoryFocus.k) : whole;
   if (memory) parts.push(`## My memory\n${memory}`);
   const journal = latestJournal(files);
   if (journal) parts.push(`## My latest journal entry\n${journal.slice(0, 2500)}`);
@@ -255,9 +299,21 @@ export function scopedPrompt(ctx: { me: Character; files: Record<string, string>
 
 export const TURN_NUDGE = `[Room note] The others are talking. It's your turn if you have something to add: respond to what was just said, in your own voice. If you have nothing worth adding, reply with exactly ${PASS}`;
 
+/** Split <think>…</think> out of a reply. An unclosed <think> (still streaming) counts as thinking so far. */
+export function splitThink(raw: string): { text: string; thinking: string } {
+  const parts: string[] = [];
+  let text = raw.replace(/<think(?:ing)?>([\s\S]*?)<\/think(?:ing)?>/gi, (_, t: string) => (parts.push(t.trim()), ""));
+  const open = /<think(?:ing)?>([\s\S]*)$/i.exec(text);
+  if (open) {
+    parts.push(open[1].trim());
+    text = text.slice(0, open.index);
+  }
+  return { text, thinking: parts.filter(Boolean).join("\n\n") };
+}
+
 /** Clean up what a model sends back: drop a leading "Name:" and anything it wrote for others. */
 export function tidyReply(me: Character, raw: string, room: Character[]): string {
-  let text = raw.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+  let text = splitThink(raw).text.trim();
   const own = [me.name, me.short].map(escape).join("|");
   text = text.replace(new RegExp(`^\\s*\\**(${own})\\**\\s*:\\s*\\**\\s*`, "i"), "");
   const others = room.filter((c) => c.id !== me.id).flatMap((c) => [c.name, c.short]).map(escape);
