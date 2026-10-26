@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Emoji Petting</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="stage">
+    <div id="pet" aria-hidden="true">🐈</div>
+    <div id="hand" aria-hidden="true">🤚</div>
+  </div>
+
+  <div id="food-bar" hidden></div>
+
+  <a href="#" id="open-settings" aria-label="Settings">⚙︎</a>
+
+  <div id="settings" hidden>
+    <div id="settings-card">
+      <h2>Pet Settings</h2>
+      <label>
+        <span>Emoji to pet</span>
+        <input type="text" id="pet-emoji" maxlength="8" value="🐈" />
+      </label>
+      <label>
+        <span>Emoji while petted <em>(optional)</em></span>
+        <input type="text" id="pet-active-emoji" maxlength="8" placeholder="e.g. 😻" />
+      </label>
+      <label>
+        <span>Hand emoji</span>
+        <input type="text" id="hand-emoji" maxlength="8" value="🤚" />
+      </label>
+      <label>
+        <span>Hand while petting <em>(optional)</em></span>
+        <input type="text" id="hand-active-emoji" maxlength="8" placeholder="e.g. 🫳" />
+      </label>
+      <label>
+        <span>Emoji while mouth open <em>(optional)</em></span>
+        <input type="text" id="open-mouth-emoji" maxlength="8" placeholder="e.g. 🫦" />
+      </label>
+      <label>
+        <span>Emoji while eating <em>(optional)</em></span>
+        <input type="text" id="eating-emoji" maxlength="8" placeholder="e.g. 😋" />
+      </label>
+      <label>
+        <span>Eating duration (ms)</span>
+        <input type="number" id="eating-duration" value="750" min="100" step="50" />
+      </label>
+      <label class="food-field">
+        <span>Foods (comma separated)</span>
+        <input type="text" id="foods" placeholder="e.g. 🍎,🍌,🍕" />
+      </label>
+      <label>
+        <span>Hand size</span>
+        <select id="hand-size">
+          <option value="super small">super small</option>
+          <option value="small">small</option>
+          <option value="somewhat small">somewhat small</option>
+          <option value="default" selected>default</option>
+          <option value="medium">medium</option>
+          <option value="somewhat large">somewhat large</option>
+          <option value="large">large</option>
+          <option value="super large">super large</option>
+          <option value="bigger than emoji being pet">bigger than emoji being pet</option>
+          <option value="way bigger than emoji being pet">way bigger than emoji being pet</option>
+        </select>
+      </label>
+      <label class="toggle">
+        <span>Show hand</span>
+        <input type="checkbox" id="hand-toggle" checked />
+      </label>
+      <div class="actions">
+        <button type="button" id="settings-close">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

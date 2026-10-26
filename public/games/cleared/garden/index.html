@@ -1,0 +1,106 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grow Your Garden!</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .care-effect {
+            position: absolute;
+            font-size: 2em;
+            animation: fadeOut 1s forwards;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-50px); }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>🌻 Grow Your Garden! 🌻</h1>
+            <div class="mode-selector">
+                <button id="sandbox-mode" class="mode-btn active">Sandbox Mode</button>
+                <button id="challenge-mode" class="mode-btn">Challenge Mode</button>
+            </div>
+            <div class="game-info">
+                <span id="coins-display">💰 Coins: <span id="coins">100</span></span>
+                <button id="settings-btn">⚙️ Settings</button>
+            </div>
+        </header>
+
+        <main>
+            <div class="garden-container">
+                <div id="garden-grid" class="garden-grid"></div>
+            </div>
+
+            <div class="controls">
+                <div class="care-items">
+                    <button class="care-btn" data-action="water">💦 Water</button>
+                    <button class="care-btn" data-action="fertilize">🫙 Fertilize</button>
+                    <button class="care-btn" data-action="weed">🌾 Weed</button>
+                    <button class="care-btn" data-action="bug">🪰 Bug Spray</button>
+                </div>
+                <div class="actions">
+                    <button id="plant-btn">🌱 Plant New</button>
+                    <button id="harvest-btn" disabled>✨ Harvest Selected</button>
+                </div>
+            </div>
+
+            <div id="plant-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2>Plant Your Seed</h2>
+                    <div class="emoji-inputs">
+                        <div>
+                            <label>Just Planted:</label>
+                            <input type="text" id="planted-emoji" value="🌱" maxlength="10" />
+                        </div>
+                        <div>
+                            <label>Growing:</label>
+                            <input type="text" id="growing-emoji" value="🌿" maxlength="10" />
+                        </div>
+                        <div>
+                            <label>Fully Grown:</label>
+                            <input type="text" id="grown-emoji" value="🌷" maxlength="10" />
+                        </div>
+                    </div>
+                    <button id="confirm-plant">Plant</button>
+                    <button id="cancel-plant">Cancel</button>
+                </div>
+            </div>
+
+            <div id="settings-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2>Settings</h2>
+                    <div class="emoji-settings">
+                        <div>
+                            <label>Water Emoji:</label>
+                            <input type="text" id="water-emoji" value="💦" maxlength="10" />
+                        </div>
+                        <div>
+                            <label>Fertilize Emoji:</label>
+                            <input type="text" id="fertilize-emoji" value="🫙" maxlength="10" />
+                        </div>
+                        <div>
+                            <label>Weed Emoji:</label>
+                            <input type="text" id="weed-emoji" value="🌾" maxlength="10" />
+                        </div>
+                        <div>
+                            <label>Bug Spray Emoji:</label>
+                            <input type="text" id="bug-emoji" value="🪰" maxlength="10" />
+                        </div>
+                    </div>
+                    <button id="save-settings">Save</button>
+                    <button id="close-settings">Close</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="game.js"></script>
+</body>
+</html>

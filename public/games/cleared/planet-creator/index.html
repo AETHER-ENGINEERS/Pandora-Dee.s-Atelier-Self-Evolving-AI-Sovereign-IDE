@@ -1,0 +1,77 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planet Creator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="controls">
+      <h1>Planet Creator</h1>
+      <div class="sliders">
+        <label>
+          Size
+          <div class="slider-value" id="sizeValue">100%</div>
+          <input type="range" id="size" min="50" max="200" value="100">
+        </label>
+        <label>
+          Ground Coverage
+          <div class="slider-value" id="groundCoverageValue">30%</div>
+          <input type="range" id="groundCoverage" min="0" max="100" value="30">
+        </label>
+        <label>
+          Cloud Coverage
+          <div class="slider-value" id="cloudCoverageValue">20%</div>
+          <input type="range" id="cloudCoverage" min="0" max="100" value="20">
+        </label>
+        <label>
+          Rings
+          <div class="slider-value" id="ringsValue">0</div>
+          <input type="range" id="rings" min="0" max="5" value="0">
+        </label>
+        <label>
+          Moons
+          <div class="slider-value" id="moonsValue">0</div>
+          <input type="range" id="moons" min="0" max="10" value="0">
+        </label>
+        <label>
+          Rotation Speed
+          <div class="slider-value" id="speedValue">25%</div>
+          <input type="range" id="speed" min="1" max="20" value="5">
+        </label>
+        <div class="button-container">
+          <button id="randomizeGround" class="randomize-btn">Randomize Ground</button>
+          <button id="resetAll" class="reset-btn">Reset All</button>
+        </div>
+      </div>
+      <div class="color-pickers">
+        <label>
+          Ocean Color
+          <input type="color" id="oceanColor" value="#1E90FF">
+        </label>
+        <label>
+          Ground Color
+          <input type="color" id="groundColor" value="#2E7D32">
+        </label>
+        <label>
+          Cloud Color
+          <input type="color" id="cloudColor" value="#FFFFFF">
+        </label>
+        <label>
+          Ring Color
+          <input type="color" id="ringColor" value="#4ECDC4">
+        </label>
+        <label>
+          Moon Color
+          <input type="color" id="moonColor" value="#9E9E9E">
+        </label>
+      </div>
+    </div>
+    <div class="planet-container">
+      <div id="planet"></div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

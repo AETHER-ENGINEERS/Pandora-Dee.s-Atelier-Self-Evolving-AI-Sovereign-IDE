@@ -1,0 +1,97 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Maker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Cookie Maker</h1>
+        </header>
+        
+        <div class="game-area">
+            <!-- Ingredients Panel -->
+            <div class="ingredients-panel">
+                <h3>Ingredients</h3>
+                <div class="ingredients-grid" id="ingredientsGrid">
+                    <!-- Default ingredients will be added by JS -->
+                </div>
+                <div class="custom-ingredient-form">
+                    <input type="text" id="customName" placeholder="Ingredient name">
+                    <input type="color" id="customColor" value="#ffffff">
+                    <button onclick="addCustomIngredient()">Add</button>
+                </div>
+                <div class="custom-name-words">
+                    <h4>Recipe Name Words</h4>
+                    <div class="name-words-grid" id="nameWordsGrid">
+                        <!-- Name words will be added by JS -->
+                    </div>
+                    <div class="custom-word-form">
+                        <input type="text" id="customWord" placeholder="Add recipe name word">
+                        <button onclick="addCustomWord()">Add Word</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dough Bowl -->
+            <div class="dough-section">
+                <h3>Dough Bowl</h3>
+                <div class="dough-bowl" id="doughBowl">
+                    <div class="dough" id="dough"></div>
+                </div>
+                <div class="cooking-controls" id="cookingControls" style="display: none;">
+                    <label>Cook for: <span id="cookingTime">0</span> minutes</label>
+                    <input type="range" id="cookingSlider" min="0" max="60" value="0" step="5">
+                    <button onclick="cookDough()">Cook!</button>
+                </div>
+            </div>
+
+            <!-- Cookie Display -->
+            <div class="cookie-section" id="cookieSection" style="display: none;">
+                <h3>Your Cookie</h3>
+                <canvas id="cookieCanvas" width="200" height="200"></canvas>
+                <div class="drawing-tools">
+                    <input type="color" id="drawColor" value="#ff0000">
+                    <label>Brush Size: <span id="brushSizeValue">3</span></label>
+                    <input type="range" id="brushSize" min="1" max="10" value="3">
+                    <button onclick="clearDrawing()">Clear Drawing</button>
+                    <button onclick="finishCookie()">Finish Cookie</button>
+                </div>
+            </div>
+
+            <!-- Smiley Face -->
+            <div class="smiley-section">
+                <div class="smiley-settings">
+                    <input type="text" id="smileyName" placeholder="Smiley name" value="Feed the Smiley">
+                    <input type="text" id="defaultEmoji" placeholder="😊" maxlength="2" style="width: 40px;">
+                    <input type="text" id="eatingEmoji" placeholder="😋" maxlength="2" style="width: 40px;">
+                    <input type="text" id="unhappyEmoji" placeholder="😞" maxlength="2" style="width: 40px;">
+                </div>
+                <h3 id="smileyTitle">Feed the Smiley</h3>
+                <div class="order-section" id="orderSection" style="display: none;">
+                    <h4>Order:</h4>
+                    <div class="order-display" id="orderDisplay">
+                        <img id="orderImage" class="order-cookie-image" src="" alt="Order cookie">
+                        <div id="orderName" class="order-name"></div>
+                    </div>
+                </div>
+                <div class="smiley-face" id="smileyFace">😊</div>
+                <div class="success-message" id="successMessage"></div>
+                <div class="cookies-made" id="cookiesMade"></div>
+                <button onclick="takeOrder()" id="takeOrderBtn">Take Order</button>
+                <button onclick="resetForNewCookie()" id="newCookieBtn" style="display: none;">Make New Cookie</button>
+            </div>
+        </div>
+
+        <!-- Recipes Panel -->
+        <div class="recipes-panel">
+            <h3>Recipes</h3>
+            <div class="recipes-list" id="recipesList"></div>
+        </div>
+
+        <script src="script.js"></script>
+    </div>
+</body>
+</html>

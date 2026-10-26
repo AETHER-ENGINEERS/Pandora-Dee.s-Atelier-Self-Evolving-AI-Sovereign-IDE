@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#071b36">
+    <title>Squid</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <main class="sea" aria-label="A squid swimming in the deep sea">
+      <div class="water-glow"></div>
+      <div class="stars" aria-hidden="true"></div>
+      <div class="floor" aria-hidden="true"></div>
+      <button class="squid-button" type="button" aria-label="Make the squid blow bubbles">
+        <svg class="squid" viewBox="0 0 300 340" role="img" aria-label="A friendly pink squid">
+          <defs>
+            <linearGradient id="mantle" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ffb1c8"/>
+              <stop offset="1" stop-color="#ff6f9e"/>
+            </linearGradient>
+            <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ff9dbb"/>
+              <stop offset="1" stop-color="#f45d92"/>
+            </linearGradient>
+          </defs>
+          <g class="tentacles" fill="none" stroke="#f56a99" stroke-linecap="round" stroke-linejoin="round">
+            <path class="arm arm-one" d="M104 208 C93 238 72 246 82 277 C88 296 75 307 66 317" stroke-width="15"/>
+            <path class="arm arm-two" d="M122 214 C117 245 104 260 116 285 C126 305 111 316 105 328" stroke-width="15"/>
+            <path class="arm arm-three" d="M140 218 C145 245 132 265 145 289 C157 311 149 319 147 332" stroke-width="16"/>
+            <path class="arm arm-four" d="M159 218 C170 244 160 265 177 286 C194 307 186 319 190 330" stroke-width="16"/>
+            <path class="arm arm-five" d="M177 213 C198 237 186 259 207 278 C222 292 217 307 228 316" stroke-width="15"/>
+            <path class="arm arm-six" d="M193 204 C220 224 215 245 235 258 C255 271 251 287 267 294" stroke-width="14"/>
+          </g>
+          <path d="M91 128 C79 100 93 50 145 24 C197 50 211 100 199 128 L192 188 C185 213 104 213 98 188 Z" fill="url(#mantle)"/>
+          <path d="M105 143 C117 158 174 158 187 143 L192 187 C183 207 108 207 99 187 Z" fill="url(#body)"/>
+          <path d="M91 129 C76 136 72 160 88 171 L101 158 Z" fill="#ff83a8"/>
+          <path d="M199 129 C214 136 218 160 202 171 L189 158 Z" fill="#ff83a8"/>
+          <path d="M111 72 C123 49 143 38 158 36" fill="none" stroke="#ffd5e1" stroke-width="7" stroke-linecap="round" opacity=".72"/>
+          <g class="face">
+            <g class="normal-face">
+              <ellipse cx="126" cy="151" rx="8" ry="11" fill="#18304d"/>
+              <ellipse cx="172" cy="151" rx="8" ry="11" fill="#18304d"/>
+              <circle cx="128" cy="147" r="2.5" fill="white"/>
+              <circle cx="174" cy="147" r="2.5" fill="white"/>
+              <path class="mouth-closed" d="M143 164 Q149 171 156 164" fill="none" stroke="#a63f70" stroke-width="3" stroke-linecap="round"/>
+            </g>
+            <g class="happy-face" fill="none" stroke="#a63f70" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M117 149 Q126 160 135 149" stroke-width="4"/>
+              <path d="M163 149 Q172 160 181 149" stroke-width="4"/>
+              <path class="mouth-happy" d="M137 160 Q149 176 161 160" stroke-width="4"/>
+            </g>
+            <ellipse cx="111" cy="166" rx="8" ry="4" fill="#ffceda" opacity=".8"/>
+            <ellipse cx="187" cy="166" rx="8" ry="4" fill="#ffceda" opacity=".8"/>
+            <ellipse class="mouth-open" cx="149" cy="166" rx="9" ry="12" fill="#a63f70"/>
+          </g>
+        </svg>
+      </button>
+      <div class="bubbles" aria-hidden="true"></div>
+      <div class="controls">
+        <label class="pet-setting">
+          <span class="setting-name">Hold</span>
+          <input id="pet-duration" class="pet-duration" type="range" min="0" max="3" step="0.25" value="1" aria-label="Hold time before the squid smiles">
+          <output class="duration-value" for="pet-duration">1s</output>
+        </label>
+        <div class="food-tray" aria-label="Drag food to the squid">
+          <button class="food" type="button" data-food="fish" aria-label="Feed fish" title="Fish">🐟</button>
+          <button class="food" type="button" data-food="shrimp" aria-label="Feed shrimp" title="Shrimp">🦐</button>
+          <button class="food" type="button" data-food="crab" aria-label="Feed crab" title="Crab">🦀</button>
+        </div>
+      </div>
+      <div class="food-ghost" aria-hidden="true"></div>
+    </main>
+  </body>
+</html>

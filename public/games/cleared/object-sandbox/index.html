@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f3f0e9" />
+  <title>Mix Things</title>
+  <link rel="stylesheet" href="style.css" />
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <a class="wordmark" href="#" aria-label="Mix Things home"><span class="wordmark-mark">✳</span> mix things</a>
+      <div class="toolbar">
+        <button class="tool-button" id="add-object" type="button" aria-label="Create object"><span>＋</span><span class="tool-label">Object</span></button>
+        <button class="tool-button" id="spawn-objects" type="button" aria-label="Spawn a created object"><span>◉</span><span class="tool-label">Spawn</span></button>
+        <button class="tool-button" id="add-mix" type="button" aria-label="Create mix rule"><span>↗</span><span class="tool-label">Mix rule</span> <b id="mix-count">0</b></button>
+      </div>
+      <div class="top-note"><span class="status-dot"></span> your little world</div>
+    </header>
+    <section class="board-wrap" aria-label="Object playground">
+      <div class="board" id="board">
+        <div class="empty-state" id="empty-state"><div class="empty-orbit"><span>🌱</span><i>✦</i></div><p>Your world is waiting</p><button type="button" id="empty-create">Make your first object <span>↗</span></button></div>
+        <div class="mix-toast" id="mix-toast" aria-live="polite"></div>
+      </div>
+      <div class="board-caption"><span id="object-count">0 objects</span><span class="caption-actions"><span class="caption-hint">drag together to mix <i>·</i> double-tap for options</span><button class="caption-toggle" id="emoji-toggle" type="button" aria-pressed="false"><span class="toggle-track"><i></i></span> Emoji only</button><button class="caption-toggle" id="no-rule-toggle" type="button" aria-pressed="true"><span class="toggle-track"><i></i></span> No-rule notice</button></span></div>
+    </section>
+    <section class="popover spawn-popover" id="spawn-popover" aria-labelledby="spawn-heading" hidden>
+      <div class="popover-head"><div><span class="eyebrow">Your object collection</span><h2 id="spawn-heading">Spawn an object</h2></div><button class="close-button" data-close="spawn-popover" aria-label="Close">×</button></div>
+      <div class="spawn-list" id="spawn-list"></div>
+    </section>
+    <section class="popover object-popover" id="object-popover" aria-labelledby="object-heading" hidden>
+      <div class="popover-head"><div><span class="eyebrow">A new little thing</span><h2 id="object-heading">Create an object</h2></div><button class="close-button" data-close="object-popover" aria-label="Close">×</button></div>
+      <form id="object-form"><label class="field-label" for="object-name">Name</label><input id="object-name" name="name" maxlength="24" placeholder="Like a tiny moon" required autocomplete="off" /><div class="field-row"><div class="field-group emoji-group"><label class="field-label" for="object-emoji">Emoji</label><input id="object-emoji" name="emoji" maxlength="4" value="✨" required aria-label="Emoji" /></div><div class="field-group size-group"><label class="field-label" for="object-size">Size</label><select id="object-size" name="size"></select></div></div><button class="submit-button" type="submit">Make object <span>↗</span></button></form>
+    </section>
+    <section class="popover mix-popover" id="mix-popover" aria-labelledby="mix-heading" hidden>
+      <div class="popover-head"><div><span class="eyebrow">Teach things to combine</span><h2 id="mix-heading">Create a mix</h2></div><button class="close-button" data-close="mix-popover" aria-label="Close">×</button></div>
+      <form id="mix-form"><div class="mix-pair"><label class="select-card"><span class="field-label">Object one</span><span class="select-emoji" id="preview-one">✦</span><select id="mix-one" required></select></label><span class="plus-sign">+</span><label class="select-card"><span class="field-label">Object two</span><span class="select-emoji" id="preview-two">✦</span><select id="mix-two" required></select></label></div><label class="field-label" for="mix-result">Makes</label><select id="mix-result" required></select><label class="field-label outcome-label" for="mix-outcome">When they meet</label><select id="mix-outcome"></select><label class="field-label time-label" for="mix-delay">Time to mix <span>seconds · 0 is instant</span></label><div class="seconds-input"><input id="mix-delay" type="number" min="0" max="3600" step="0.1" value="1" required /><span>sec</span></div><button class="submit-button" type="submit">Save mix rule <span>↗</span></button><p class="mix-error" id="mix-error" role="alert" hidden></p></form>
+      <div class="saved-rules"><div class="saved-rules-heading">Saved rules <span id="saved-rule-count">0</span></div><div class="saved-rule-list" id="saved-rule-list"></div></div>
+    </section>
+    <div class="context-menu" id="context-menu" role="menu" hidden><div class="context-title" id="context-title"></div><button type="button" data-action="raise" role="menuitem">Move up <span>↑</span></button><button type="button" data-action="top" role="menuitem">Bring to front <span>⇧</span></button><button type="button" data-action="lower" role="menuitem">Move down <span>↓</span></button><button type="button" data-action="bottom" role="menuitem">Send to back <span>⇩</span></button><button type="button" class="delete-action" data-action="delete" role="menuitem">Delete <span>⌫</span></button></div>
+    <div class="toast-region" id="toast-region" aria-live="polite"></div>
+  </main>
+</body>
+</html>

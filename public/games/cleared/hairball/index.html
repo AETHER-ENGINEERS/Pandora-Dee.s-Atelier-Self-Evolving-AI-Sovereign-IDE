@@ -1,0 +1,44 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tiny Hairball World</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="controls">
+    <div id="color-picker">
+      <label>Hairball Color:</label>
+      <input type="color" id="hairball-color" value="#4A2511">
+      <button id="randomize-color">🎲</button>
+      <button id="invert-color">🔄</button>
+    </div>
+
+    <div id="food-picker" style="display:flex;align-items:center;gap:6px;">
+      <label>Food Color:</label>
+      <input type="color" id="food-color" value="#ffd700">
+      <button id="randomize-food-color" title="Randomize food color">🎲</button>
+    </div>
+
+    <label style="display:flex;align-items:center;gap:6px;">
+      <input type="checkbox" id="allow-color-change" checked>
+      <span style="font-size:13px;">Allow color changes from food/shed</span>
+    </label>
+
+    <button id="spawn-hairball">Spawn Hairball</button>
+    <button id="spawn-cat">Spawn Cat</button>
+    <button id="spawn-random">Spawn Random</button>
+    <button id="spawn-food">Spawn Food</button>
+    <button id="mix-hairballs">Mix Selected</button>
+    <button id="split-hairballs">Split Selected</button>
+    <button id="shed">Shed Hairball</button>
+    <button id="reset">Reset</button>
+  </div>
+  
+  <div id="game-area">
+    <div id="mixing-area"></div>
+  </div>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shell Collector</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="coin-display">Coins: <span id="coin-amount">0</span></div>
+        <div id="main-menu">
+            <button id="look-for-shells">Look for Shells</button>
+            <button id="collection-btn">My Collection</button>
+            <button id="polish-shell">Polish Shell</button>
+            <button id="sell-shell">Sell Shell</button>
+        </div>
+        <div id="shell-find-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>New Shells Found!</h2>
+                <div id="shell-options">
+                    <!-- Shells will be dynamically generated here -->
+                </div>
+            </div>
+        </div>
+        <div id="collection-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>My Shell Collection</h2>
+                <div id="collected-shells">
+                    <!-- Collected shells will be displayed here -->
+                </div>
+                <button id="close-collection">Close</button>
+            </div>
+        </div>
+        <div id="polish-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Polish Shell</h2>
+                <div id="polish-shell-options">
+                    <!-- Shells to polish will be displayed here -->
+                </div>
+                <button id="close-polish">Close</button>
+            </div>
+        </div>
+        <div id="sell-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Sell Shell</h2>
+                <div id="sell-shell-options">
+                    <!-- Shells to sell will be displayed here -->
+                </div>
+                <button id="close-sell">Close</button>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="game.js"></script>
+</body>
+</html>

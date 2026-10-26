@@ -1,0 +1,932 @@
+{
+ "attribution": "SunkissedButterfly from websim.ai 🦋",
+ "source": "https://websim.ai",
+ "games": [
+  {
+   "slug": "animal-collector",
+   "name": "Animal collector",
+   "title": "Zones & Animals",
+   "intent": "Collect animals into zones.",
+   "cleared": "",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "avatar-maker",
+   "name": "Avatar maker",
+   "title": "Avatar Studio",
+   "intent": "Build an avatar from a photo and the pieces you add.",
+   "cleared": "Makers and photos save on this device. Nothing is uploaded.",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "server.js",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "bacteria",
+   "name": "Bacteria",
+   "title": "Bacteria",
+   "intent": "Watch a dish of bacteria grow.",
+   "cleared": "The dish includes its own copy of p5, so it can grow without the CDN.",
+   "originalFiles": [
+    "index.html"
+   ],
+   "clearedFiles": [
+    "index.html",
+    "p5.min.js"
+   ]
+  },
+  {
+   "slug": "buttons",
+   "name": "Buttons",
+   "title": "Button Creator",
+   "intent": "Design a button and see it react.",
+   "cleared": "The burst is drawn here, instead of loading a particle library.",
+   "originalFiles": [
+    "index.html"
+   ],
+   "clearedFiles": [
+    "confetti.js",
+    "index.html"
+   ]
+  },
+  {
+   "slug": "care-game",
+   "name": "Care game",
+   "title": "Care Game Maker",
+   "intent": "Make a small care routine and play it.",
+   "cleared": "",
+   "originalFiles": [
+    "index.html",
+    "script.js",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "index.html",
+    "script.js",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "cat-breeder",
+   "name": "Cat breeder",
+   "title": "Kitten Genetics Maker",
+   "intent": "Breed kittens and see the coat genetics.",
+   "cleared": "",
+   "originalFiles": [
+    "cat-renderer.js",
+    "genetics.js",
+    "index.html",
+    "main.js",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "cat-renderer.js",
+    "genetics.js",
+    "index.html",
+    "main.js",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "catlab",
+   "name": "Catlab",
+   "title": "Cat Breeding Game",
+   "intent": "A cat breeding lab.",
+   "cleared": "",
+   "originalFiles": [
+    "config.js",
+    "game.js",
+    "index.html",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "config.js",
+    "game.js",
+    "index.html",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "cats",
+   "name": "cats",
+   "title": "cats",
+   "intent": "Cats, on a page.",
+   "cleared": "",
+   "originalFiles": [
+    "index.html"
+   ],
+   "clearedFiles": [
+    "index.html"
+   ]
+  },
+  {
+   "slug": "cook",
+   "name": "Cook",
+   "title": "Emoji Cooking Game",
+   "intent": "Cook a meal out of emoji ingredients.",
+   "cleared": "",
+   "originalFiles": [
+    "Human Eating_Crunch - Sound Effect (HD) (1).wav",
+    "game.js",
+    "index.html",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "Human Eating_Crunch - Sound Effect (HD) (1).wav",
+    "game.js",
+    "index.html",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "cookie",
+   "name": "Cookie",
+   "title": "Cookie Maker",
+   "intent": "Mix a cookie, bake it, and keep the recipe.",
+   "cleared": "The taste button describes the cookie from the recipe on this device, instead of calling a cloud model.",
+   "originalFiles": [
+    "index.html",
+    "script.js",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "index.html",
+    "script.js",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "dentist",
+   "name": "Dentist",
+   "title": "Dentist Game",
+   "intent": "A dentist visit, played gently.",
+   "cleared": "",
+   "originalFiles": [
+    "game.js",
+    "index.html",
+    "styles.css",
+    "translations.js"
+   ],
+   "clearedFiles": [
+    "game.js",
+    "index.html",
+    "styles.css",
+    "translations.js"
+   ]
+  },
+  {
+   "slug": "doctor",
+   "name": "Doctor",
+   "title": "Doctor Simulator",
+   "intent": "A clinic you can walk through.",
+   "cleared": "",
+   "originalFiles": [
+    "index.html",
+    "src/drag.js",
+    "src/main.js",
+    "src/menu.js",
+    "src/rooms/checkupRoom.js",
+    "src/rooms/surgeryRoom.js",
+    "src/utils.js",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "index.html",
+    "src/drag.js",
+    "src/main.js",
+    "src/menu.js",
+    "src/rooms/checkupRoom.js",
+    "src/rooms/surgeryRoom.js",
+    "src/utils.js",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "dog-trainer",
+   "name": "Dog trainer",
+   "title": "Ultimate Dog Simulator",
+   "intent": "Raise a dog, feed it, and race it.",
+   "cleared": "An unused icon library address was removed so the page does not point off the device.",
+   "originalFiles": [
+    "AudioManager.js",
+    "DogRenderer.js",
+    "dog_bark.mp3",
+    "dog_eat.mp3",
+    "index.html",
+    "level_up.mp3",
+    "main.js",
+    "race_win.mp3",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "AudioManager.js",
+    "DogRenderer.js",
+    "dog_bark.mp3",
+    "dog_eat.mp3",
+    "index.html",
+    "level_up.mp3",
+    "main.js",
+    "race_win.mp3",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "dogs",
+   "name": "Dogs",
+   "title": "Little Dogs",
+   "intent": "Keep little dogs.",
+   "cleared": "",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ],
+   "author": "Little Dogs developer",
+   "versions": [
+    {
+     "version": "2026-10-25",
+     "path": "cleared/dogs",
+     "note": "Latest build from its developer"
+    },
+    {
+     "version": "2026-10-22",
+     "path": "cleared/dogs@2026-10-22",
+     "note": "Earlier build"
+    }
+   ]
+  },
+  {
+   "slug": "drink",
+   "name": "Drink",
+   "title": "Drink Maker",
+   "intent": "Mix a drink and taste the color.",
+   "cleared": "A stray file named undefined was left out. The mixer itself was already whole.",
+   "originalFiles": [
+    "index.html",
+    "script.js",
+    "styles.css",
+    "undefined"
+   ],
+   "clearedFiles": [
+    "index.html",
+    "script.js",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "eat",
+   "name": "Eat",
+   "title": "Emoji Eating Simulator",
+   "intent": "Feed emoji a bite.",
+   "cleared": "",
+   "originalFiles": [
+    "Human Eating_Crunch - Sound Effect (HD) (1).wav",
+    "index.html",
+    "script.js",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "Human Eating_Crunch - Sound Effect (HD) (1).wav",
+    "index.html",
+    "script.js",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "eat-v2",
+   "name": "Eat v2",
+   "title": "Emoji Eater",
+   "intent": "A cleaner plate of the eating game.",
+   "cleared": "",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "emoji-actor",
+   "name": "Emoji actor",
+   "title": "Emoji Actor",
+   "intent": "Direct an emoji like an actor.",
+   "cleared": "",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "emoji-friend",
+   "name": "Emoji friend",
+   "title": "Emoji Trigger",
+   "intent": "An emoji that answers what you do.",
+   "cleared": "The friend runs here, without a network runtime.",
+   "originalFiles": [
+    "app.jsx",
+    "index.html",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "feesh",
+   "name": "Feesh",
+   "title": "Feesh: Collect and Breed Fish!",
+   "intent": "Collect fish and breed them.",
+   "cleared": "",
+   "originalFiles": [
+    "game.js",
+    "index.html",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "game.js",
+    "index.html",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "fish-aquarium",
+   "name": "Fish aquarium",
+   "title": "Fish Aquarium Simulator",
+   "intent": "An aquarium you stock yourself.",
+   "cleared": "",
+   "originalFiles": [
+    "index.html",
+    "script.js",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "index.html",
+    "script.js",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "flower",
+   "name": "Flower",
+   "title": "Petal Days",
+   "intent": "Grow a flower through its days.",
+   "cleared": "",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "garden",
+   "name": "Garden",
+   "title": "Grow Your Garden!",
+   "intent": "Plant a garden and tend it.",
+   "cleared": "",
+   "originalFiles": [
+    "game.js",
+    "index.html",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "game.js",
+    "index.html",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "god-simulator",
+   "name": "God simulator",
+   "title": "Mini God Sandbox",
+   "intent": "A tiny world you can nudge.",
+   "cleared": "",
+   "originalFiles": [
+    "index.html",
+    "main.js",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "index.html",
+    "main.js",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "hairball",
+   "name": "Hairball",
+   "title": "Tiny Hairball World",
+   "intent": "A small world of hairballs.",
+   "cleared": "",
+   "originalFiles": [
+    "game.js",
+    "index.html",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "game.js",
+    "index.html",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "happy-pets",
+   "name": "Happy pets",
+   "title": "Happy Things Game",
+   "intent": "Pets you can move, adopt, and breed.",
+   "cleared": "",
+   "originalFiles": [
+    "index.html",
+    "scripts/adoption-manager.js",
+    "scripts/breeding-manager.js",
+    "scripts/drag-manager.js",
+    "scripts/happy-thing.js",
+    "scripts/main.js",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "index.html",
+    "scripts/adoption-manager.js",
+    "scripts/breeding-manager.js",
+    "scripts/drag-manager.js",
+    "scripts/happy-thing.js",
+    "scripts/main.js",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "hex-code-generator",
+   "name": "Hex code generator",
+   "title": "Hex Generator",
+   "intent": "Pick a color and keep its hex.",
+   "cleared": "",
+   "originalFiles": [
+    "index.html",
+    "script.js",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "index.html",
+    "script.js",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "language-maker",
+   "name": "Language Maker",
+   "title": "Language Maker",
+   "intent": "Invent a language and save the words.",
+   "cleared": "",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "storage.js",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "storage.js",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "merge",
+   "name": "Merge",
+   "title": "Custom Merge Game Creator",
+   "intent": "Invent elements and the rules that merge them.",
+   "cleared": "New elements get an id on this device. The uuid library is not loaded.",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "messages",
+   "name": "Messages",
+   "title": "Message Simulator",
+   "intent": "A pretend message thread.",
+   "cleared": "",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "nonsense-chat",
+   "name": "Nonsense chat",
+   "title": "Nonsense Chat",
+   "intent": "A chat that talks nonsense on purpose.",
+   "cleared": "",
+   "originalFiles": [
+    "index.html"
+   ],
+   "clearedFiles": [
+    "index.html"
+   ]
+  },
+  {
+   "slug": "object-manipulator",
+   "name": "Object Manipulator",
+   "title": "Object Manipulator",
+   "intent": "Make objects and do things to them.",
+   "cleared": "An unused 3D library address was removed. The objects were already the page itself.",
+   "originalFiles": [
+    "index.html",
+    "script.js",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "index.html",
+    "script.js",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "object-sandbox",
+   "name": "Object sandbox",
+   "title": "Mix Things",
+   "intent": "Mix objects and see what they become.",
+   "cleared": "",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "oreo",
+   "name": "Oreo",
+   "title": "Oreo Maker",
+   "intent": "Assemble an oreo your way.",
+   "cleared": "",
+   "originalFiles": [
+    "index.html",
+    "script.js",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "index.html",
+    "script.js",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "pet-care",
+   "name": "Pet care",
+   "title": "Emoji Pet",
+   "intent": "Look after an emoji pet.",
+   "cleared": "",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "pet-creator",
+   "name": "Pet creator",
+   "title": "Pet Creator",
+   "intent": "Design a pet from parts.",
+   "cleared": "",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "pet-drawing",
+   "name": "Pet drawing",
+   "title": "Draw Pet",
+   "intent": "Draw a pet and the frames of what it does.",
+   "cleared": "The drawing desk runs here, and the frames stay on this device.",
+   "originalFiles": [
+    "app.jsx",
+    "index.html",
+    "server.js",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "pet-emojis",
+   "name": "Pet emojis",
+   "title": "Emoji Petting",
+   "intent": "Pet an emoji until it settles.",
+   "cleared": "",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "planet-creator",
+   "name": "Planet creator",
+   "title": "Planet Creator",
+   "intent": "Build a planet.",
+   "cleared": "",
+   "originalFiles": [
+    "index.html",
+    "script.js",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "index.html",
+    "script.js",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "raise-a-bird",
+   "name": "Raise a bird",
+   "title": "Raise a Bird",
+   "intent": "Raise a bird from the egg.",
+   "cleared": "",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "raise-a-kitten",
+   "name": "Raise a kitten",
+   "title": "Kitten Care",
+   "intent": "Raise a kitten.",
+   "cleared": "",
+   "originalFiles": [
+    "index.html",
+    "js/color.js",
+    "js/draw.js",
+    "js/kitten.js",
+    "js/main.js",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "index.html",
+    "js/color.js",
+    "js/draw.js",
+    "js/kitten.js",
+    "js/main.js",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "sandbox",
+   "name": "Sandbox",
+   "title": "Emoji Sandbox",
+   "intent": "Spawn emoji people and let them move.",
+   "cleared": "People and emotes stay in this browser. The websim room is not opened, so the page can load here.",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "shell-collector",
+   "name": "Shell collector",
+   "title": "Shell Collector",
+   "intent": "Walk a beach and keep shells.",
+   "cleared": "",
+   "originalFiles": [
+    "game.js",
+    "index.html",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "game.js",
+    "index.html",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "shop",
+   "name": "Shop",
+   "title": "Shop Builder",
+   "intent": "Stock a shop and sell from it.",
+   "cleared": "",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "simulator",
+   "name": "Simulator",
+   "title": "Little Sim",
+   "intent": "A little life you sim.",
+   "cleared": "",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "squid",
+   "name": "Squid",
+   "title": "Squid",
+   "intent": "A squid you can poke.",
+   "cleared": "",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "text-creature-sandbox",
+   "name": "Text creature sandbox",
+   "title": "Text Beasts",
+   "intent": "Creatures made of the words you type.",
+   "cleared": "",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "treasure-hunt-and-crafting",
+   "name": "Treasure hunt & crafting",
+   "title": "Emoji Treasure Game",
+   "intent": "Dig, find, and craft.",
+   "cleared": "",
+   "originalFiles": [
+    "craft_fail.mp3",
+    "craft_success.mp3",
+    "dig.mp3",
+    "index.html",
+    "script.js",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "craft_fail.mp3",
+    "craft_success.mp3",
+    "dig.mp3",
+    "index.html",
+    "script.js",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "tree",
+   "name": "Tree",
+   "title": "Emoji Tree Grower",
+   "intent": "Grow a tree out of emoji.",
+   "cleared": "",
+   "originalFiles": [
+    "index.html",
+    "main.js",
+    "styles.css"
+   ],
+   "clearedFiles": [
+    "index.html",
+    "main.js",
+    "styles.css"
+   ]
+  },
+  {
+   "slug": "word-generator",
+   "name": "Word generator",
+   "title": "Wordloom",
+   "intent": "Weave words into new ones.",
+   "cleared": "",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ]
+  },
+  {
+   "slug": "worms",
+   "name": "Worms",
+   "title": "Worm Sandbox",
+   "intent": "A sandbox of worms, snakes, and bugs.",
+   "cleared": "A stray snippet named w.face was left out. Faces are already drawn by the sandbox.",
+   "originalFiles": [
+    "app.js",
+    "index.html",
+    "style.css",
+    "w.face"
+   ],
+   "clearedFiles": [
+    "app.js",
+    "index.html",
+    "style.css"
+   ]
+  }
+ ]
+}

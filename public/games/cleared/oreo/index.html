@@ -1,0 +1,77 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oreo Maker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <h1>Oreo Maker</h1>
+        
+        <div class="oreo-builder">
+            <div class="controls">
+                <button class="add-btn" id="addBottomCookie">Add Bottom Cookie (o)</button>
+                <button class="add-btn" id="addCream">Add Cream (re)</button>
+                <button class="add-btn" id="addTopCookie">Add Top Cookie (o)</button>
+                <button class="remove-btn" id="removeLast">Remove Last</button>
+                <button class="reset-btn" id="resetOreo">Reset</button>
+            </div>
+            
+            <!-- Custom flavor controls -->
+            <div class="custom-flavor">
+                <h2>Custom Flavor</h2>
+                <select id="flavorType">
+                    <option value="cookie">Cookie</option>
+                    <option value="cream">Cream</option>
+                </select>
+                
+                <input type="text" id="flavorName" placeholder="Flavor name" maxlength="20">
+                <input type="text" id="flavorCode" placeholder="Letter(s) for name" maxlength="5">
+                <input type="color" id="flavorColor" value="#2c1810">
+                
+                <!-- Background color picker -->
+                <label style="margin-top: 1rem; font-weight: bold;">Background Color:</label>
+                <input type="color" id="backgroundColor" value="#f0f0f0">
+                
+                <button class="add-btn" id="addCustom">Add Custom</button>
+                
+                <div style="margin-top: 1rem; border-top: 1px solid #ddd; padding-top: 1rem;">
+                    <h3>Mix Ingredients</h3>
+                    <select id="mixType">
+                        <option value="cookie">Cookie</option>
+                        <option value="cream">Cream</option>
+                    </select>
+                    
+                    <select id="ingredient1">
+                        <option value="">Select ingredient 1</option>
+                    </select>
+                    
+                    <select id="ingredient2">
+                        <option value="">Select ingredient 2</option>
+                    </select>
+                    
+                    <input type="text" id="mixName" placeholder="Mixed flavor name" maxlength="20">
+                    <input type="text" id="mixCode" placeholder="Letter(s) for name" maxlength="5">
+                    
+                    <button class="add-btn" id="mixIngredients">Mix Ingredients</button>
+                </div>
+            </div>
+            
+            <div class="oreo-display">
+                <div class="oreo-stack" id="oreoStack">
+                </div>
+                <div class="oreo-name" id="oreoName">empty</div>
+                <button class="eat-btn" id="eatOreo">Eat Oreo</button>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <p>Build your oreo by adding cookies (o) and cream (re)!</p>
+            <p>The name is automatically generated based on your creation.</p>
+        </div>
+    </div>
+    
+    <script type="module" src="script.js"></script>
+</body>
+</html>

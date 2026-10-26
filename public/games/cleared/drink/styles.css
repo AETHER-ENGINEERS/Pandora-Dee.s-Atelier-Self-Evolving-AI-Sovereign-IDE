@@ -1,0 +1,316 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #e6eef2;
+  font-family: Arial, sans-serif;
+}
+
+.container {
+  padding: 20px;
+  max-width: 600px;
+  width: 100%;
+}
+
+.drink-maker {
+  background: #e8f0f5;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.glass {
+  width: 150px;
+  height: 200px;
+  background: #e6eef2;
+  border: 4px solid #ddd;
+  border-radius: 5px 5px 30px 30px;
+  position: relative;
+  margin: 0 auto 20px;
+  overflow: hidden;
+  transition: transform 1s ease;
+}
+
+.liquid {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+  transition: all 1s ease;
+  background: transparent;
+}
+
+.bubbles {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.bubble {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  animation: rise 3s infinite ease-in;
+}
+
+@keyframes rise {
+  0% {
+    transform: translateY(100%) scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100%) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes drink {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes tilt {
+  0% {
+    transform: rotate(0deg);
+  }
+  40% {
+    transform: rotate(-45deg);
+  }
+  90% {
+    transform: rotate(-45deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.drinking {
+  animation: tilt 2.5s ease-in-out forwards;
+}
+
+.drinking .liquid {
+  animation: drink 2s forwards;
+}
+
+.drinking .bubbles {
+  animation: drink 2s forwards;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.ingredients {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
+}
+
+.ingredients h4 {
+  color: #333;
+  margin: 5px 0;
+}
+
+.ingredient-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ingredient-group button {
+  font-size: 24px;
+  padding: 10px;
+  border: none;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.ingredient-group button[data-type="milk"]::after,
+.ingredient-group button[data-type="chocolate"]::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  opacity: 0.2;
+}
+
+.ingredient-group button[data-type="milk"]::after {
+  background: white;
+  border: 2px solid #ddd;
+}
+
+.ingredient-group button[data-type="chocolate"]::after {
+  background: #6A441C;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.actions button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  background: #4CAF50;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.actions button:hover {
+  background: #45a049;
+}
+
+#reset {
+  background: #f44336;
+}
+
+#reset:hover {
+  background: #da190b;
+}
+
+#drink {
+  background: #2196F3;
+}
+
+#drink:hover {
+  background: #1976D2;
+}
+
+#drink:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.recipe {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 10px;
+}
+
+.recipe h3 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+#recipe-list {
+  list-style: none;
+  padding-left: 10px;
+}
+
+#recipe-list li {
+  margin: 5px 0;
+  color: #666;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0 10px;
+}
+
+.toggle-button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 15px;
+  background: #2196F3;
+  color: white;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s;
+}
+
+.toggle-button:hover {
+  background: #1976D2;
+}
+
+.ingredient-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.ingredient-name {
+  font-size: 10px;
+  color: #666;
+  text-align: center;
+  display: none;
+  transition: opacity 0.3s;
+}
+
+.show-names .ingredient-name {
+  display: block;
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 10px;
+  }
+  
+  .glass {
+    width: 120px;
+    height: 160px;
+  }
+  
+  .ingredients h4 {
+    font-size: 14px;
+  }
+  
+  .ingredient-group {
+    gap: 8px;
+  }
+  
+  .ingredient-group button {
+    font-size: 20px;
+    padding: 8px;
+  }
+  
+  .header-row {
+    padding: 0 5px;
+  }
+  
+  .toggle-button {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+  
+  .ingredient-name {
+    font-size: 9px;
+  }
+}

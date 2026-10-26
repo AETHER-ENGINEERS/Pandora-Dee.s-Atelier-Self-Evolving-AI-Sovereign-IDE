@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Object Manipulator</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="script.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <div id="game-area">
+            <!-- Objects will be placed here -->
+        </div>
+        <div class="controls">
+            <p>Selected: <span id="selected-object-name">None</span></p>
+            <!-- Added display for selected object's pattern -->
+            <p>Pattern: <span id="selected-object-pattern">None</span></p>
+            <select id="action-select">
+                <option value="">-- Select Action --</option>
+                <option value="changeColor">Change Color</option>
+                <option value="rotate">Rotate</option>
+                <option value="scaleUp">Scale Up</option>
+                <option value="scaleDown">Scale Down</option>
+                <option value="resetTransform">Reset Transform</option>
+                <option value="moveRandom">Move Randomly</option>
+                <option value="break">Break</option>
+                <option value="fix">Fix</option>
+                <option value="remove">Remove</option> <!-- Added Remove action -->
+                <option value="eat">Eat</option> <!-- Added Eat action -->
+                <option value="shake">Shake</option> <!-- Added Shake action -->
+                <option value="hop">Hop</option> <!-- New Hop action -->
+                <option value="squeeze">Squeeze</option> <!-- New Squeeze action -->
+                <option value="displayText">Display Text</option> <!-- New Display Text action -->
+            </select>
+            <button id="apply-action-button">Apply Action</button>
+            <!-- Added Randomize Action button -->
+            <button id="randomize-action-button">Randomize Action</button>
+
+            <!-- Display Text Controls (shown when Display Text is selected) -->
+            <div id="display-text-controls" class="hidden" style="margin-top:8px;">
+                <input type="text" id="display-text-input" placeholder="Enter text or emoji(s)">
+                <input type="number" id="display-text-duration" placeholder="Seconds" min="0" value="3" style="width:100px;margin-top:6px;">
+            </div>
+
+            <!-- Randomize Action Manager Section -->
+            <div class="controls-header" style="margin-top: 15px;">
+                <h3>Randomize Action Manager</h3>
+                <button id="toggle-action-manager">Hide</button>
+            </div>
+            <div id="action-randomizer-manager">
+                <p>Select actions to allow in randomization:</p>
+                <div id="action-randomizer-options" class="randomizer-options">
+                    <!-- Checkboxes populated by script -->
+                </div>
+            </div>
+            <!-- End Randomize Action Manager Section -->
+
+            <!-- New Object Creator Section -->
+            <div class="controls-header" style="margin-top: 15px;">
+                <h3>Add New Object</h3>
+                <button id="toggle-add-object">Hide</button>
+            </div>
+            <div id="add-object-creator"> <!-- Wrap the creator inputs and button -->
+                <select id="new-object-shape">
+                    <option value="">-- Select Shape --</option>
+                    <option value="box">Box</option>
+                    <option value="sphere">Sphere</option>
+                    <option value="cone">Cone</option>
+                    <option value="star">Star</option> <!-- Added Star shape -->
+                </select>
+                <input type="text" id="new-object-name" placeholder="Object Name (optional)">
+                <input type="color" id="new-object-color" value="#3498db"> <!-- Default color -->
+
+                <!-- Added Pattern Select -->
+                <select id="new-object-pattern">
+                    <option value="none">No Pattern</option>
+                    <option value="stripes">Stripes</option>
+                    <option value="spots">Spots</option>
+                    <option value="specks">Specks</option>
+                </select>
+
+                <!-- Pattern Color Choice -->
+                <div class="pattern-color-choice">
+                    <label>Pattern Color Source:</label><br>
+                    <input type="radio" id="pattern-color-darker" name="pattern-color-source" value="darker" checked>
+                    <label for="pattern-color-darker">Darker Shade</label><br>
+                    <input type="radio" id="pattern-color-lighter" name="pattern-color-source" value="lighter"> <!-- Added Lighter Shade option -->
+                    <label for="pattern-color-lighter">Lighter Shade</label><br>
+                    <input type="radio" id="pattern-color-custom" name="pattern-color-source" value="custom">
+                    <label for="pattern-color-custom">Custom Color:</label>
+                    <input type="color" id="new-object-pattern-color" value="#27ad60"> <!-- Distinct default pattern color -->
+                </div>
+                <!-- End Pattern Color Choice -->
+
+                <button id="add-object-button">Add Object</button>
+                 <!-- Added Randomize Add Object button -->
+                <button id="randomize-add-object-button">Randomize</button>
+            </div>
+            <!-- End New Object Creator Section -->
+
+            <!-- Object Mixer Section -->
+            <div class="controls-header" style="margin-top: 15px;">
+                <h3>Object Mixer</h3>
+                <button id="toggle-mixer">Hide</button>
+            </div>
+            <div id="object-mixer">
+                <div>
+                    <label for="mixer-object1">Object 1:</label>
+                    <select id="mixer-object1">
+                        <option value="">-- Select Object 1 --</option>
+                        <!-- Options populated by script -->
+                    </select>
+                </div>
+                 <div>
+                    <label for="mixer-object2">Object 2:</label>
+                    <select id="mixer-object2">
+                        <option value="">-- Select Object 2 --</option>
+                        <!-- Options populated by script -->
+                    </select>
+                </div>
+                <!-- Added input for optional mixed object name -->
+                <input type="text" id="mixed-object-name" placeholder="Mixed Object Name (optional)">
+                <div class="mixer-logic">
+                    <label>Mix Result:</label><br>
+                    <input type="radio" id="mixer-logic1" name="mixer-logic" value="shape1-pattern2" checked>
+                    <label for="mixer-logic1">Shape 1 / Pattern 2</label><br>
+                    <input type="radio" id="mixer-logic2" name="mixer-logic" value="shape2-pattern1">
+                    <label for="mixer-logic2">Shape 2 / Pattern 1</label>
+                </div>
+                <button id="mix-objects-button">Mix Objects</button>
+                <!-- Added Randomize Mixer button -->
+                <button id="randomize-mixer-button">Randomize</button>
+            </div>
+            <!-- End Object Mixer Section -->
+
+            <!-- Randomize Mixer Manager Section -->
+            <div class="controls-header" style="margin-top: 15px;">
+                <h3>Randomize Mixer Manager</h3>
+                <button id="toggle-mixer-manager">Hide</button>
+            </div>
+            <div id="mixer-randomizer-manager">
+                <p>Select objects allowed to be mixed (at least two needed):</p>
+                <div id="mixer-randomizer-options" class="randomizer-options">
+                    <!-- Checkboxes populated by script -->
+                </div>
+            </div>
+            <!-- End Randomize Mixer Manager Section -->
+
+            <!-- Randomize Name Manager Section -->
+            <div class="controls-header" style="margin-top: 15px;">
+                <h3>Randomize Name Manager</h3>
+                <button id="toggle-name-manager">Hide</button>
+            </div>
+            <div id="name-randomizer-manager">
+                 <!-- Added input and button for adding custom characters -->
+                 <div class="add-custom-chars">
+                     <input type="text" id="custom-char-input" placeholder="Add custom char(s)">
+                     <button id="add-custom-char-button">Add</button>
+                 </div>
+                 <!-- Toggle for whether mixing removes the component objects -->
+                 <div style="margin-top:8px;">
+                     <label class="randomizer-option" style="align-items:center;">
+                         <input type="checkbox" id="remove-on-mix" checked>
+                         <span style="margin-left:6px;">Remove components when mixing</span>
+                     </label>
+                 </div>
+                <p>Select characters allowed in randomized names:</p>
+                <div id="name-randomizer-options" class="randomizer-options">
+                    <!-- Checkboxes populated by script -->
+                </div>
+                <!-- Added inputs for min/max name length -->
+                <div class="name-length-controls">
+                    <label for="min-name-length">Min Length:</label>
+                    <input type="number" id="min-name-length" value="3" min="0">
+                    <label for="max-name-length">Max Length:</label>
+                    <input type="number" id="max-name-length" value="12" min="0">
+                </div>
+            </div>
+            <!-- End Randomize Name Manager Section -->
+
+        </div>
+    </div>
+</body>
+</html>

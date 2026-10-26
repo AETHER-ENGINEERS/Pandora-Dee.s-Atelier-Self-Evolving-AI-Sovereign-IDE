@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f1e8">
+  <title>Wordloom</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="rail">
+      <a class="brand" href="#" aria-label="Wordloom home"><span class="brand-mark">w.</span><span>wordloom</span></a>
+      <div class="rail-heading"><span>Your generators</span><span id="generator-count" class="count">0</span></div>
+      <nav id="generator-list" class="generator-list" aria-label="Saved generators"></nav>
+      <button id="new-generator" class="new-generator" type="button"><span>+</span> New generator</button>
+      <div class="rail-foot"><span class="status-dot"></span> Saved in this browser</div>
+    </aside>
+
+    <main class="workbench">
+      <header class="topbar">
+        <div class="crumb"><span>GENERATOR STUDIO</span><span class="crumb-slash">/</span><span id="crumb-name">Untitled</span></div>
+        <div class="top-actions"><button id="copy-generator" class="quiet-action" type="button" hidden>Copy</button><button id="delete-generator" class="quiet-action delete-action" type="button" hidden>Delete</button><button id="save-generator" class="save-button" type="button">Finish generator <span aria-hidden="true">↗</span></button></div>
+      </header>
+
+      <div class="workspace-grid">
+        <section class="editor" aria-label="Generator editor">
+          <div class="section-kicker"><span class="kicker-index">01</span> THE BLUEPRINT</div>
+          <div class="name-wrap"><label for="generator-name">Name your generator</label><input id="generator-name" maxlength="48" placeholder="e.g. Forest spirits" autocomplete="off"></div>
+
+          <section class="builder-section">
+            <div class="section-head"><div><h2>Letter groups</h2><p>Sounds enter lowercase; use Caps to change them.</p></div><button id="add-group" class="text-button" type="button"><span>+</span> Add group</button></div>
+            <div id="groups" class="group-list"></div>
+            <div id="groups-empty" class="empty-hint">Add a group to start collecting sounds.</div>
+          </section>
+
+          <section class="builder-section types-section">
+            <div class="section-head"><div><h2>Types</h2><p>Optional categories for conditional structures.</p></div></div>
+            <div id="type-chips" class="type-chips"></div>
+            <form id="type-form" class="type-form"><input id="type-input" maxlength="28" placeholder="Add a type, e.g. Ancient" aria-label="New type"><button type="submit" aria-label="Add type">+</button></form>
+          </section>
+
+          <section class="builder-section structure-section">
+            <div class="section-head"><div><h2>Word structure</h2><p>Stack sounds and transformations in order.</p></div><span class="sequence-count" id="structure-count">0 STEPS</span></div>
+            <label class="capitalize-toggle"><input id="capitalize-first" type="checkbox"><span class="toggle-track" aria-hidden="true"><span></span></span><span class="capitalize-copy"><strong>Uppercase first character</strong><small>Applied after the structure is built</small></span></label>
+            <div id="structures" class="structure-list"></div>
+            <div class="structure-actions"><button id="add-structure" class="add-structure" type="button"><span>+</span> Add structure</button><button id="open-manual" class="manual-button" type="button">Structure manual <span aria-hidden="true">?</span></button></div>
+          </section>
+        </section>
+
+        <aside class="preview-panel" aria-label="Generator preview">
+          <div class="preview-topline"><span class="section-kicker"><span class="kicker-index">02</span> THE RESULT</span><span class="live-mark"><i></i> LIVE</span></div>
+          <div class="preview-title">Make something<br><em>new.</em></div>
+          <label class="field-label" for="type-select">GENERATE AS</label>
+          <div class="select-wrap"><select id="type-select" aria-label="Generate as"></select><span aria-hidden="true">⌄</span></div>
+          <div id="result-card" class="result-card" aria-live="polite">
+            <span class="result-eyebrow">YOUR WORD</span>
+            <div id="generated-word" class="generated-word">—</div>
+            <div id="generated-meta" class="generated-meta">Ready when you are</div>
+          </div>
+          <button id="generate-button" class="generate-button" type="button"><span>Generate</span><span class="generate-arrow">↗</span></button>
+          <div class="preview-foot"><span>Each turn, a new possibility.</span><span class="sparkle">✳</span></div>
+        </aside>
+      </div>
+    </main>
+  </div>
+  <dialog id="manual-dialog" class="manual-dialog" aria-labelledby="manual-title"><div class="manual-heading"><div><span class="section-kicker"><span class="kicker-index">REF</span> STRUCTURE GUIDE</span><h2 id="manual-title">What each step does</h2></div><button id="close-manual" class="manual-close" type="button" aria-label="Close structure manual">×</button></div><div class="manual-list">
+    <article><h3>Letter / syllable</h3><p>Chooses one random entry from the group you select and adds it.</p></article><article><h3>Random group</h3><p>Chooses a non-empty group at random, then adds one of its entries.</p></article><article><h3>Two chosen groups</h3><p>Randomly chooses between the two groups you select, then adds one of that group's entries.</p></article><article><h3>Space</h3><p>Adds a space at this point in the name.</p></article><article><h3>Caps</h3><p>Changes the previous letter or syllable to uppercase.</p></article><article><h3>Parrot 1</h3><p>Repeats the previous letter or syllable.</p></article><article><h3>Parrot 2</h3><p>Repeats the whole name assembled so far.</p></article><article><h3>Inverted parrot 1</h3><p>Repeats the previous letter or syllable backwards.</p></article><article><h3>Inverted parrot 2</h3><p>Repeats the whole name assembled so far backwards.</p></article><article><h3>Coin flip</h3><p>Gives the preceding structure a 50% chance to apply.</p></article><article><h3>Type based</h3><p>Applies the preceding structure only when the generated type matches one or more types you select.</p></article><article><h3>Repeat start</h3><p>Adds the first letter or syllable in the name again.</p></article><article><h3>Repeat end</h3><p>Adds the latest letter or syllable in the name again.</p></article><article><h3>Cutout</h3><p>Removes one random non-space character from the name.</p></article><article><h3>Cutout previous 1</h3><p>Removes the last character of the previous letter or syllable.</p></article><article><h3>Cutout previous 2</h3><p>Removes the first character of the previous letter or syllable.</p></article><article><h3>Cutout last 1</h3><p>Removes the last character of the last letter or syllable.</p></article><article><h3>Cutout last 2</h3><p>Removes the first character of the last letter or syllable.</p></article><article><h3>Cutout start 1</h3><p>Removes the last character of the first letter or syllable.</p></article><article><h3>Cutout start 2</h3><p>Removes the first character of the first letter or syllable.</p></article><article><h3>Reposition 1</h3><p>Moves the last character of the previous letter or syllable to a random spot in the name.</p></article><article><h3>Reposition 2</h3><p>Moves a random non-space character to a random spot in the name.</p></article>
+  </div></dialog>
+  <div id="toast" class="toast" role="status"></div>
+</body>
+</html>

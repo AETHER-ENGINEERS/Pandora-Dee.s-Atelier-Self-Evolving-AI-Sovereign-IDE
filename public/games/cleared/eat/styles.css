@@ -1,0 +1,247 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+#app {
+    text-align: center;
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+#emoji-inputs {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+input {
+    padding: 10px;
+    font-size: 16px;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+    touch-action: manipulation;
+}
+
+.copy-food-btn, .copy-reaction-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-top: 5px;
+    touch-action: manipulation;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+#done-btn, #reset-btn {
+    padding: 12px 24px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+#done-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+#reset-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+#defaults-btn {
+    background-color: #9C27B0;
+    color: white;
+    padding: 12px 24px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+#eating-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+#main-emoji {
+    font-size: 100px;
+    margin-bottom: 20px;
+}
+
+#food-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+
+.food-item {
+    font-size: 50px;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.toggle-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.toggle-container label {
+    font-size: 14px;
+}
+
+#revert-toggle {
+    width: auto;
+    height: auto;
+}
+
+.suggestion-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 30px;
+}
+
+#suggestion-btn {
+    background-color: #FF9800;
+    color: white;
+    padding: 12px 24px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    touch-action: manipulation;
+    margin-left: 10px;
+}
+
+.suggestion-copy-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+#copy-suggestion-btn {
+    background-color: #2196F3;
+    color: white;
+    padding: 12px 24px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.custom-suggestion-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+#custom-suggestion-input {
+    width: 100%;
+    max-width: 400px;
+    padding: 10px;
+    font-size: 16px;
+    text-align: center;
+}
+
+#update-suggestion-pool-btn {
+    background-color: #673AB7;
+    color: white;
+    padding: 12px 24px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+/* Improved touch targets and responsive design */
+@media (max-width: 480px) {
+    #app {
+        padding: 15px;
+        margin: 0;
+    }
+
+    #main-emoji {
+        font-size: 80px;
+    }
+
+    .food-item {
+        font-size: 40px;
+    }
+
+    input, .copy-food-btn, .copy-reaction-btn, #done-btn, #reset-btn {
+        font-size: 14px;
+        padding: 8px 16px;
+    }
+    
+    .toggle-container {
+        flex-direction: column;
+    }
+    #defaults-btn {
+        font-size: 14px;
+        padding: 8px 16px;
+    }
+    #suggestion-btn {
+        font-size: 14px;
+        padding: 8px 16px;
+    }
+    #copy-suggestion-btn {
+        font-size: 14px;
+        padding: 8px 16px;
+    }
+    #update-suggestion-pool-btn {
+        font-size: 14px;
+        padding: 8px 16px;
+    }
+}

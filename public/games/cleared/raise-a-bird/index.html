@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f0e5">
+  <title>Raise a Bird</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <a class="wordmark" href="./" aria-label="Raise a Bird home"><span class="wordmark-mark">✳</span> raise a bird</a>
+      <div class="topbar-tools"><button class="new-bird-button" id="new-bird-button" hidden>New bird <span aria-hidden="true">↺</span></button><div class="day-chip" id="day-chip" hidden><span class="day-dot"></span><span id="day-label">Day 1</span></div></div>
+    </header>
+
+    <section class="setup view" id="setup-view" aria-labelledby="setup-title">
+      <div class="setup-copy">
+        <p class="eyebrow">A little life, all yours</p>
+        <h1 id="setup-title">Pick your<br><em>hatchling.</em></h1>
+        <p class="setup-note">Choose the colors, then see who’s waiting inside.</p>
+        <div class="preset-row" aria-label="Color presets"><span>Color presets</span><button type="button" class="preset-swatch meadow" data-preset="meadow" aria-label="Meadow colors" title="Meadow"></button><button type="button" class="preset-swatch lagoon" data-preset="lagoon" aria-label="Lagoon colors" title="Lagoon"></button><button type="button" class="preset-swatch berry" data-preset="berry" aria-label="Berry colors" title="Berry"></button><button type="button" class="preset-swatch citrus" data-preset="citrus" aria-label="Citrus colors" title="Citrus"></button></div>
+        <div class="setup-fields">
+          <fieldset class="field-group">
+            <legend>Egg</legend>
+            <label class="color-row"><span>Shell</span><input type="color" id="egg-color" value="#f1c979" aria-label="Egg color"></label>
+            <label class="toggle-row"><span>Shell spots</span><input type="checkbox" id="egg-spots" checked><span class="switch"></span></label>
+            <label class="color-row spot-color" id="egg-spot-row"><span>Spot color</span><input type="color" id="egg-spot-color" value="#c78355" aria-label="Egg spot color"></label>
+          </fieldset>
+          <fieldset class="field-group">
+            <legend>Your bird</legend>
+            <label class="color-row"><span>Chick</span><input type="color" id="chick-color" value="#f3d66c" aria-label="Chick body color"></label>
+            <label class="color-row"><span>Grown bird</span><input type="color" id="bird-color" value="#7eaa87" aria-label="Bird body color"></label>
+            <label class="color-row"><span>Beak &amp; legs</span><input type="color" id="beak-color" value="#df855a" aria-label="Beak and leg color"></label>
+            <label class="toggle-row"><span>Body spots</span><input type="checkbox" id="body-spots"><span class="switch"></span></label>
+            <label class="color-row spot-color" id="body-spot-row" hidden><span>Spot color</span><input type="color" id="body-spot-color" value="#c78355" aria-label="Body spot color"></label>
+          </fieldset>
+          <fieldset class="field-group day-fields">
+            <legend>Big days</legend>
+            <label class="select-row"><span>Hatch on day</span><select id="hatch-day"><option>3</option><option selected>5</option><option>7</option><option>10</option><option>14</option></select></label>
+            <label class="select-row"><span>Grow on day</span><select id="grow-day"><option>10</option><option selected>14</option><option>18</option><option>21</option><option>28</option></select></label>
+          </fieldset>
+        </div>
+        <div class="setup-actions"><button class="start-button" id="start-button">Begin your story <span aria-hidden="true">↗</span></button><button class="surprise-button" id="surprise-button">Surprise me <span aria-hidden="true">✳</span></button></div>
+      </div>
+      <div class="preview-stage" aria-label="Egg preview">
+        <div class="stage-sun"></div>
+        <div class="preview-caption"><span class="caption-spark">✳</span><span>A tiny beginning</span></div>
+        <div class="creature egg preview-egg" id="preview-egg" role="img" aria-label="Your egg"></div>
+        <div class="stage-ground"></div>
+        <div class="preview-shadow"></div>
+      </div>
+    </section>
+
+    <section class="game view" id="game-view" hidden aria-label="Bird care">
+      <div class="game-heading"><div><p class="eyebrow" id="age-label">A new beginning</p><h1 id="bird-name">Someone’s in there.</h1></div><button class="advance-button" id="advance-button">Next day <span aria-hidden="true">＋</span></button></div>
+      <div class="habitat" id="habitat">
+        <div class="habitat-glow"></div>
+        <div class="weather-spark spark-one">✳</div><div class="weather-spark spark-two">✦</div>
+        <div class="creature egg" id="creature" role="img" aria-label="An egg"></div>
+        <div class="food-offering" id="food-offering" hidden aria-hidden="true"><span class="food-name"></span></div>
+        <div class="effect-layer" id="effect-layer" aria-hidden="true"></div>
+        <div class="habitat-ground"><div class="ground-line"></div><div class="tuft tuft-left"></div><div class="tuft tuft-right"></div></div>
+      </div>
+      <div class="care-dock" id="care-dock" hidden>
+        <div class="care-topline"><span id="care-prompt">What shall we do together?</span><span class="mood-mark" id="mood-mark">♡</span></div>
+        <div class="care-controls" id="care-controls">
+          <form class="feed-form" id="feed-form"><label class="sr-only" for="food-input">Food to feed your bird</label><input id="food-input" type="text" maxlength="24" placeholder="A little snack…" autocomplete="off"><button type="submit" aria-label="Feed bird">Feed <span>↗</span></button></form>
+          <button class="care-button" data-action="clean"><span class="care-icon">✧</span>Clean</button>
+          <button class="care-button" data-action="pet"><span class="care-icon">♡</span>Pet</button>
+          <button class="care-button" data-action="play"><span class="care-icon">⌁</span>Play</button>
+          <button class="care-button sleep-button" id="sleep-button"><span class="care-icon">☾</span>Sleep</button>
+        </div>
+      </div>
+      <p class="day-hint" id="day-hint">One day at a time.</p>
+    </section>
+  </main>
+</body>
+</html>

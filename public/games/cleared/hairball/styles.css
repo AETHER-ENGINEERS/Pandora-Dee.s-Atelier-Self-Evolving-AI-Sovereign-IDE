@@ -1,0 +1,167 @@
+body {
+  margin: 0;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  touch-action: none;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+#controls {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 10px;
+  background: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  z-index: 100;
+  overflow-x: auto;  
+  overflow-y: hidden; 
+  white-space: nowrap; 
+  -webkit-overflow-scrolling: touch; 
+  scrollbar-width: none; 
+  -ms-overflow-style: none; 
+}
+
+#controls::-webkit-scrollbar {
+  display: none;
+}
+
+#color-picker {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0; 
+}
+
+button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  background: #4CAF50;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+  flex-shrink: 0; 
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+#randomize-color {
+  padding: 4px 8px;
+  font-size: 16px;
+  background: #FF69B4;
+  margin-left: 5px;
+}
+
+#invert-color {
+  padding: 4px 8px;
+  font-size: 16px;
+  background: #333;
+  margin-left: 5px;
+}
+
+#game-area {
+  margin-top: 60px;
+  min-height: calc(100vh - 80px);
+  position: relative;
+}
+
+#mixing-area {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150px;
+  height: 150px;
+  border: 3px dashed #666;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#mixing-area::after {
+  content: 'Mixing Area';
+  color: #666;
+  font-size: 14px;
+}
+
+.hairball {
+  position: absolute;
+  cursor: move;
+  touch-action: none;
+  transition: transform 0.2s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.hairball.selected {
+  filter: brightness(1.2) drop-shadow(0 0 5px rgba(255,255,0,0.5));
+  transform: scale(1.1);
+}
+
+.flat-hairball {
+  position: absolute;
+  cursor: move;
+  touch-action: none;
+  transition: transform 0.2s;
+  user-select: none;
+  -webkit-user-select: none;
+  filter: brightness(0.9);
+}
+
+.flat-hairball:hover {
+  transform: scale(1.05);
+  filter: brightness(1);
+}
+
+.food {
+  position: absolute;
+  border-radius: 50%;
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.2s;
+  box-sizing: border-box;
+}
+
+.food:active {
+  transform: scale(1.2);
+}
+
+#spawn-cat {
+  background: #FF69B4;
+}
+
+#spawn-random {
+  background: #9932CC;
+}
+
+#reset {
+  background: #ff4444;
+}
+
+#shed {
+  background: #8B4513;
+}
+
+.poop {
+  position: absolute;
+  cursor: pointer;
+  touch-action: none;
+  transition: transform 0.2s;
+}
+
+.poop:hover {
+  transform: scale(1.1);
+}

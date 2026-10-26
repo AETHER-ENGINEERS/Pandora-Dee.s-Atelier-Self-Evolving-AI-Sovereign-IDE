@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Message Simulator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <main id="list-screen">
+      <section id="profile-creator" class="card">
+        <h3>Create Your Profile</h3>
+        <div class="row">
+          <label class="avatar-picker">
+            <div id="my-avatar-preview" class="avatar large"></div>
+            <input id="my-avatar-emoji" type="text" placeholder="Emoji" inputmode="text" />
+            <input id="my-avatar-color" type="color" title="Color" value="#2f8bff" />
+          </label>
+        </div>
+        <div class="row">
+          <button id="save-me">Save Profile</button>
+        </div>
+      </section>
+
+      <section id="people-list" class="card">
+        <h3>People</h3>
+        <div id="people-container"></div>
+        <div class="row">
+          <button id="add-person">+ Add Person</button>
+        </div>
+      </section>
+
+      <section id="groups-list" class="card">
+        <h3>Group Chats</h3>
+        <div id="groups-container"></div>
+        <div class="row">
+          <button id="new-group" class="secondary-btn">+ New Group</button>
+        </div>
+        <label class="mention-toggle">
+          <input id="mention-at" type="checkbox" checked />
+          Require @ to mention in groups
+        </label>
+      </section>
+    </main>
+
+    <!-- Person creator / editor modal -->
+    <div id="person-modal" class="modal hidden">
+      <div class="modal-card">
+        <header>
+          <h3 id="modal-title">New Person</h3>
+          <button id="close-modal" class="icon-btn">✕</button>
+        </header>
+        <div class="modal-body">
+          <label class="avatar-picker">
+            <div id="person-avatar-preview" class="avatar large"></div>
+            <input id="person-emoji" type="text" placeholder="Emoji" />
+            <input id="person-color" type="color" value="#f39c12" />
+          </label>
+          <label>
+            Name
+            <input id="person-name" type="text" placeholder="Name" />
+          </label>
+
+          <div id="message-templates">
+            <h4>Message templates</h4>
+            <div id="templates-list"></div>
+            <div class="row">
+              <button id="add-template" class="secondary">+ Add Template</button>
+              <button id="paste-template" class="secondary">Paste Template</button>
+            </div>
+            <p class="muted">Type what you'll say, or leave that blank and instead type things the NPC might say — the template then only activates (and fires one of its outcomes) when the NPC's last reply matches one of those. Matching is on the full word/phrase, so "okay" won't be triggered by "ok". Copy a template to reuse it in any other person — even in a different browser.</p>
+
+            <div id="fallback-block">
+              <h4>When nothing matches</h4>
+              <p class="muted">Optional replies the person can send when your message doesn't match any template.</p>
+              <div id="fallbacks-list"></div>
+              <div class="row">
+                <button id="add-fallback" class="secondary">+ Add Fallback</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer>
+          <button id="save-person">Save</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- Group creator / editor modal -->
+    <div id="group-modal" class="modal hidden">
+      <div class="modal-card">
+        <header>
+          <h3 id="group-modal-title">New Group</h3>
+          <button id="close-group" class="icon-btn">✕</button>
+        </header>
+        <div class="modal-body">
+          <label>
+            Group name
+            <input id="group-name" type="text" placeholder="Group name" />
+          </label>
+          <div id="group-members-picker"></div>
+          <p class="muted">Select 2 or more people. Whoever has a template for your message will reply (at random if several fit).</p>
+        </div>
+        <footer>
+          <button id="save-group">Create</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- Chat screen -->
+    <div id="chat-screen" class="hidden">
+      <header class="chat-header">
+        <button id="back-to-list" class="icon-btn">◀</button>
+        <div id="chat-avatars" class="chat-avatars">
+          <div id="chat-avatar" class="avatar"></div>
+        </div>
+        <div class="chat-user">
+          <div id="chat-name"></div>
+          <div id="chat-members" class="muted"></div>
+        </div>
+        <div class="spacer"></div>
+        <button id="edit-person" class="icon-btn">Edit</button>
+        <button id="remove-person" class="icon-btn danger">Delete</button>
+      </header>
+
+      <div id="messages" class="messages"></div>
+
+      <footer class="composer">
+        <select id="template-select"></select>
+        <div class="composer-row">
+          <input id="message-input" type="text" placeholder="Type or pick a template..." />
+          <button id="send-btn">Send</button>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

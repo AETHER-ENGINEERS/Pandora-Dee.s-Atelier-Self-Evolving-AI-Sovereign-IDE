@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+<title>Mini God Sandbox</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <button id="createBtn" class="btn">Create</button>
+    <select id="spawnPicker" class="picker">
+      <option value="">Select a created item...</option>
+    </select>
+    <button id="spawnBtn" class="btn" disabled>Spawn</button>
+    <button id="playBtn" class="btn">Play as animal</button>
+    <button id="manageBtn" class="btn">Manage Creations</button>
+    <button id="settingsBtn" class="btn">Settings</button>
+  </div>
+
+  <canvas id="world"></canvas>
+
+  <!-- Create modal -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-card">
+      <h3>Create Item</h3>
+      <label>Emoji <input id="emoji" maxlength="2" /></label>
+      <label>Name <input id="nameInput" /></label>
+      <label>Type
+        <select id="typeSelect">
+          <option value="animal">Animal</option>
+          <option value="food">Food</option>
+        </select>
+      </label>
+
+      <div id="animalOptions">
+        <label>Diet
+          <select id="dietSelect">
+            <option value="meat">meats</option>
+            <option value="veggie">veggies</option>
+            <option value="fruit">fruits</option>
+            <option value="meat_veg">meats and veggies</option>
+            <option value="meat_fruit">meats and fruits</option>
+            <option value="fruit_veg">fruits and veggies</option>
+            <option value="all">all</option>
+          </select>
+        </label>
+        <label><input type="checkbox" id="makesMeat"> Makes meat when converted</label>
+        <div id="meatChoice" class="hidden">
+          <label>Meat produced
+            <select id="meatProduced">
+              <option value="">(none available)</option>
+            </select>
+          </label>
+        </div>
+        <label>Baby emoji (optional) <input id="babyEmoji" maxlength="2" placeholder="e.g. 🐣" /></label>
+      </div>
+
+      <div id="foodOptions" class="hidden">
+        <label>Food Type
+          <select id="foodType">
+            <option value="meat">meat</option>
+            <option value="veggie">veggie</option>
+            <option value="fruit">fruit</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button id="saveCreate" class="btn primary">Save</button>
+        <button id="cancelCreate" class="btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage modal -->
+  <div id="manageModal" class="modal hidden">
+    <div class="modal-card">
+      <h3>Manage Creations</h3>
+      <div id="manageList"></div>
+      <div class="modal-actions">
+        <button id="closeManage" class="btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div id="settingsModal" class="modal hidden">
+    <div class="modal-card">
+      <h3>Settings</h3>
+      <label>Minimum cooldown (seconds)
+        <input id="minCooldown" type="number" min="0" step="1" />
+      </label>
+      <label>Maximum cooldown (seconds)
+        <input id="maxCooldown" type="number" min="0" step="1" />
+      </label>
+      <label>Baby growth time (seconds)
+        <input id="babyGrowth" type="number" min="0" step="1" />
+      </label>
+      <label>Minimum lifetime (seconds)
+        <input id="minLife" type="number" min="0" step="1" />
+      </label>
+      <label>Maximum lifetime (seconds)
+        <input id="maxLife" type="number" min="0" step="1" />
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px">
+        <input type="checkbox" id="protectLastTwo" /> Protect last two adults
+      </label>
+      <div class="modal-actions">
+        <button id="saveSettings" class="btn primary">Save</button>
+        <button id="cancelSettings" class="btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script type="module" src="main.js"></script>
+</body>
+</html>

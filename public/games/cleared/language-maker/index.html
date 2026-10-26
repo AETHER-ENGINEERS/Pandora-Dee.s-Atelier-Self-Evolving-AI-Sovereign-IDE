@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Language Maker</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "./storage.js": "./storage.js",
+      "./app.js": "./app.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <header class="app-header">
+    <h1>Language Maker</h1>
+    <p class="subtitle">Create word and letter translations. Words apply first, then letters.</p>
+  </header>
+
+  <main class="container">
+    <section class="card translator">
+      <h2>Translate</h2>
+      <label for="inputText" class="sr-only">Input text</label>
+      <textarea id="inputText" rows="4" placeholder="Type text to translate..."></textarea>
+      <div class="actions">
+        <button id="translateBtn" class="btn primary">Translate</button>
+        <button id="clearBtn" class="btn">Clear</button>
+      </div>
+      <div class="settings">
+        <label class="toggle">
+          <input type="checkbox" id="reverseDir">
+          <span>Reverse translation direction</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="reverseSpeech">
+          <span>Reverse language speech</span>
+        </label>
+      </div>
+      <div class="output-wrap">
+        <div class="output-header">
+          <h3>Result</h3>
+          <button id="copyBtn" class="btn ghost">Copy</button>
+        </div>
+        <pre id="outputText" aria-live="polite"></pre>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <h2>Word translations</h2>
+        <form id="wordForm" class="inline-form" autocomplete="off">
+          <input id="wordFrom" placeholder="from (word)" required />
+          <span class="arrow">→</span>
+          <input id="wordTo" placeholder="to (word)" required />
+          <button class="btn primary" type="submit">Add</button>
+        </form>
+        <ul id="wordList" class="list"></ul>
+      </div>
+
+      <div class="card">
+        <h2>Letter translations</h2>
+        <form id="letterForm" class="inline-form" autocomplete="off">
+          <input id="letterFrom" placeholder="from (1 char)" maxlength="2" required />
+          <span class="arrow">→</span>
+          <input id="letterTo" placeholder="to (1-4 chars, UPPER)" maxlength="4" />
+          <input id="letterToLower" placeholder="to (1-4 chars, lower)" maxlength="4" />
+          <button class="btn primary" type="submit">Add</button>
+        </form>
+        <ul id="letterList" class="list"></ul>
+        <p class="hint">Example: N → Ñ and hello → Nello results in Ñello</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <small>Words apply first, then letters. Edits save automatically.</small>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

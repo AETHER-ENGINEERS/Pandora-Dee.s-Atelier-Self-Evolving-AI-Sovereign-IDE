@@ -1,0 +1,48 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cat Breeding Game</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="food-counter">
+    🍖 Food: <span id="food-count">5</span>
+    <button id="trade-btn">Trade</button>
+  </div>
+
+  <div id="trade-overlay" class="trade-overlay" style="display: none"></div>
+  <div id="trade-menu" class="trade-menu" style="display: none">
+    <button id="close-trade">Close</button>
+  </div>
+
+  <div id="game-container">
+    <div id="cats-container">
+      <h2>My Cats (<span id="cat-count">1</span>/10)</h2>
+      <div id="cats" class="cats-grid"></div>
+    </div>
+    
+    <div id="breeding-container">
+      <h2>Breeding</h2>
+      <div id="selected-parents"></div>
+      <button id="breed-btn" disabled>Breed Selected Cats</button>
+      <button id="reroll-kittens" style="display:none">Reroll Kittens</button>
+      <div id="kittens"></div>
+    </div>
+
+    <div id="egg-container">
+      <h2>Egg Generator</h2>
+      <button id="basic-egg">Create Basic Egg</button>
+      <div id="eggs" class="eggs-grid"></div>
+    </div>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "config": "./config.js"
+      }
+    }
+  </script>
+  <script type="module" src="game.js"></script>
+</body>
+</html>

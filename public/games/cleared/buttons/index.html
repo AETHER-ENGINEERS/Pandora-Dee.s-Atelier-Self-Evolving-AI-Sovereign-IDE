@@ -1,0 +1,316 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Button Creator</title>
+    <script src="confetti.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        
+        .button-creator {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .color-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        label {
+            margin-right: 5px;
+        }
+
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .created-button {
+            transition: all 0.2s;
+        }
+
+        .slightly-smaller {
+            transform: scale(0.95);
+        }
+
+        .slightly-bigger {
+            transform: scale(1.05);
+        }
+
+        .shake-horizontal {
+            animation: shakeHorizontal 0.2s;
+        }
+
+        .shake-vertical {
+            animation: shakeVertical 0.2s;
+        }
+
+        .jump-up {
+            animation: jumpUp 0.2s;
+        }
+
+        .jump-down {
+            animation: jumpDown 0.2s;
+        }
+
+        .slightly-smaller-reverse {
+            animation: slightlySmallerReverse 0.2s;
+        }
+
+        .slightly-bigger-reverse {
+            animation: slightlyBiggerReverse 0.2s;
+        }
+
+        .shake-horizontal-reverse {
+            animation: shakeHorizontalReverse 0.2s;
+        }
+
+        .shake-vertical-reverse {
+            animation: shakeVerticalReverse 0.2s;
+        }
+
+        .jump-up-reverse {
+            animation: jumpUpReverse 0.2s;
+        }
+
+        .jump-down-reverse {
+            animation: jumpDownReverse 0.2s;
+        }
+
+        @keyframes shakeHorizontal {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes shakeVertical {
+            0%, 100% { transform: translateY(0); }
+            25% { transform: translateY(-5px); }
+            75% { transform: translateY(5px); }
+        }
+
+        @keyframes jumpUp {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes jumpDown {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(10px); }
+        }
+
+        @keyframes slightlySmallerReverse {
+            0% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes slightlyBiggerReverse {
+            0% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shakeHorizontalReverse {
+            0% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            100% { transform: translateX(0); }
+        }
+
+        @keyframes shakeVerticalReverse {
+            0% { transform: translateY(-5px); }
+            50% { transform: translateY(5px); }
+            100% { transform: translateY(0); }
+        }
+
+        @keyframes jumpUpReverse {
+            0% { transform: translateY(-10px); }
+            100% { transform: translateY(0); }
+        }
+
+        @keyframes jumpDownReverse {
+            0% { transform: translateY(10px); }
+            100% { transform: translateY(0); }
+        }
+
+        select, input, button {
+            margin: 5px;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="button-creator">
+        <h2>Create a Button</h2>
+        <div>
+            <input type="text" id="buttonName" placeholder="Button Name">
+            <div class="color-row">
+                <div class="color-group">
+                    <label>Background:</label>
+                    <input type="color" id="buttonColor">
+                    <input type="color" id="secondColor" style="display: none;">
+                </div>
+                <div class="color-group">
+                    <label>Text:</label>
+                    <input type="color" id="textColor" value="#000000">
+                    <input type="color" id="secondTextColor" style="display: none;">
+                </div>
+                <div class="color-group">
+                    <label>Outline:</label>
+                    <input type="color" id="outlineColor" value="#000000">
+                    <input type="color" id="secondOutlineColor" style="display: none;">
+                </div>
+            </div>
+            <select id="animation">
+                <option value="slightly-smaller">Slightly Smaller</option>
+                <option value="slightly-bigger">Slightly Bigger</option>
+                <option value="shake-horizontal">Shake Left/Right</option>
+                <option value="shake-vertical">Shake Up/Down</option>
+                <option value="jump-up">Jump Up</option>
+                <option value="jump-down">Jump Down</option>
+                <option value="color-change">Change Color</option>
+            </select>
+            <div>
+                <input type="checkbox" id="hasEffect">
+                <label for="hasEffect">Add Effect</label>
+            </div>
+            <div id="effectInputs" style="display: none;">
+                <input type="text" placeholder="Effect Text 1" class="effect-text">
+                <input type="text" placeholder="Effect Text 2" class="effect-text">
+                <input type="text" placeholder="Effect Text 3" class="effect-text">
+                <input type="text" placeholder="Effect Text 4" class="effect-text">
+                <input type="text" placeholder="Effect Text 5" class="effect-text">
+            </div>
+            <button onclick="createButton()">Create Button</button>
+        </div>
+    </div>
+    
+    <div class="button-container" id="buttonContainer"></div>
+
+    <script>
+        const animation = document.getElementById('animation');
+        const secondColor = document.getElementById('secondColor');
+        const secondTextColor = document.getElementById('secondTextColor');
+        const secondOutlineColor = document.getElementById('secondOutlineColor');
+        const hasEffect = document.getElementById('hasEffect');
+        const effectInputs = document.getElementById('effectInputs');
+
+        animation.addEventListener('change', () => {
+            const isColorChange = animation.value === 'color-change';
+            secondColor.style.display = isColorChange ? 'inline' : 'none';
+            secondTextColor.style.display = isColorChange ? 'inline' : 'none';
+            secondOutlineColor.style.display = isColorChange ? 'inline' : 'none';
+        });
+
+        hasEffect.addEventListener('change', () => {
+            effectInputs.style.display = hasEffect.checked ? 'block' : 'none';
+        });
+
+        function createButton() {
+            const name = document.getElementById('buttonName').value;
+            const color = document.getElementById('buttonColor').value;
+            const textColor = document.getElementById('textColor').value;
+            const outlineColor = document.getElementById('outlineColor').value;
+            const animationType = animation.value;
+            const color2 = secondColor.value;
+            const textColor2 = secondTextColor.value;
+            const outlineColor2 = secondOutlineColor.value;
+            const effects = hasEffect.checked ? 
+                Array.from(document.querySelectorAll('.effect-text'))
+                    .map(input => input.value)
+                    .filter(text => text.trim() !== '') : [];
+
+            const button = document.createElement('button');
+            button.textContent = name;
+            button.style.backgroundColor = color;
+            button.style.color = textColor;
+            button.style.border = `2px solid ${outlineColor}`;
+            button.className = 'created-button';
+            
+            let isPressed = false;
+            
+            function handlePressStart(e) {
+                e.preventDefault();  // Prevent default touch behavior
+                isPressed = true;
+                if (animationType === 'color-change') {
+                    button.style.backgroundColor = color2;
+                    button.style.color = textColor2;
+                    button.style.border = `2px solid ${outlineColor2}`;
+                } else {
+                    button.classList.add(animationType);
+                }
+                
+                if (effects.length > 0) {
+                    const particles = [];
+                    for (let i = 0; i < 50; i++) {
+                        particles.push({
+                            text: { value: effects[Math.floor(Math.random() * effects.length)] }
+                        });
+                    }
+                    
+                    confetti({
+                        particleCount: 50,
+                        spread: 70,
+                        origin: { y: 0.6 },
+                        shapes: ["text"],
+                        shapeOptions: {
+                            text: {
+                                value: particles.map(p => p.text.value)
+                            }
+                        }
+                    });
+                }
+            }
+
+            function handlePressEnd(e) {
+                e.preventDefault();  // Prevent default touch behavior
+                if (isPressed) {
+                    isPressed = false;
+                    if (animationType === 'color-change') {
+                        button.style.backgroundColor = color;
+                        button.style.color = textColor;
+                        button.style.border = `2px solid ${outlineColor}`;
+                    } else {
+                        button.classList.remove(animationType);
+                        
+                        const reverseClass = animationType + '-reverse';
+                        button.classList.add(reverseClass);
+                        
+                        setTimeout(() => {
+                            button.classList.remove(reverseClass);
+                        }, 200);
+                    }
+                }
+            }
+
+            // Mouse events
+            button.addEventListener('mousedown', handlePressStart);
+            button.addEventListener('mouseup', handlePressEnd);
+            button.addEventListener('mouseleave', handlePressEnd);
+
+            // Touch events
+            button.addEventListener('touchstart', handlePressStart);
+            button.addEventListener('touchend', handlePressEnd);
+            button.addEventListener('touchcancel', handlePressEnd);
+
+            document.getElementById('buttonContainer').appendChild(button);
+        }
+    </script>
+</body>
+</html>

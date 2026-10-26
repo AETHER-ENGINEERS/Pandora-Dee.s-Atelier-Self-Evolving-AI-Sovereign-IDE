@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>Shop Builder</title>
+  <link rel="stylesheet" href="style.css" />
+  <script type="module" src="app.js" defer></script>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div id="money"><span id="coin-name">Coins</span>: <span id="coin-symbol">¢</span> <span id="coin-count">100</span></div>
+      <div id="actions">
+        <button id="btn-work" class="btn">Work</button>
+        <button id="btn-new-item" class="btn primary">Create Item</button>
+        <button id="btn-manage" class="btn">Manage Items</button>
+        <button id="btn-settings" class="btn">Settings</button>
+        <button id="btn-reset" class="btn">Reset</button>
+        <button id="btn-full-reset" class="btn" title="Reset shop + inventory + coins">Full Reset</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="shop">
+        <h2>Shop</h2>
+        <div id="shop-list" class="card-list"></div>
+      </section>
+
+      <section id="inventory">
+        <h2>Inventory</h2>
+        <div id="inv-list" class="card-list"></div>
+      </section>
+    </main>
+
+    <!-- Right/bottom panel for selected item details (mobile-friendly bottom sheet) -->
+    <div id="detail-sheet" class="sheet hidden">
+      <div class="sheet-handle"></div>
+      <div id="detail-content"></div>
+      <div class="sheet-actions">
+        <button id="btn-buy" class="btn primary">Buy</button>
+        <button id="btn-use" class="btn">Use</button>
+        <button id="btn-close" class="btn">Close</button>
+      </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-backdrop" class="backdrop hidden"></div>
+
+    <div id="modal-create" class="modal hidden">
+      <h3 id="create-title">Create Shop Item</h3>
+      <form id="form-create" data-edit-id="">
+        <label>
+          Name
+          <input name="name" required />
+        </label>
+        <label>
+          Emoji (one)
+          <input name="emoji" required />
+        </label>
+        <label>
+          Description (optional)
+          <input name="desc" />
+        </label>
+        <label>
+          Uses (0 = infinite)
+          <input name="uses" type="number" min="0" value="1" required />
+        </label>
+        <label>
+          Price
+          <input name="price" type="number" min="0" value="10" required />
+        </label>
+
+        <div id="uses-builder">
+          <h4>Uses (actions) for this item</h4>
+          <div id="uses-list"></div>
+          <button id="add-use" type="button" class="btn">+ Add Use</button>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn primary">Create Item</button>
+          <button id="cancel-create" type="button" class="btn">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <div id="modal-manager" class="modal hidden">
+      <h3>Item Manager</h3>
+      <div id="manager-list"></div>
+      <div class="form-actions">
+        <button id="close-manager" class="btn">Close</button>
+      </div>
+    </div>
+
+    <div id="modal-settings" class="modal hidden">
+      <h3>Settings</h3>
+      <form id="form-settings">
+        <label>Coin name<input name="coinName" /></label>
+        <label>Coin symbol<input name="coinSymbol" maxlength="2" /></label>
+        <label>Starter amount<input name="starter" type="number" min="0" /></label>
+        <label>Work button name<input name="workName" /></label>
+        <label>Work completion message<input name="workMessage" placeholder="Worked {secs}s and earned {gained}¢" /></label>
+        <div class="form-actions">
+          <button type="submit" class="btn primary">Save</button>
+          <button id="cancel-settings" type="button" class="btn">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <div id="modal-work" class="modal hidden">
+      <h3>Work</h3>
+      <div class="work-row">
+        <label for="work-seconds">Time: <span id="work-sec-label">5</span>s</label>
+        <input id="work-seconds" type="range" min="5" max="120" value="5" />
+      </div>
+      <div class="work-preview">Estimated coins: <span id="work-est">3</span></div>
+      <div class="form-actions">
+        <button id="start-work" class="btn primary">Start Work</button>
+        <button id="cancel-work" class="btn">Cancel</button>
+      </div>
+    </div>
+
+    <div id="modal-use" class="modal hidden">
+      <h3>Use Item</h3>
+      <div id="use-content"></div>
+      <div class="form-actions">
+        <button id="perform-use" class="btn primary">Perform</button>
+        <button id="cancel-use" class="btn">Cancel</button>
+      </div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+  </div>
+</body>
+</html>

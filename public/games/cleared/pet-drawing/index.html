@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+/* Cleared edition: drawings stay on this device. The websim server is not called. */
+(function () {
+  var KEY = "sunkissed-draw-pet";
+  function read() {
+    try { return JSON.parse(localStorage.getItem(KEY) || "") || { drawings: {}, customs: [] }; }
+    catch (e) { return { drawings: {}, customs: [] }; }
+  }
+  function write(store) { localStorage.setItem(KEY, JSON.stringify(store)); }
+  function json(data, status) {
+    return new Response(JSON.stringify(data), { status: status || 200, headers: { "content-type": "application/json" } });
+  }
+  var orig = window.fetch.bind(window);
+  window.fetch = function (url, opts) {
+    var path = String(url || "");
+    if (path.indexOf("/api/") !== 0) return orig(url, opts);
+    var store = read();
+    var body = {};
+    try { body = opts && opts.body ? JSON.parse(opts.body) : {}; } catch (e) { body = {}; }
+    if (path === "/api/load") return Promise.resolve(json({ drawings: store.drawings || {}, customs: store.customs || [] }));
+    if (path === "/api/save") {
+      store.drawings = store.drawings || {};
+      store.drawings[body.slot] = body.dataUrl;
+      write(store);
+      return Promise.resolve(json({ ok: true }));
+    }
+    if (path === "/api/customs") {
+      store.customs = body.customs || [];
+      write(store);
+      return Promise.resolve(json({ ok: true }));
+    }
+    if (path === "/api/delete-custom") {
+      var id = body.id;
+      Object.keys(store.drawings || {}).forEach(function (key) {
+        if (key.indexOf("custom:" + id + ":") === 0) delete store.drawings[key];
+      });
+      store.customs = (store.customs || []).filter(function (item) { return item.id !== id; });
+      write(store);
+      return Promise.resolve(json({ ok: true }));
+    }
+    return Promise.resolve(json({ error: "not on this device" }, 404));
+  };
+})();
+</script>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Draw Pet</title>
+  <link rel="stylesheet" href="styles.css" />
+  </head>
+<body>
+  <div id="root"></div>
+  <script src="app.js"></script>
+</body>
+</html>

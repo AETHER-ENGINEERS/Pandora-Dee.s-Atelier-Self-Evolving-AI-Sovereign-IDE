@@ -1,0 +1,61 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Merge Game Creator</title>
+    <link rel="stylesheet" href="styles.css">
+    </head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Custom Merge Game Creator</h1>
+            <p>Create elements and define how they combine!</p>
+            <button id="reset-btn" class="reset-button">Reset Game</button>
+        </header>
+
+        <div class="panels">
+            <div class="panel">
+                <h2>Add Element</h2>
+                <form id="add-element-form">
+                    <input type="text" id="element-name" placeholder="Element name" required>
+                    <input type="color" id="element-color" value="#ff6b6b">
+                    <button type="submit">Add Element</button>
+                </form>
+            </div>
+
+            <div class="panel">
+                <h2>Add Mix Rule</h2>
+                <form id="add-mix-form">
+                    <div class="mix-inputs">
+                        <select id="element1" required>
+                            <option value="">Select first element...</option>
+                        </select>
+                        <span>+</span>
+                        <select id="element2" required>
+                            <option value="">Select second element...</option>
+                        </select>
+                        <span>=</span>
+                    </div>
+                    <input type="text" id="result-name" placeholder="Result name" required>
+                    <input type="color" id="result-color" value="#4ecdc4">
+                    <button type="submit">Add Mix Rule</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="game-area">
+            <h2>Workspace</h2>
+            <div id="element-bank" class="element-bank">
+                <p>Drag elements here to start mixing!</p>
+            </div>
+            <div id="workspace" class="workspace">
+                <div class="drop-zone">Drop elements here to mix</div>
+            </div>
+        </div>
+
+        <div id="notification" class="notification hidden"></div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

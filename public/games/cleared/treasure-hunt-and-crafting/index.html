@@ -1,0 +1,87 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Treasure Game</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- No external libraries needed yet -->
+</head>
+<body>
+    <h1>Emoji Treasure Hunt & Crafting</h1>
+
+    <div id="setup-screen">
+        <div id="default-patch-set-inputs">
+            <h2>Default Patch Set</h2>
+            <p>Enter emojis for the default treasure pool and patch visuals:</p>
+            <label for="common-emojis">Common:</label>
+            <input type="text" id="common-emojis" value="🍎,🍊,🍌,🍇"><br>
+
+            <label for="uncommon-emojis">Uncommon:</label>
+            <input type="text" id="uncommon-emojis" value="💎,👑,🗝️"><br>
+
+            <label for="rare-emojis">Rare:</label>
+            <input type="text" id="rare-emojis" value="🦄,✨,🌈"><br>
+
+            <label for="default-dirt-emoji">Dirt Patch Emojis (separated by commas):</label>
+            <input type="text" id="default-dirt-emoji" value="🟫"><br>
+
+            <label for="default-hole-emoji">Dug Hole Emojis (separated by commas):</label>
+            <input type="text" id="default-hole-emoji" value="🕳️"><br>
+        </div>
+
+        <div id="additional-patch-sets">
+            <h2>Additional Patch Sets</h2>
+            <p>Define extra sets with their own emojis and visuals. Patches will be randomly assigned to any defined set.</p>
+            <button id="add-patch-set-button">Add Patch Set</button>
+            <div id="dynamic-patch-sets-container">
+                <!-- Dynamic patch set inputs will be added here -->
+            </div>
+        </div>
+
+        <p>Enter initial recipes (format: emoji1+emoji2=result, space-separated):</p>
+        <textarea id="initial-recipes" rows="4" cols="50">🍎+🍎=🍌 🍊+🍇=✨ 💎+🗝️=👑</textarea><br>
+
+        <button id="start-game-button">Start Game</button>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <div id="game-area">
+            <!-- Dirt patches will be generated here -->
+        </div>
+
+        <div id="inventory-area">
+            <h2>Inventory</h2>
+            <div id="inventory-list">
+                <!-- Inventory items will be displayed here -->
+            </div>
+        </div>
+
+        <div id="crafting-area">
+            <h2>Crafting</h2>
+            <div id="selected-craft-items">
+                <!-- Selected items for crafting will be displayed here -->
+                <p>Select 2 items from inventory to craft.</p>
+            </div>
+            <button id="craft-button" disabled>Craft</button>
+            <p id="crafting-feedback"></p>
+        </div>
+
+        <div id="recipe-area">
+            <h2>Recipes</h2>
+            <ul id="current-recipes">
+                <!-- Current recipes will be listed here -->
+            </ul>
+            <button id="show-add-recipe-button">Add New Recipe</button>
+            <div id="add-recipe-form" class="hidden">
+                <input type="text" id="new-recipe-input" placeholder="e.g., 🍎+🍌=🍉">
+                <button id="add-recipe-button">Add</button>
+                <button id="cancel-add-recipe-button">Cancel</button>
+            </div>
+        </div>
+
+        <button id="reset-game-button">Reset Game</button>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>

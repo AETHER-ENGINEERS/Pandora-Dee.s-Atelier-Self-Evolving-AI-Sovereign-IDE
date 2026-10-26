@@ -1,0 +1,243 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+#app {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 90vw;
+}
+
+h1 {
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.oreo-builder {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+    flex-direction: column;
+    width: 100%;
+}
+
+.oreo-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    order: 2;
+    position: relative;
+}
+
+.oreo-stack {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 2px;
+}
+
+.oreo-piece {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: transparent;
+}
+
+.cookie-top, .cookie-bottom {
+    width: 120px;
+    height: 30px;
+    background: #2c1810;
+    border-radius: 50px 50px 15px 15px;
+}
+
+.cookie-bottom {
+    border-radius: 15px 15px 50px 50px;
+}
+
+.cream {
+    width: 100px;
+    height: 20px;
+    background: #f5f5dc;
+    border-radius: 10px;
+}
+
+.oreo-name {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    margin-top: 1rem;
+    min-height: 2.5rem;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-break: break-all;
+}
+
+.controls {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    order: 1;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    max-width: 100%;
+}
+
+.controls > div {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.controls button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: transform 0.1s;
+    min-height: 44px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.controls .remove-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    margin-left: 0;
+    min-width: auto;
+    width: auto;
+    height: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+}
+
+.add-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.remove-btn {
+    background-color: #ff9800;
+    color: white;
+}
+
+.reset-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+.instructions {
+    margin-top: 2rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.custom-flavor {
+    margin: 1rem 0;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: #fafafa;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+    max-width: 300px;
+}
+
+.custom-flavor h2 {
+    font-size: 1.2rem;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.custom-flavor input,
+.custom-flavor select {
+    padding: 0.5rem;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 200px;
+}
+
+.custom-flavor input[type="color"] {
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+#addCustom {
+    margin-top: 0.5rem;
+    background-color: #2196F3;
+    color: white;
+}
+
+.eat-btn {
+    background-color: #8B4513;
+    color: white;
+    margin-top: 1rem;
+}
+
+.crumb {
+    position: fixed;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    opacity: 0.9;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+@media (max-width: 600px) {
+    .oreo-builder {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .controls {
+        flex-direction: row;
+        width: 100%;
+    }
+}

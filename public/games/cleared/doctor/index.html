@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Doctor Simulator</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div id="app" class="appRoot" aria-live="polite">
+    <!-- Menu: Selector -->
+    <section id="menu-selector" class="menu" data-menu="selector">
+      <div class="roomArea">
+        <div class="centerHint">
+          <div class="bigEmoji" aria-hidden="true">🩺</div>
+          <div class="subtle">Choose a room below.</div>
+        </div>
+      </div>
+      <div class="bottomBar">
+        <button id="btnToCheckup" class="primaryPick bigBtn" type="button">🩹 Check up</button>
+        <button id="btnToSurgery" class="primaryPick bigBtn" type="button">🔪 Surgery</button>
+      </div>
+    </section>
+
+    <!-- Menu: Check up -->
+    <section id="menu-checkup" class="menu hidden" data-menu="checkup">
+      <div class="roomArea">
+        <div class="checkupLayout">
+          <div class="patientStage">
+            <div class="patientCard">
+              <div class="patientLabel">Patient</div>
+              <div id="checkupPatientEmoji" class="patientEmoji" role="img" aria-label="Selected patient">🙂</div>
+            </div>
+          </div>
+
+          <div class="checkupDropZone" aria-hidden="true">
+            <div class="dropText">Drop tools onto the patient</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottomBar bottomBarScroll">
+        <div class="pickerBlock">
+          <div class="pickerLabel">Patients</div>
+          <div id="patientPicker" class="emojiRow" role="group" aria-label="Select patient">
+            <button class="emojiPick" type="button" data-patient="🙂">🙂</button>
+            <button class="emojiPick" type="button" data-patient="🤢">🤢</button>
+            <button class="emojiPick" type="button" data-patient="🥵">🥵</button>
+            <button class="emojiPick" type="button" data-patient="🥶">🥶</button>
+            <button class="emojiPick" type="button" data-patient="😵‍💫">😵‍💫</button>
+          </div>
+        </div>
+
+        <div class="toolBlock">
+          <div class="pickerLabel">Tools (drag)</div>
+          <div id="checkupToolRow" class="emojiRow" role="group" aria-label="Check up tools">
+            <div class="draggableTool" data-tool="🩹" role="button" tabindex="0" aria-label="Tool 🩹">🩹</div>
+            <div class="draggableTool" data-tool="💊" role="button" tabindex="0" aria-label="Tool 💊">💊</div>
+            <div class="draggableTool" data-tool="🧊" role="button" tabindex="0" aria-label="Tool 🧊">🧊</div>
+            <div class="draggableTool" data-tool="🔥" role="button" tabindex="0" aria-label="Tool 🔥">🔥</div>
+            <div class="draggableTool" data-tool="💉" role="button" tabindex="0" aria-label="Tool 💉">💉</div>
+            <div class="draggableTool" data-tool="🩺" role="button" tabindex="0" aria-label="Tool 🩺">🩺</div>
+            <div class="draggableTool" data-tool="🩻" role="button" tabindex="0" aria-label="Tool 🩻">🩻</div>
+            <div class="draggableTool" data-tool="🌡" role="button" tabindex="0" aria-label="Tool 🌡">🌡</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Menu: Surgery -->
+    <section id="menu-surgery" class="menu hidden" data-menu="surgery">
+      <div class="roomArea">
+        <div id="surgeryStage" class="surgeryStage">
+          <div class="canvasWrap">
+            <canvas id="surgeryCanvas" class="surgeryCanvas"></canvas>
+            <div id="spawnLayer" class="spawnLayer" aria-hidden="true"></div>
+            <div id="tray" class="tray" aria-label="Tray"></div>
+          </div>
+
+          <!-- Spawn choice modal (for 🥢 / 🥢🫀) -->
+          <div id="spawnChoiceModal" class="spawnChoiceModal hidden" role="dialog" aria-modal="true" aria-label="Choose what to spawn">
+            <div class="spawnChoiceSheet">
+              <div class="spawnChoiceHeader">
+                <div class="spawnChoiceTitle">Choose spawn</div>
+                <button id="btnCancelSpawnChoice" class="spawnChoiceClose" type="button" aria-label="Close">✕</button>
+              </div>
+              <div id="spawnChoiceEmojiRow" class="spawnChoiceEmojiRow" role="group" aria-label="Spawn choices"></div>
+            </div>
+          </div>
+
+          <div id="surgeryStatus" class="surgeryStatus" aria-hidden="true">
+            <span class="statusDot"></span>
+            <span id="surgeryStatusText">Ready</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottomBar bottomBarScroll">
+        <div class="pickerBlock">
+          <div class="pickerLabel">Skin tone</div>
+          <div id="skinTonePicker" class="emojiRow" role="group" aria-label="Skin tone">
+            <button class="tonePick" type="button" data-tone="lightPeach" aria-label="Light peach">🟫</button>
+            <button class="tonePick" type="button" data-tone="peach" aria-label="Peach">🟧</button>
+            <button class="tonePick" type="button" data-tone="darkPeach" aria-label="Dark peach">🍑</button>
+            <button class="tonePick" type="button" data-tone="lightBrown" aria-label="Light brown">🍂</button>
+            <button class="tonePick" type="button" data-tone="brown" aria-label="Brown">🟤</button>
+            <button class="tonePick" type="button" data-tone="darkBrown" aria-label="Dark brown">🌰</button>
+          </div>
+        </div>
+
+        <div class="toolBlock">
+          <div class="pickerLabel">Surgery tools (tap)</div>
+          <div id="surgeryToolRow" class="toolRow emojiRow" role="group" aria-label="Surgery tools">
+            <button class="toolPick" data-tool="🔪" type="button">🔪</button>
+            <button class="toolPick" data-tool="🧽" type="button">🧽</button>
+            <button class="toolPick" data-tool="🧴" type="button">🧴</button>
+            <button class="toolPick" data-tool="🪡" type="button">🪡</button>
+            <button class="toolPick" data-tool="🧻" type="button">🧻</button>
+            <button class="toolPick" data-tool="🥢" type="button">🥢</button>
+            <button class="toolPick" data-tool="🥢🫀" type="button">🥢🫀</button>
+            <button class="toolPick" data-tool="🧠" type="button">🧠</button>
+            <button class="toolPick" data-tool="🫀" type="button">🫀</button>
+            <button class="toolPick" data-tool="🫁" type="button">🫁</button>
+            <button class="toolPick" data-tool="🦴" type="button">🦴</button>
+          </div>
+        </div>
+
+        <div class="bottomActionsRow">
+          <button id="btnResetSurgery" class="ghostPick bigBtn" type="button">♻ Reset</button>
+          <button id="btnBackToSelector" class="ghostPick bigBtn" type="button">↩ Back</button>
+        </div>
+      </div>
+    </section>
+    <button id="btnExitRooms" class="exitPick hidden" type="button" aria-label="Exit">✕</button>
+  </div>
+
+  <div id="floatingGhost" class="ghostTool" aria-hidden="true">🩹</div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

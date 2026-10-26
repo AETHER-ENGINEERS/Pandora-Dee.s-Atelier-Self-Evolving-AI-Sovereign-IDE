@@ -1,0 +1,44 @@
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <title>Feesh: Collect and Breed Fish!</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="game-container">
+    <div id="tutorial">
+      <h2>Feesh Tutorial</h2>
+      <p>Welcome to Feesh! 🐟</p>
+      <p>• Start with 20 Seacoins</p>
+      <p>• Buy Feesh for 5 Seacoins</p>
+      <p>• Breed two Feesh for 3 Seacoins to create Feshies</p>
+      <p>• Feed Feshies for 3 Seacoins to grow them</p>
+      <p>• Sell Feesh/Feshies to earn Seacoins</p>
+    </div>
+
+    <div id="resources">
+      <span id="seacoins">Seacoins: <span id="seacoin-count">20</span></span>
+      <button id="restart-btn">Restart Game</button>
+    </div>
+    
+    <div id="shop">
+      <h2>Feesh Shop</h2>
+      <button id="buy-feesh-btn">Buy Feesh (5 Seacoins)</button>
+    </div>
+    
+    <div id="feesh-collection">
+      <h2>Your Feesh</h2>
+      <div id="feesh-list"></div>
+    </div>
+    
+    <div id="breeding-area">
+      <h2>Breeding Area</h2>
+      <div id="breed-selection"></div>
+      <button id="breed-btn" disabled>Breed Feesh (3 Seacoins)</button>
+    </div>
+  </div>
+  
+  <script type="module" src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Happy Things Game</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="game-container">
+    <div id="main-room">
+      <!-- Happy things will live here -->
+      <div id="breeding-zone">
+        <div class="breeding-area">
+          <div class="breeding-slot" id="breeding-slot-1"></div>
+          <div class="breeding-slot" id="breeding-slot-2"></div>
+        </div>
+        <button id="breed-btn" class="hidden">Breed</button>
+      </div>
+    </div>
+    
+    <div id="controls">
+      <button id="adopt-btn">Adopt Something</button>
+      <button id="spawn-food">Spawn Food</button>
+    </div>
+
+    <div id="adoption-room" class="hidden">
+      <div class="adoption-slots">
+        <div class="adoption-slot" data-slot="0"></div>
+        <div class="adoption-slot" data-slot="1"></div>
+        <div class="adoption-slot" data-slot="2"></div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="scripts/main.js"></script>
+</body>
+</html>

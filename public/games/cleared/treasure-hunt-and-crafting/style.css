@@ -1,0 +1,363 @@
+body {
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background-color: #f0f0f0;
+}
+
+h1, h2 {
+    text-align: center;
+    color: #333;
+}
+
+#setup-screen, #game-screen {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 600px; /* Limit width for better readability on large screens */
+    box-sizing: border-box; /* Include padding in width */
+    margin-bottom: 20px; /* Space below the main screen areas */
+}
+
+/* New styles for patch set sections */
+#default-patch-set-inputs, #additional-patch-sets {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+#default-patch-set-inputs h2, #additional-patch-sets h2 {
+    margin-top: 0;
+}
+
+#setup-screen label {
+    display: inline-block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+#setup-screen input[type="text"],
+#setup-screen textarea,
+#add-recipe-form input[type="text"] {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Include padding in width */
+    font-size: 1em;
+}
+
+/* Style for dynamically added patch set blocks */
+.patch-set-block {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    position: relative; /* For remove button positioning */
+    padding-top: 40px; /* Added padding to make space for the remove button */
+}
+
+.patch-set-block label {
+     display: block; /* Labels above inputs for better layout */
+     margin-bottom: 5px;
+}
+
+.patch-set-block input[type="text"] {
+    width: 100%; /* Full width within the block */
+    margin-bottom: 10px;
+}
+
+.patch-set-block .remove-set-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #ccc;
+    color: #333;
+    border: none;
+    border-radius: 50%; /* Make it round */
+    width: 25px;
+    height: 25px;
+    font-size: 1em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    padding: 0; /* Remove padding */
+    line-height: 1; /* Center text vertically */
+    transition: background-color 0.2s ease;
+}
+
+.patch-set-block .remove-set-button:hover {
+    background-color: #aaa;
+}
+
+button {
+    padding: 10px 15px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    margin-top: 5px;
+    transition: background-color 0.3s ease;
+}
+
+button:hover:not(:disabled) {
+    background-color: #45a049;
+}
+
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+#add-patch-set-button {
+    margin-bottom: 15px;
+}
+
+.hidden {
+    display: none;
+}
+
+#game-area {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); /* Responsive grid */
+    gap: 5px;
+    margin-top: 20px;
+    border: 1px solid #ccc;
+    padding: 5px;
+    background-color: #e0e0e0; /* Represents dirt */
+    border-radius: 4px;
+}
+
+.dirt-patch {
+    width: 100%; /* Take full column width */
+    /* Use aspect-ratio or padding-bottom trick for square patches if needed,
+       but fixed height is simpler for now and works with flex/grid items */
+    height: 50px; /* Fixed height for cells */
+    background-color: #8B4513; /* SaddleBrown */
+    border: 1px solid #5a2c0d;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5em;
+    cursor: pointer;
+    user-select: none; /* Prevent text selection */
+    border-radius: 4px;
+    transition: background-color 0.1s ease;
+    overflow: hidden; /* Hide potential overflow */
+}
+
+.dirt-patch:hover:not(.dug-patch) {
+    background-color: #a0522d; /* Sienna */
+}
+
+.dug-patch {
+    background-color: #f0f0f0; /* Lighter color after digging */
+    border: 1px solid #ccc;
+    cursor: default;
+}
+
+/* Ensure dug patch doesn't have hover effect */
+.dug-patch:hover {
+     background-color: #f0f0f0;
+}
+
+#inventory-area, #crafting-area, #recipe-area {
+    margin-top: 20px;
+    border-top: 1px solid #eee; /* Lighter separator */
+    padding-top: 15px; /* More padding */
+}
+
+#inventory-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px; /* Slightly less gap */
+    min-height: 50px; /* Ensure area is visible even when empty */
+    padding: 5px 0; /* Add padding around flex items */
+}
+
+.inventory-item {
+    padding: 0; /* Remove padding here, content centered by flex */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: #e9e9e9;
+    display: flex; /* Use flex to center emoji */
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    font-size: 1.5em; /* Make emoji larger */
+    width: 45px; /* Fixed size for individual items */
+    height: 45px; /* Fixed size for individual items */
+    flex-shrink: 0; /* Prevent shrinking in flex container */
+    transition: background-color 0.1s ease, border-color 0.1s ease, outline 0.1s ease;
+}
+
+.inventory-item .count {
+    display: none; /* Hide the count span */
+}
+
+.inventory-item.selected {
+    border-color: #4CAF50;
+    background-color: #d4edda;
+    outline: 2px solid #4CAF50; /* Add outline for clarity */
+    outline-offset: 2px;
+}
+
+#selected-craft-items {
+    min-height: 50px; /* Match inventory item height */
+    border: 1px dashed #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+#selected-craft-items p {
+    margin: 0; /* Remove default paragraph margin */
+    color: #666;
+    font-style: italic;
+}
+
+#selected-craft-items .item {
+    padding: 5px;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    background-color: #fff;
+    font-size: 1.5em; /* Match inventory item size */
+    display: flex; /* Center emoji */
+    justify-content: center;
+    align-items: center;
+    width: 45px; /* Fixed size */
+    height: 45px; /* Fixed size */
+    box-sizing: border-box;
+}
+
+#crafting-feedback {
+    min-height: 1.2em;
+    color: #333;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+#recipe-area {
+    margin-bottom: 20px; /* Space before the reset button */
+}
+
+#show-add-recipe-button {
+    margin-bottom: 10px; /* Space below the button */
+}
+
+#add-recipe-form {
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+    margin-bottom: 10px; /* Space below the form */
+    flex-wrap: wrap; /* Allow buttons/input to wrap on small screens */
+}
+
+#add-recipe-form input {
+    flex-grow: 1; /* Input takes available space */
+    min-width: 150px; /* Ensure input is wide enough */
+}
+
+#add-recipe-form button {
+    flex-shrink: 0; /* Buttons don't shrink */
+    margin-top: 0; /* Align with input */
+}
+
+#current-recipes {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+}
+
+#current-recipes li {
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    padding: 8px 10px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+    font-size: 0.95em;
+}
+
+#reset-game-button {
+    margin-top: 20px;
+    background-color: #f44336; /* Red color for reset */
+    width: 100%; /* Make reset button full width */
+    box-sizing: border-box; /* Include padding in width */
+    display: block; /* Ensure it takes full width */
+    text-align: center;
+}
+
+#reset-game-button:hover:not(:disabled) {
+     background-color: #da190b;
+}
+
+/* Mobile specific adjustments if needed, though the current CSS is mostly responsive */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+
+    #setup-screen, #game-screen {
+        padding: 15px;
+    }
+
+    #game-area {
+         grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); /* Smaller patches on smaller screens */
+         gap: 3px;
+         padding: 3px;
+    }
+
+    .dirt-patch {
+        height: 40px; /* Smaller patch height */
+        font-size: 1.2em;
+    }
+
+    .inventory-item, #selected-craft-items .item {
+        width: 40px; /* Smaller inventory items */
+        height: 40px;
+        font-size: 1.3em;
+    }
+
+    #inventory-list {
+        gap: 5px; /* Smaller inventory gap */
+    }
+
+    #selected-craft-items {
+        min-height: 40px; /* Match smaller item height */
+        padding: 8px;
+        gap: 8px;
+    }
+
+    #add-recipe-form input {
+        min-width: unset; /* Allow input to shrink more */
+    }
+
+    #add-recipe-form {
+         flex-direction: column; /* Stack input and buttons vertically */
+         gap: 8px;
+    }
+
+     #add-recipe-form button {
+         width: 100%; /* Make buttons full width */
+         margin-top: 0;
+     }
+
+     .patch-set-block {
+         padding-top: 35px; /* Adjust padding for smaller button */
+     }
+}

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Pandora Atelier">
+  <rect width="32" height="32" rx="7" fill="#07060e"/>
+  <path fill="#c4b5fd" d="M8.2 12.6 11.1 4.2 14.2 12.6Z"/>
+  <path fill="#f0b4c8" d="M17.8 12.6 20.9 4.2 23.8 12.6Z"/>
+  <path fill="#e2a04a" d="M9.7 11.4 11.1 7.4 12.7 11.4Z"/>
+  <path fill="#e2a04a" d="M19.3 11.4 20.9 7.4 22.3 11.4Z"/>
+  <path fill="#f0b4c8" d="M10 13.2h6.1c3.35 0 5.4 1.95 5.4 4.7s-2.05 4.7-5.4 4.7H13.3V28H10V13.2Zm3.3 2.7v4h2.5c1.55 0 2.45-.75 2.45-2s-.9-2-2.45-2H13.3Z"/>
+</svg>

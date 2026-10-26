@@ -1,0 +1,516 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nonsense Chat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+
+    #word-input, #message-input {
+      width: 200px;
+      padding: 5px;
+      margin-right: 10px;
+    }
+
+    #chat-box {
+      border: 1px solid #ccc;
+      height: 300px;
+      overflow-y: auto;
+      margin: 20px 0;
+      padding: 10px;
+    }
+
+    .message {
+      margin: 5px 0;
+      padding: 5px;
+      border-radius: 5px;
+    }
+
+    .user-message {
+      background: #e3f2fd;
+    }
+
+    .bot-message {
+      background: #f5f5f5;
+    }
+
+    #word-list {
+      margin: 10px 0;
+      font-style: italic;
+      color: #666;
+    }
+
+    .typing-indicator {
+      color: #666;
+      font-style: italic;
+      margin: 5px 0;
+      padding: 5px;
+    }
+
+    .name-settings {
+      margin: 10px 0;
+    }
+
+    .name-settings input {
+      width: 150px;
+      padding: 5px;
+      margin-right: 10px;
+    }
+
+    /* Add new styles */
+    .mode-toggle {
+      margin: 10px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+
+    .button-group {
+      margin: 10px 0;
+      display: flex;
+      gap: 10px;
+    }
+
+    .danger-button {
+      background-color: #ff4444;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .danger-button:hover {
+      background-color: #cc0000;
+    }
+
+    .input-group {
+      margin: 10px 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .input-group label {
+      margin-bottom: 5px;
+      color: #666;
+    }
+
+    .mode-selector {
+      margin: 10px 0;
+      display: flex;
+      gap: 20px;
+    }
+
+    .radio-group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Nonsense Chat</h2>
+
+  <div class="mode-selector">
+    <div class="radio-group">
+      <input type="radio" id="word-mode" name="chat-mode" checked>
+      <label for="word-mode">Word Mode</label>
+    </div>
+    <div class="radio-group">
+      <input type="radio" id="letter-mode" name="chat-mode">
+      <label for="letter-mode">Letter Mode</label>
+    </div>
+  </div>
+  
+  <div class="input-group">
+    <label for="user-name">Your Name</label>
+    <input type="text" id="user-name" placeholder="Your name..." value="You">
+  </div>
+
+  <div class="input-group">
+    <label for="bot-name">Bot's Name</label>
+    <input type="text" id="bot-name" placeholder="Bot name..." value="Bot">
+  </div>
+
+  <div class="name-settings">
+    <div class="input-group">
+      <label for="min-words">Minimum Words</label>
+      <input type="number" id="min-words" placeholder="Min words..." value="2" min="1" max="10">
+    </div>
+    <div class="input-group">
+      <label for="max-words">Maximum Words</label>
+      <input type="number" id="max-words" placeholder="Max words..." value="4" min="1" max="10">
+    </div>
+  </div>
+
+  <!-- Add letter mode settings -->
+  <div id="letter-settings" style="display: none" class="name-settings">
+    <div class="input-group">
+      <label for="min-letters">Minimum Letters per Word</label>
+      <input type="number" id="min-letters" value="2" min="1" max="10">
+    </div>
+    <div class="input-group">
+      <label for="max-letters">Maximum Letters per Word</label>
+      <input type="number" id="max-letters" value="5" min="1" max="10">
+    </div>
+  </div>
+
+  <!-- Add mode toggle -->
+  <div class="mode-toggle">
+    <label class="switch">
+      <input type="checkbox" id="learn-mode">
+      <span class="slider"></span>
+    </label>
+    <span>Auto-learn new words from messages</span>
+  </div>
+
+  <div>
+    <input type="text" id="word-input" placeholder="Add a word...">
+    <button onclick="addWord()">Add Word</button>
+  </div>
+
+  <div id="letter-input-container" style="display: none">
+    <input type="text" id="letter-input" placeholder="Add letters...">
+    <button onclick="addLetters()">Add Letters</button>
+  </div>
+
+  <div id="word-list">Available words: None</div>
+
+  <!-- Add clear buttons -->
+  <div class="button-group">
+    <button class="danger-button" onclick="clearWords()">Clear Words</button>
+    <button class="danger-button" onclick="clearChat()">Clear Chat</button>
+  </div>
+
+  <div id="chat-box"></div>
+
+  <div>
+    <input type="text" id="message-input" placeholder="Type a message...">
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <script>
+    const words = new Set();
+    const letters = new Set();
+    const chatBox = document.getElementById('chat-box');
+    const wordList = document.getElementById('word-list');
+    const userName = document.getElementById('user-name');
+    const botName = document.getElementById('bot-name');
+    const minWords = document.getElementById('min-words');
+    const maxWords = document.getElementById('max-words');
+
+    function addWord() {
+      const input = document.getElementById('word-input');
+      const word = input.value.trim().toLowerCase();
+      
+      if (word) {
+        words.add(word);
+        updateWordList();
+        input.value = '';
+      }
+    }
+
+    function addLetters() {
+      const input = document.getElementById('letter-input');
+      const newLetters = input.value.toLowerCase().replace(/[^a-z]/g, '').split('');
+      
+      newLetters.forEach(letter => letters.add(letter));
+      updateWordList();
+      input.value = '';
+    }
+
+    function updateWordList() {
+      if (document.getElementById('word-mode').checked) {
+        const wordArray = Array.from(words);
+        wordList.textContent = wordArray.length > 0 ? 
+          `Available words: ${wordArray.join(', ')}` : 
+          'Available words: None';
+      } else {
+        const letterArray = Array.from(letters);
+        wordList.textContent = letterArray.length > 0 ? 
+          `Available letters: ${letterArray.join(', ')}` : 
+          'Available letters: None';
+      }
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('message-input');
+      const message = input.value.trim();
+      
+      if (message) {
+        // Check for new words/letters if learn mode is enabled
+        if (document.getElementById('learn-mode').checked) {
+          if (document.getElementById('word-mode').checked) {
+            const messageWords = message.toLowerCase()
+              .split(/\s+/)
+              .map(word => word.trim())
+              .filter(word => {
+                // If word contains only symbols
+                if (/^[^a-zA-Z0-9]+$/.test(word)) return true;
+                // Remove symbols unless they're part of a word
+                return word.replace(/[^a-zA-Z0-9'-]/g, '').length > 0;
+              })
+              .map(word => {
+                // If it's only symbols, keep as is
+                if (/^[^a-zA-Z0-9]+$/.test(word)) return word;
+                // Otherwise remove surrounding symbols
+                return word.replace(/^[^a-zA-Z0-9'-]+|[^a-zA-Z0-9'-]+$/g, '');
+              });
+
+            messageWords.forEach(word => {
+              if (!words.has(word) && word.length > 0) {
+                words.add(word);
+              }
+            });
+          } else {
+            // Letter mode learning
+            const newLetters = message.toLowerCase().replace(/[^a-z]/g, '').split('');
+            newLetters.forEach(letter => letters.add(letter));
+          }
+          updateWordList();
+        }
+
+        // Add user message
+        const userDiv = document.createElement('div');
+        userDiv.className = 'message user-message';
+        userDiv.textContent = `${userName.value}: ${message}`;
+        chatBox.appendChild(userDiv);
+
+        // Add typing indicator
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'typing-indicator';
+        typingDiv.textContent = `${botName.value} is typing...`;
+        chatBox.appendChild(typingDiv);
+
+        // Auto scroll
+        chatBox.scrollTop = chatBox.scrollHeight;
+        input.value = '';
+
+        // Generate bot response with delay
+        setTimeout(() => {
+          // Remove typing indicator
+          chatBox.removeChild(typingDiv);
+
+          // Add bot response
+          const response = generateBotResponse();
+          const botDiv = document.createElement('div');
+          botDiv.className = 'message bot-message';
+          botDiv.textContent = `${botName.value}: ${response}`;
+          chatBox.appendChild(botDiv);
+
+          // Auto scroll
+          chatBox.scrollTop = chatBox.scrollHeight;
+        }, Math.random() * 1500 + 500); // Random delay between 0.5 and 2 seconds
+      }
+    }
+
+    function generateBotResponse() {
+      if (document.getElementById('word-mode').checked) {
+        if (words.size === 0) {
+          return "I don't know any words yet!";
+        }
+
+        const wordArray = Array.from(words);
+        let min = parseInt(minWords.value) || 2;
+        let max = parseInt(maxWords.value) || 4;
+        
+        // Ensure min and max are valid
+        min = Math.max(1, Math.min(10, min));
+        max = Math.max(min, Math.min(10, max));
+        minWords.value = min;
+        maxWords.value = max;
+        
+        const numberOfWords = Math.floor(Math.random() * (max - min + 1)) + min;
+        const selectedWords = [];
+
+        for (let i = 0; i < numberOfWords; i++) {
+          const randomIndex = Math.floor(Math.random() * wordArray.length);
+          selectedWords.push(wordArray[randomIndex]);
+        }
+
+        // Capitalize first word
+        let response = selectedWords.join(' ');
+        response = response.charAt(0).toUpperCase() + response.slice(1);
+
+        // Add random ending punctuation
+        const endings = ['.', '?', '!'];
+        if (Math.random() < 0.7) { // 70% chance to add ending punctuation
+          response += endings[Math.floor(Math.random() * endings.length)];
+        }
+
+        return response;
+      } else {
+        if (letters.size === 0) {
+          return "I don't know any letters yet!";
+        }
+
+        const minLetters = Math.max(1, Math.min(10, parseInt(document.getElementById('min-letters').value) || 2));
+        const maxLetters = Math.max(minLetters, Math.min(10, parseInt(document.getElementById('max-letters').value) || 5));
+        let min = parseInt(minWords.value) || 2;
+        let max = parseInt(maxWords.value) || 4;
+        
+        const numberOfWords = Math.floor(Math.random() * (max - min + 1)) + min;
+        const selectedWords = [];
+
+        for (let i = 0; i < numberOfWords; i++) {
+          const word = generateRandomWord(minLetters, maxLetters);
+          if (word) selectedWords.push(word);
+        }
+
+        let response = selectedWords.join(' ');
+        response = response.charAt(0).toUpperCase() + response.slice(1);
+
+        const endings = ['.', '?', '!'];
+        if (Math.random() < 0.7) {
+          response += endings[Math.floor(Math.random() * endings.length)];
+        }
+
+        return response;
+      }
+    }
+
+    function generateRandomWord(minLetters, maxLetters) {
+      if (letters.size === 0) return null;
+      
+      const letterArray = Array.from(letters);
+      const length = Math.floor(Math.random() * (maxLetters - minLetters + 1)) + minLetters;
+      let word = '';
+      
+      for (let i = 0; i < length; i++) {
+        const randomLetter = letterArray[Math.floor(Math.random() * letterArray.length)];
+        word += randomLetter;
+      }
+      
+      return word;
+    }
+
+    // Allow sending message with Enter key
+    document.getElementById('message-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+
+    document.getElementById('word-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        addWord();
+      }
+    });
+
+    // Add letter input handling
+    document.getElementById('letter-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        addLetters();
+      }
+    });
+
+    // Save names when they change
+    userName.addEventListener('change', function() {
+      if (!this.value.trim()) this.value = 'You';
+    });
+
+    botName.addEventListener('change', function() {
+      if (!this.value.trim()) this.value = 'Bot';
+    });
+
+    // Add new clear functions
+    function clearWords() {
+      if (confirm('Are you sure you want to clear all words and letters?')) {
+        words.clear();
+        letters.clear();
+        updateWordList();
+      }
+    }
+
+    function clearChat() {
+      if (confirm('Are you sure you want to clear the chat?')) {
+        chatBox.innerHTML = '';
+      }
+    }
+
+    // Add validation for min/max words
+    minWords.addEventListener('change', function() {
+      let min = parseInt(this.value) || 2;
+      min = Math.max(1, Math.min(10, min));
+      this.value = min;
+      
+      let max = parseInt(maxWords.value) || 4;
+      max = Math.max(min, Math.min(10, max));
+      maxWords.value = max;
+    });
+
+    maxWords.addEventListener('change', function() {
+      let max = parseInt(this.value) || 4;
+      let min = parseInt(minWords.value) || 2;
+      
+      min = Math.max(1, Math.min(10, min));
+      max = Math.max(min, Math.min(10, max));
+      
+      minWords.value = min;
+      this.value = max;
+    });
+
+    // Add mode switching functionality
+    document.getElementById('word-mode').addEventListener('change', function() {
+      document.getElementById('word-input').parentElement.style.display = 'block';
+      document.getElementById('letter-input-container').style.display = 'none';
+      document.getElementById('letter-settings').style.display = 'none';
+    });
+
+    document.getElementById('letter-mode').addEventListener('change', function() {
+      document.getElementById('word-input').parentElement.style.display = 'none';
+      document.getElementById('letter-input-container').style.display = 'block';
+      document.getElementById('letter-settings').style.display = 'flex';
+    });
+  </script>
+</body>
+</html>

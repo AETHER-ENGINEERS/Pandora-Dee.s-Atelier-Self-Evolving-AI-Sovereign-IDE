@@ -1,0 +1,237 @@
+:root {
+  --bg: linear-gradient(180deg, #fdf6e3, #fef9ef);
+  --panel: #ffffff;
+  --ink: #3a2f28;
+  --accent: #f4a259;
+  --accent-dark: #e08a3d;
+  --shadow: 0 8px 24px rgba(58, 47, 40, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  max-width: 900px;
+  width: 100%;
+  padding: 24px;
+}
+
+.panel {
+  background: var(--panel);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.config {
+  padding: 22px;
+  align-self: start;
+}
+
+.config h2 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 10px;
+  color: var(--accent-dark);
+}
+
+.config h2:not(:first-child) {
+  margin-top: 22px;
+}
+
+.config label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.config label span {
+  width: 92px;
+  font-size: 14px;
+}
+
+.config input[type="text"] {
+  font-size: 22px;
+  text-align: center;
+  padding: 4px;
+  width: 64px;
+  border: 2px solid #ece1d3;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.config input[type="text"]:focus,
+.config input[type="number"]:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.config .duration {
+  display: flex;
+  gap: 8px;
+}
+
+.config input[type="number"] {
+  width: 76px;
+  font-size: 16px;
+  padding: 6px;
+  border: 2px solid #ece1d3;
+  border-radius: 10px;
+}
+
+.config select {
+  flex: 1;
+  font-size: 14px;
+  padding: 6px;
+  border: 2px solid #ece1d3;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  min-height: 520px;
+  overflow: hidden;
+}
+
+.eater-wrap {
+  height: 170px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.eater {
+  font-size: 120px;
+  line-height: 1;
+  transition: transform 0.15s ease;
+  user-select: none;
+}
+
+.eater.open {
+  animation: open 0.25s ease;
+}
+
+.eater.chew {
+  animation: chew 0.3s infinite;
+  transform-origin: center;
+}
+
+.eater.near {
+  transform: scale(1.12);
+}
+
+@keyframes open {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+@keyframes swallow {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+@keyframes chew {
+  0% { transform: rotate(-7deg) scale(1.05); }
+  50% { transform: rotate(7deg) scale(1.02); }
+  100% { transform: rotate(-7deg) scale(1.05); }
+}
+
+.dropped-zone {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+  align-content: flex-end;
+  padding: 16px;
+  min-height: 120px;
+}
+
+.food {
+  font-size: 64px;
+  line-height: 1;
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.1s ease;
+  touch-action: none;
+}
+
+.food.dragging {
+  cursor: grabbing;
+  opacity: 0.35;
+  transform: scale(0.9);
+}
+
+.food-form {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.food-form input {
+  flex: 1;
+  font-size: 18px;
+  text-align: center;
+  padding: 8px;
+  border: 2px solid #ece1d3;
+  border-radius: 12px;
+}
+
+.food-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.food-form button {
+  font-size: 18px;
+  width: 44px;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.food-form button:hover {
+  background: var(--accent-dark);
+}
+
+@media (max-width: 720px) {
+  body {
+    display: block;
+  }
+  .app {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+  .stage {
+    min-height: 420px;
+  }
+}

@@ -1,0 +1,156 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Dentist Game</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="game-container">
+    <div class="controls">
+      <select id="language-select">
+        <option value="en">English</option>
+        <option value="es">Español</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+        <option value="it">Italiano</option>
+        <option value="pt">Português</option>
+        <option value="ru">Русский</option>
+        <option value="zh">中文</option>
+        <option value="ja">日本語</option>
+        <option value="ko">한국어</option>
+      </select>
+      <button id="toggle-labels" style="margin-bottom: 10px; padding: 5px 10px;" data-label="Show Names">Show Names</button>
+    </div>
+    <div id="tools">
+      <button class="tool" data-tool="brush">
+        🪥
+        <span class="tool-label">Toothbrush</span>
+      </button>
+      <button class="tool" data-tool="razor">
+        🪒
+        <span class="tool-label">Floss</span>
+      </button>
+      <button class="tool" data-tool="hammer">
+        🔧
+        <span class="tool-label">Tooth Remover</span>
+      </button>
+      <button class="tool" data-tool="normal">
+        🦷
+        <span class="tool-label">Tooth Replacement</span>
+      </button>
+      <button class="tool" data-tool="bronze">
+        <span class="bronze-tooth">🦷</span>
+        <span class="tool-label">Bronze Tooth Replacement</span>
+      </button>
+      <button class="tool" data-tool="silver">
+        <span class="silver-tooth">🦷</span>
+        <span class="tool-label">Silver Tooth Replacement</span>
+      </button>
+      <button class="tool" data-tool="gold">
+        <span class="gold-tooth">🦷</span>
+        <span class="tool-label">Golden Tooth Replacement</span>
+      </button>
+      <button class="tool" data-tool="water">
+        💧
+        <span class="tool-label">Mouthwash</span>
+      </button>
+      <button class="tool" data-tool="blood">
+        🩸
+        <span class="tool-label">Black Dye</span>
+      </button>
+      <button class="tool" data-tool="syringe">
+        💉
+        <span class="tool-label">Filler</span>
+      </button>
+      <button class="tool cavity-remover-tool" data-tool="cavity-remover">
+        <svg width="24" height="24" viewBox="0 0 24 24">
+          <line x1="4" y1="20" x2="20" y2="4" stroke="#8b4513" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <span class="tool-label">Toothpick</span>
+      </button>
+      <button class="tool" data-tool="root-canal">
+        🔬
+        <span class="tool-label">Root Canal</span>
+      </button>
+      <button class="tool" data-tool="shine">
+        🌟
+        <span class="tool-label">Tooth Shiner</span>
+      </button>
+      <button class="tool" data-tool="random">
+        ❓
+        <span class="tool-label">Tooth Randomizer</span>
+      </button>
+      <button class="tool" data-tool="color-random">
+        ❔
+        <span class="tool-label">Color Randomizer</span>
+      </button>
+      <button class="tool" data-tool="single-brace">
+        🔗
+        <span class="tool-label">Brace</span>
+      </button>
+      <button class="tool" data-tool="all-braces">
+        ⛓️
+        <span class="tool-label">Braces</span>
+      </button>
+      <button class="tool" data-tool="cut-brace">
+        ✂️
+        <span class="tool-label">Brace Remover</span>
+      </button>
+      <button class="tool" data-tool="heart">
+        ❤️
+        <span class="tool-label">Red Dye</span>
+      </button>
+      <button class="tool" data-tool="orange-heart">
+        🧡
+        <span class="tool-label">Orange Dye</span>
+      </button>
+      <button class="tool" data-tool="yellow-heart">
+        💛
+        <span class="tool-label">Yellow Dye</span>
+      </button>
+      <button class="tool" data-tool="green-heart">
+        💚
+        <span class="tool-label">Green Dye</span>
+      </button>
+      <button class="tool" data-tool="blue-heart">
+        💙
+        <span class="tool-label">Blue Dye</span>
+      </button>
+      <button class="tool" data-tool="purple-heart">
+        💜
+        <span class="tool-label">Purple Dye</span>
+      </button>
+      <button class="tool" data-tool="brown-heart">
+        🤎
+        <span class="tool-label">Brown Dye</span>
+      </button>
+      <button class="tool" data-tool="pink-heart">
+        💖
+        <span class="tool-label">Pink Dye</span>
+      </button>
+      <button class="tool" data-tool="flashlight">
+        🔦
+        <span class="tool-label">Bacteria Checker</span>
+      </button>
+      <button class="tool" data-tool="bacteria-remover">
+        🦠🚫
+        <span class="tool-label">Bacteria Remover</span>
+      </button>
+      <button class="tool" data-tool="breath">
+        🌬️
+        <span class="tool-label">Fresh Breath</span>
+      </button>
+      <button class="tool" data-tool="restart">
+        🔄
+        <span class="tool-label">Reset</span>
+      </button>
+    </div>
+    <div id="mouth">
+      <div id="teeth-container"></div>
+    </div>
+  </div>
+  <script type="module" src="translations.js"></script>
+  <script type="module" src="game.js"></script>
+</body>
+</html>

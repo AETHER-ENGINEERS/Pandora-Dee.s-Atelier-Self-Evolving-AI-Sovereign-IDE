@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f6ec">
+  <title>Petal Days</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#create" aria-label="Petal Days home"><span class="brand-mark" aria-hidden="true"></span><span>petal days</span></a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <button class="nav-link active" data-view="create">Create</button>
+        <button class="nav-link" data-view="library">Flower library <span class="library-count" id="libraryCount">0</span></button>
+      </nav>
+      <div class="top-note"><span class="sun-dot"></span> a little garden of your own</div>
+    </header>
+
+    <main id="appMain">
+      <section id="createView" class="view create-view">
+        <div class="view-heading">
+          <div><p class="eyebrow">YOUR GARDEN, YOUR RULES</p><h1>Make a flower</h1></div>
+          <button class="button button-outline randomize-button" id="randomizeButton" type="button"><span aria-hidden="true">⤨</span> Randomize everything</button>
+        </div>
+        <div class="creator-layout">
+          <div class="builder-card">
+            <section class="form-section">
+              <div class="section-heading"><span class="step-number">01</span><div><h2>Petals</h2><p>Give your flower its signature look.</p></div></div>
+              <div class="field-row three-fields">
+                <label class="field">Shape<select id="petalShape"><option value="oval">Oval</option><option value="triangle">Long triangle</option><option value="rectangle">Rectangle</option></select></label>
+                <label class="field amount-field">Amount <span class="input-with-suffix"><input id="petalAmount" type="number" min="1" max="50" value="8"><span>petals</span></span></label>
+                <label class="field">Petal length<input id="petalLength" type="number" min="1" max="10" value="5"></label>
+              </div>
+              <div class="field"><div class="field-label-line"><span>Petal colors</span><span class="field-hint">Choose colors in order</span></div><div id="petalPicker" class="palette-picker"></div></div>
+              <div class="field color-cycle-field"><div class="field-label-line"><span>Color sequence</span></div><select id="petalColorCycle"><option value="repeat">Repeat from the first color</option><option value="reverse">Reverse at the last color</option></select></div>
+              <div class="field color-cycle-field"><div class="field-label-line"><span>Petal outline color</span></div><div id="petalOutlinePicker" class="palette-picker compact-picker"></div></div>
+              <label class="center-toggle outline-toggle"><input id="removePetalOutlines" type="checkbox"><span>No petal outlines</span></label>
+              <label class="center-toggle outline-toggle"><input id="addPetalStripes" type="checkbox"><span>Add petal stripes</span></label>
+              <div class="field color-cycle-field"><div class="field-label-line"><span>Stripe color</span></div><div id="petalStripePicker" class="palette-picker compact-picker"></div></div>
+            </section>
+
+            <section class="form-section">
+              <div class="section-heading"><span class="step-number">02</span><div><h2>Growing rhythm</h2><p>Choose when the magic happens.</p></div></div>
+              <div class="field-row growth-days">
+                <label class="field">Blooms on day<input id="bloomDay" type="number" min="1" max="100" value="7"></label>
+                <label class="field">Grows until day<input id="stopDay" type="number" min="10" max="300" value="24"></label>
+              </div>
+              <div class="field-row growth-rate-fields">
+                <label class="field">Stem growth each day<span class="input-with-suffix"><input id="dailyGrowth" type="number" min="1" max="10" step="0.1" value="3.5"><span>units</span></span></label>
+                <label class="field">Fertilizer bonus<span class="input-with-suffix"><input id="fertilizedGrowth" type="number" min="1" max="10" step="0.1" value="5"><span>extra</span></span></label>
+              </div>
+            </section>
+
+            <section class="form-section last-form-section">
+              <div class="section-heading"><span class="step-number">03</span><div><h2>Stem & center</h2><p>Pick the finishing touches.</p></div></div>
+              <div class="field"><div class="field-label-line"><span>Stem color</span></div><div id="stemPicker" class="palette-picker compact-picker"></div></div>
+              <div class="field">
+                <div class="field-label-line">
+                  <span>Flower center</span>
+                  <label class="center-toggle"><input id="removeCenter" type="checkbox"><span>No center</span></label>
+                </div>
+                <div id="centerPicker" class="palette-picker compact-picker"></div>
+              </div>
+              <div class="field color-cycle-field"><div class="field-label-line"><span>Center outline color</span></div><div id="centerOutlinePicker" class="palette-picker compact-picker"></div></div>
+              <label class="center-toggle outline-toggle"><input id="removeCenterOutline" type="checkbox"><span>No center outline</span></label>
+              <label class="center-toggle outline-toggle"><input id="removeCenterShine" type="checkbox"><span>No center shine</span></label>
+              <div class="field color-cycle-field"><div class="field-label-line"><span>Center shine color</span></div><div id="centerShinePicker" class="palette-picker compact-picker"></div></div>
+            </section>
+            <div class="builder-footer"><span class="autosave-note"><span class="tiny-leaf">✿</span> Your recipe stays right here</span><button class="button button-primary" id="playButton">Grow this flower <span>↗</span></button></div>
+          </div>
+
+          <aside class="preview-column">
+            <div class="preview-card">
+              <div class="preview-topline"><span>YOUR FLOWER</span><span class="live-pill"><i></i> LIVE PREVIEW</span></div>
+              <div class="flower-art preview-art" id="builderFlower"></div>
+              <div class="preview-caption"><span id="previewShapeLabel">Oval petals</span><span class="caption-dot">·</span><span id="previewPetalCount">8 petals</span></div>
+            </div>
+            <div class="mini-note"><span>☀</span><p>Every flower begins as a tiny sprout. Help it grow one day at a time.</p></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="playView" class="view play-view hidden">
+        <div class="play-heading"><button class="back-link" id="backToCreate">← Edit flower</button><div class="play-title"><p class="eyebrow">YOUR LITTLE PATCH</p><h1 id="playFlowerName">A new flower</h1></div><button class="button button-outline save-button" id="saveFlower">♡ <span>Save to library</span></button></div>
+        <div class="garden-layout">
+          <section class="garden-card">
+            <div class="garden-sky"><span class="sky-cloud cloud-one"></span><span class="sky-cloud cloud-two"></span><span class="sky-sun">☼</span><div class="garden-day"><span>DAY</span><strong id="dayNumber">0</strong></div>
+              <div class="flower-art garden-art" id="gardenFlower"></div><div class="ground-hill"></div><div class="particle-layer" id="particleLayer"></div>
+              <div class="bloom-status" id="bloomStatus">A tiny sprout is waking up</div>
+            </div>
+            <div class="garden-controls"><button class="button button-primary grow-button" id="growButton"><span class="button-icon">↑</span><span>Grow a day</span><span class="grow-sub">+1 day</span></button><div class="growth-readout"><span class="readout-leaf">⌁</span><span id="growthReadout">Your stem is just beginning.</span></div></div>
+            <div class="garden-actions" id="actionButtons"><button class="action-button water-action" data-action="water"><span class="action-icon">◌</span><span>Water</span></button><button class="action-button fertilizer-action" data-action="fertilize"><span class="action-icon">✧</span><span>Fertilize</span></button><button class="action-button custom-add" id="openInteraction"><span class="action-icon">＋</span><span>Make an interaction</span></button></div>
+            <div class="fertilizer-status hidden" id="fertilizerStatus"></div>
+          </section>
+          <aside class="play-side"><div class="care-card"><div class="care-title"><span class="care-sparkle">✷</span><div><h2>Growing notes</h2><p>Little steps add up to blooms.</p></div></div><div class="milestone-row"><span>Blooms</span><strong id="bloomMilestone">Day 7</strong></div><div class="milestone-row"><span>Stem stops growing</span><strong id="stopMilestone">Day 24</strong></div><div class="milestone-row"><span>Petals</span><strong id="petalMilestone">8 oval</strong></div></div>
+            <div class="interaction-tip"><span>✿</span><p>Try a little water or plant food and see what happens.</p></div></aside>
+        </div>
+      </section>
+
+      <section id="libraryView" class="view library-view hidden">
+        <div class="library-heading"><div><p class="eyebrow">A GARDEN THAT REMEMBERS</p><h1>Your flower library</h1><p class="library-subtitle">Every saved bloom is waiting right here.</p></div><button class="button button-outline" id="libraryCreate">＋ Make a flower</button></div>
+        <div id="libraryContent"></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="interactionDialog" class="modal-dialog">
+    <form method="dialog" class="modal-close-form"><button class="icon-close" aria-label="Close">×</button></form>
+    <div class="modal-content"><p class="eyebrow">A NEW LITTLE RITUAL</p><h2>Make an interaction</h2><p class="modal-intro">Give your flower a button all its own.</p>
+      <label class="field">Interaction name<input id="interactionName" type="text" maxlength="22" placeholder="e.g. Moon dust"></label>
+      <div class="field"><span class="field-label-line">Particle color</span><div id="particlePicker" class="palette-picker compact-picker"></div></div>
+      <div class="field-row"><label class="field">Effect<select id="interactionEffect"><option value="none">None</option><option value="fertilize">Fertilize</option></select></label><label class="field">Animation<select id="interactionAnimation"><option value="water">Water · fall & splash</option><option value="fertilizer">Fertilizer · fall & vanish</option><option value="up">Up · float away</option><option value="fade-up">Fade up · drift away</option><option value="none">None · little sparkle</option></select></label></div>
+      <button class="button button-primary modal-submit" id="createInteraction" type="button">Add interaction <span>↗</span></button>
+      <section class="custom-interaction-manager">
+        <div class="field-label-line"><strong>Saved interactions</strong><label class="delete-confirm-toggle"><input class="confirm-deletions-toggle" type="checkbox"> Confirm before deleting</label></div>
+        <div id="customInteractionList"></div>
+      </section>
+    </div>
+  </dialog>
+  <dialog id="breedDialog" class="modal-dialog breed-dialog">
+    <form method="dialog" class="modal-close-form"><button class="icon-close" aria-label="Close">×</button></form>
+    <div class="modal-content"><p class="eyebrow">A LITTLE FLOWER MAGIC</p><h2>Breed two blooms</h2><p class="modal-intro">Choose two flowers that have bloomed to grow something new.</p><div id="breedChoices" class="breed-choices"></div><button class="button button-primary modal-submit" id="breedButton" type="button" disabled>Grow their seed <span>↗</span></button></div>
+  </dialog>
+  <dialog id="flowerNameDialog" class="modal-dialog">
+    <form method="dialog" class="modal-close-form"><button class="icon-close" aria-label="Close">×</button></form>
+    <div class="modal-content">
+      <p class="eyebrow">A NAME TO REMEMBER</p>
+      <h2 id="flowerNameHeading">Name your flower</h2>
+      <p class="modal-intro" id="flowerNameIntro">Give this bloom a name for your library, or leave it blank.</p>
+      <label class="field">Flower name<input id="flowerNameInput" type="text" maxlength="32" placeholder="e.g. Sunny"></label>
+      <button class="button button-primary modal-submit" id="saveFlowerName" type="button">Save flower <span>↗</span></button>
+    </div>
+  </dialog>
+  <dialog id="deleteConfirmDialog" class="modal-dialog">
+    <div class="modal-content">
+      <p class="eyebrow">JUST CHECKING</p>
+      <h2>Delete this?</h2>
+      <p class="modal-intro" id="deleteConfirmMessage"></p>
+      <div class="delete-confirm-actions">
+        <button class="button button-outline" id="cancelDelete" type="button">Keep it</button>
+        <button class="button button-danger" id="confirmDelete" type="button">Delete</button>
+      </div>
+    </div>
+  </dialog>
+</body>
+</html>

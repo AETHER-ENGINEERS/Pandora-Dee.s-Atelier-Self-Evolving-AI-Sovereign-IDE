@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f2eb">
+  <title>Text Beasts</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <a class="wordmark" href="#" aria-label="Text Beasts home"><span class="brand-dot"></span>text beasts</a>
+      <div class="top-note">a little world of your own</div>
+      <button class="create-button" id="create-button"><span>＋</span> Create</button>
+    </header>
+
+    <section class="world-wrap">
+      <div class="world" id="world" aria-label="Creature sandbox">
+        <div class="world-grid"></div>
+        <div class="empty-hint" id="empty-hint"><span class="hint-face">◡</span><br>Make something weird.<br>Then let it loose.</div>
+        <div class="creature-layer" id="creature-layer"></div>
+        <div class="effects-layer" id="effects-layer" aria-hidden="true"></div>
+        <div class="world-caption"><span class="live-dot"></span> YOUR LITTLE WORLD <span id="creature-count">0 CREATURES</span></div>
+      </div>
+    </section>
+
+    <section class="shelf" aria-label="Your creatures and food">
+      <div class="shelf-label">CREATURES + FOOD <span id="shelf-count">0</span></div>
+      <div class="creature-shelf" id="creature-shelf"><div class="shelf-empty">Your creations will live here.</div></div>
+    </section>
+
+    <nav class="toolbar" aria-label="Sandbox tools">
+      <div class="tool-group primary-tools">
+        <button class="tool-button spawn-tool" id="spawn-button" title="Choose a creature to spawn"><span class="tool-icon">↗</span><span>Spawn</span></button>
+        <button class="tool-button" id="create-tool"><span class="tool-icon">✳</span><span>Create</span></button>
+        <button class="tool-button food-create-tool" id="create-food-tool"><span class="tool-icon">✦</span><span>Make food</span></button>
+      </div>
+      <span class="tool-divider"></span>
+      <div class="expression-controls">
+        <label class="select-control"><span>Eyes</span><select id="eye-expression" aria-label="Eye expression">
+          <option value="open">Open</option><option value="closed">Closed</option><option value="down">Downward closed</option><option value="up">Upward closed</option><option value="surprised">Surprised</option><option value="squint">&gt; &lt;</option>
+        </select></label>
+        <label class="select-control"><span>Mouth</span><select id="mouth-expression" aria-label="Mouth expression">
+          <option value="neutral">Neutral</option><option value="smile">Smile</option><option value="frown">Frown</option><option value="dot">Dot</option><option value="open">Open</option><option value="open-smile">Open smile</option><option value="open-frown">Open frown</option><option value="teeth">Teeth</option><option value="teeth-smile">Teeth smile</option><option value="teeth-frown">Teeth frown</option><option value="o">O</option>
+        </select></label>
+        <button class="tool-button give-tool" id="give-button"><span class="tool-icon">♡</span><span>Give expression</span></button>
+      </div>
+      <span class="tool-divider"></span>
+      <button class="tool-button delete-tool" id="delete-button"><span class="tool-icon">⌫</span><span>Delete</span></button>
+    </nav>
+  </main>
+
+  <div class="modal-backdrop hidden" id="editor-modal" role="dialog" aria-modal="true" aria-labelledby="editor-title">
+    <section class="editor-card">
+      <header class="editor-header"><div><p class="eyebrow">MAKE A NEW FRIEND</p><h1 id="editor-title">Creature workshop</h1></div><button class="icon-button" id="close-editor" aria-label="Close editor">×</button></header>
+      <div class="editor-main">
+        <div class="editor-stage" id="editor-stage"><div class="stage-grid"></div><div class="editor-creature" id="editor-creature"></div><div class="stage-tip" id="stage-tip">Drag the face bits around</div></div>
+        <div class="editor-controls">
+          <label class="field-label"><span id="text-field-label">Their words</span><input id="body-text" type="text" maxlength="18" value="hello!" autocomplete="off"></label>
+          <label class="field-label color-label">Their color<input id="body-color" type="color" value="#f3a85c"></label>
+          <div class="part-controls feature-controls" id="eye-controls"><div class="part-title">EYES <span id="eye-count">2</span></div><div class="part-actions"><button id="add-eye">＋ Add eye</button><button id="remove-eye" class="quiet-button">− Remove</button></div></div>
+          <div class="part-controls feature-controls" id="mouth-controls"><div class="part-title">MOUTHS <span id="mouth-count">1</span></div><div class="part-actions"><button id="add-mouth">＋ Add mouth</button><button id="remove-mouth" class="quiet-button">− Remove</button></div></div>
+          <div class="eating-controls" id="eating-controls"><div class="part-title">WHILE EATING</div>
+            <label class="field-label compact-field">Eyes<select id="eat-eye-expression"><option value="do-not-change">Do not change</option><option value="open">Open</option><option value="closed">Closed</option><option value="down">Downward closed</option><option value="up">Upward closed</option><option value="surprised">Surprised</option><option value="squint">&gt; &lt;</option></select></label>
+            <label class="field-label compact-field">Mouth<select id="eat-mouth-expression"><option value="do-not-change">Do not change</option><option value="neutral">Neutral</option><option value="smile">Smile</option><option value="frown">Frown</option><option value="dot">Dot</option><option value="open">Open</option><option value="open-smile">Open smile</option><option value="open-frown">Open frown</option><option value="teeth">Teeth</option><option value="teeth-smile">Teeth smile</option><option value="teeth-frown">Teeth frown</option><option value="o">O</option></select></label>
+            <label class="field-label duration-field">Duration (seconds)<input id="eat-duration" type="number" min="0.1" max="60" step="0.1" value="1.2"></label>
+          </div>
+          <p class="editor-note" id="editor-note">The words are the whole body. Place each feature wherever it feels right.</p>
+        </div>
+      </div>
+      <footer class="editor-footer"><button class="cancel-button" id="cancel-editor">Cancel</button><button class="done-button" id="done-button">Done <span>→</span></button></footer>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" aria-live="polite"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drink Maker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="drink-maker">
+      <div class="glass">
+        <div class="liquid"></div>
+        <div class="bubbles"></div>
+      </div>
+      
+      <div class="controls">
+        <div class="actions">
+          <button id="mix">Mix Drink</button>
+          <button id="drink" disabled>Drink</button>
+          <button id="reset">Reset</button>
+        </div>
+        
+        <div class="ingredients">
+          <div class="header-row">
+            <h4>Fruits</h4>
+            <button id="toggle-names" class="toggle-button">Show Names</button>
+          </div>
+          <div class="ingredient-group">
+            <div class="ingredient-wrapper"><button data-color="#ff9999" data-name="Strawberry">🍓</button><span class="ingredient-name">Strawberry</span></div>
+            <div class="ingredient-wrapper"><button data-color="#ffd700" data-name="Lemon">🍋</button><span class="ingredient-name">Lemon</span></div>
+            <div class="ingredient-wrapper"><button data-color="#ff8c00" data-name="Orange">🍊</button><span class="ingredient-name">Orange</span></div>
+            <div class="ingredient-wrapper"><button data-color="#9370db" data-name="Grape">🍇</button><span class="ingredient-name">Grape</span></div>
+            <div class="ingredient-wrapper"><button data-color="#00FF87" data-name="Mint">🌿</button><span class="ingredient-name">Mint</span></div>
+            <div class="ingredient-wrapper"><button data-color="#ff0000" data-name="Apple">🍎</button><span class="ingredient-name">Apple</span></div>
+            <div class="ingredient-wrapper"><button data-color="#663399" data-name="Blueberry">🫐</button><span class="ingredient-name">Blueberry</span></div>
+            <div class="ingredient-wrapper"><button data-color="#ffa500" data-name="Mango">🥭</button><span class="ingredient-name">Mango</span></div>
+            <div class="ingredient-wrapper"><button data-color="#ff69b4" data-name="Peach">🍑</button><span class="ingredient-name">Peach</span></div>
+            <div class="ingredient-wrapper"><button data-color="#90EE90" data-name="Kiwi">🥝</button><span class="ingredient-name">Kiwi</span></div>
+            <div class="ingredient-wrapper"><button data-color="#ffeb3b" data-name="Pineapple">🍍</button><span class="ingredient-name">Pineapple</span></div>
+            <div class="ingredient-wrapper"><button data-color="#d4b157" data-name="Pear">🍐</button><span class="ingredient-name">Pear</span></div>
+            <div class="ingredient-wrapper"><button data-color="#c41e3a" data-name="Cherry">🍒</button><span class="ingredient-name">Cherry</span></div>
+            <div class="ingredient-wrapper"><button data-color="#fff5b3" data-name="Banana">🍌</button><span class="ingredient-name">Banana</span></div>
+            <div class="ingredient-wrapper"><button data-color="#228B22" data-name="Lime">🍋‍🟩</button><span class="ingredient-name">Lime</span></div>
+            <div class="ingredient-wrapper"><button data-color="#ffe4c4" data-name="Coconut">🥥</button><span class="ingredient-name">Coconut</span></div>
+            <div class="ingredient-wrapper"><button data-color="#FFAA00" data-name="Cantaloupe">🍈</button><span class="ingredient-name">Cantaloupe</span></div>
+          </div>
+          
+          <h4>Vegetables</h4>
+          <div class="ingredient-group">
+            <div class="ingredient-wrapper"><button data-color="#ff6b6b" data-name="Tomato">🍅</button><span class="ingredient-name">Tomato</span></div>
+            <div class="ingredient-wrapper"><button data-color="#ffa500" data-name="Carrot">🥕</button><span class="ingredient-name">Carrot</span></div>
+            <div class="ingredient-wrapper"><button data-color="#90EE90" data-name="Cucumber">🥒</button><span class="ingredient-name">Cucumber</span></div>
+            <div class="ingredient-wrapper"><button data-color="#800080" data-name="Eggplant">🍆</button><span class="ingredient-name">Eggplant</span></div>
+            <div class="ingredient-wrapper"><button data-color="#ff4d4d" data-name="Bell Pepper">🫑</button><span class="ingredient-name">Bell Pepper</span></div>
+            <div class="ingredient-wrapper"><button data-color="#228B22" data-name="Celery">🥬</button><span class="ingredient-name">Celery</span></div>
+            <div class="ingredient-wrapper"><button data-color="#ff7f50" data-name="Pumpkin">🎃</button><span class="ingredient-name">Pumpkin</span></div>
+            <div class="ingredient-wrapper"><button data-color="#98fb98" data-name="Spinach">🥬</button><span class="ingredient-name">Spinach</span></div>
+            <div class="ingredient-wrapper"><button data-color="#ff6347" data-name="Beet">🫘</button><span class="ingredient-name">Beet</span></div>
+            <div class="ingredient-wrapper"><button data-color="#2E8B57" data-name="Broccoli">🥦</button><span class="ingredient-name">Broccoli</span></div>
+          </div>
+
+          <h4>Nuts</h4>
+          <div class="ingredient-group">
+            <div class="ingredient-wrapper"><button data-color="#deb887" data-name="Peanut">🥜</button><span class="ingredient-name">Peanut</span></div>
+            <div class="ingredient-wrapper"><button data-color="#d2691e" data-name="Almond">🌰</button><span class="ingredient-name">Almond</span></div>
+            <div class="ingredient-wrapper"><button data-color="#8b4513" data-name="Walnut">🌰</button><span class="ingredient-name">Walnut</span></div>
+            <div class="ingredient-wrapper"><button data-color="#cd853f" data-name="Hazelnut">🌰</button><span class="ingredient-name">Hazelnut</span></div>
+          </div>
+
+          <h4>Add-ons</h4>
+          <div class="ingredient-group">
+            <div class="ingredient-wrapper"><button data-color="#ffffff" data-name="Milk" data-type="milk">🥛</button><span class="ingredient-name">Milk</span></div>
+            <div class="ingredient-wrapper"><button data-color="#6A441C" data-name="Chocolate" data-type="chocolate">🍫</button><span class="ingredient-name">Chocolate</span></div>
+            <div class="ingredient-wrapper"><button data-color="#FFEFD4" data-name="Vanilla">🍶</button><span class="ingredient-name">Vanilla</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="recipe">
+        <h3>Current Mix:</h3>
+        <ul id="recipe-list"></ul>
+      </div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fish Aquarium Simulator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="aquarium-container">
+        <h1>Fish Aquarium Simulator</h1>
+        
+        <div class="controls">
+            <button id="add-fish-btn" class="btn primary">Add Fish</button>
+            <button id="breed-fish-btn" class="btn secondary">Breed Fish</button>
+            <button id="sell-fish-btn" class="btn secondary">Sell Fish</button>
+            <button id="manage-patterns-btn" class="btn secondary">Manage Naming Patterns</button>
+            <p class="instruction">Click anywhere in the aquarium to drop food!</p>
+        </div>
+
+        <div class="aquarium" id="aquarium">
+            <div class="water-bubbles"></div>
+        </div>
+
+        <div class="inventory-controls">
+            <h3>Inventory Views:</h3>
+            <div class="view-buttons">
+                <button id="view-all-fish" class="btn primary active-view">All Fish</button>
+                <button id="view-adults" class="btn secondary">Adults Only</button>
+                <button id="view-babies" class="btn secondary">Babies Only</button>
+                <div class="specific-fish-select-group">
+                    <button id="view-specific-fish-btn" class="btn secondary">Specific Fish</button>
+                    <select id="specific-fish-select" disabled>
+                        <option value="">Select a fish...</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="fish-list">
+            <h3>Your Fish (<span id="fish-count">0</span>)</h3>
+            <div id="fish-inventory"></div>
+        </div>
+    </div>
+
+    <!-- Add Fish Modal -->
+    <div id="add-fish-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add New Fish</h2>
+            
+            <div class="fish-preview">
+                <svg id="preview-fish" width="80" height="60" viewBox="0 0 80 60">
+                    <ellipse cx="35" cy="30" rx="20" ry="12" fill="#ff6b6b" class="body"/>
+                    <polygon points="55,30 70,20 70,25 65,30 70,35 70,40" fill="#4ecdc4" class="tail"/>
+                    <polygon points="25,20 35,15 40,25" fill="#45b7d1" class="fin-top"/>
+                    <polygon points="25,40 35,45 40,35" fill="#45b7d1" class="fin-bottom"/>
+                    <circle cx="30" cy="25" r="3" fill="#2c3e50" class="eye"/>
+                </svg>
+            </div>
+            
+            <div class="form-group">
+                <label>Name:</label>
+                <input type="text" id="fish-name" placeholder="Enter fish name">
+            </div>
+            
+            <div class="form-group">
+                <label>Size:</label>
+                <select id="fish-size">
+                    <option value="0.5">Super Small</option>
+                    <option value="0.7">Small</option>
+                    <option value="1" selected>Medium</option>
+                    <option value="1.3">Big</option>
+                    <option value="1.6">Super Big</option>
+                    <option value="custom">Custom</option>
+                </select>
+                <input type="number" id="custom-size" min="0.3" max="2.0" step="0.1" value="1.0" style="display: none; margin-top: 10px;" placeholder="Enter size (0.3-2.0)">
+            </div>
+            
+            <div class="color-controls">
+                <div class="color-group">
+                    <label>Body Color:</label>
+                    <input type="color" id="body-color" value="#ff6b6b">
+                </div>
+                <div class="color-group">
+                    <label>Tail Color:</label>
+                    <input type="color" id="tail-color" value="#4ecdc4">
+                </div>
+                <div class="color-group">
+                    <label>Fin Color:</label>
+                    <input type="color" id="fin-color" value="#45b7d1">
+                </div>
+                <div class="color-group">
+                    <label>Eye Color:</label>
+                    <input type="color" id="eye-color" value="#2c3e50">
+                </div>
+            </div>
+            
+            <button id="create-fish" class="btn primary">Create Fish</button>
+            <button id="randomize-fish" class="btn secondary">Randomize</button>
+        </div>
+    </div>
+
+    <!-- Breed Fish Modal -->
+    <div id="breed-fish-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Breed Fish</h2>
+            <p>Select two adult fish to breed:</p>
+            
+            <div class="breeding-selection">
+                <div class="parent-selection">
+                    <h4>Parent 1</h4>
+                    <select id="parent1-select">
+                        <option value="">Select fish...</option>
+                    </select>
+                    <div id="parent1-preview"></div>
+                </div>
+                
+                <div class="parent-selection">
+                    <h4>Parent 2</h4>
+                    <select id="parent2-select">
+                        <option value="">Select fish...</option>
+                    </select>
+                    <div id="parent2-preview"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Baby Fish Name (optional):</label>
+                <input type="text" id="baby-fish-name" placeholder="Enter baby fish name">
+            </div>
+            
+            <button id="breed-button" class="btn primary" disabled>Breed Fish</button>
+        </div>
+    </div>
+
+    <!-- Sell Fish Modal -->
+    <div id="sell-fish-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Sell Fish</h2>
+            <p>Select a fish to sell:</p>
+            
+            <div class="form-group">
+                <label>Fish to Sell:</label>
+                <select id="fish-to-sell-select">
+                    <option value="">Select fish...</option>
+                </select>
+            </div>
+            
+            <button id="sell-button" class="btn primary" disabled>Sell Fish</button>
+        </div>
+    </div>
+
+    <!-- Manage Patterns Modal -->
+    <div id="manage-patterns-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Manage Randomized Naming Patterns</h2>
+            <p>Patterns are sequences of 'v' (vowel) and 'n' (non-vowel).</p>
+            
+            <div class="form-group">
+                <label for="new-pattern-input">Add New Pattern:</label>
+                <input type="text" id="new-pattern-input" placeholder="e.g., vnvn, nvv, nnnv" pattern="[vnVN]+" title="Only 'v' and 'n' characters allowed">
+            </div>
+            <button id="add-pattern-btn" class="btn primary">Add Pattern</button>
+            
+            <h3 style="margin-top: 20px;">Current Patterns:</h3>
+            <div id="current-patterns-list">
+                <!-- Patterns will be dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

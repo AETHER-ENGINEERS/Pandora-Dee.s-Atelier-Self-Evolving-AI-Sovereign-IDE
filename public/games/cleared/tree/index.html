@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Emoji Tree Grower</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script type="importmap">
+  {
+    "imports": {}
+  }
+  </script>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>Emoji Tree Grower</h1>
+    </header>
+
+    <section class="creator" id="creator">
+      <label>Leaf & Fruit emojis (no spaces needed)</label>
+      <label>Leaves (e.g. 🌿☘️🍀)</label>
+      <input id="leafInput" placeholder="e.g. 🌿☘️🍀" inputmode="text" />
+      <label>Fruits (optional, e.g. 🍎🍐)</label>
+      <input id="fruitInput" placeholder="e.g. 🍎🍐" inputmode="text" />
+      <label>Wood color</label>
+      <input id="woodColor" type="color" value="#6b4b2a" />
+      <div class="creator-actions">
+        <button id="startBtn">Start with Seed</button>
+      </div>
+    </section>
+
+    <section class="game hidden" id="game">
+      <div class="controls">
+        <div class="left">
+          <button id="growBtn">Grow</button>
+          <button id="waterBtn">Water</button>
+          <button id="fertBtn">Fertilize</button>
+          <button id="windBtn">Wind</button>
+        </div>
+        <div class="right">
+          <div class="stats">
+            <span id="fruitsCollected">Fruits: 0</span>
+            <span id="growthCount">Growths: 0</span>
+          </div>
+          <button id="resetBtn">Reset</button>
+        </div>
+      </div>
+
+      <div class="note" id="gameNote">Tap fruits to pick. Fertilize raises fruit chance for 5 grows.</div>
+
+      <div class="stage" id="stage">
+        <canvas id="treeCanvas"></canvas>
+        <div id="emojiLayer"></div>
+        <div id="particleLayer"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="main.js" type="module"></script>
+</body>
+</html>

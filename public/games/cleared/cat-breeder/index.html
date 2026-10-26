@@ -1,0 +1,162 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kitten Genetics Maker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Kitten Genetics Maker</h1>
+    
+    <div class="natural-colors-toggle">
+      <span>Natural Colors Only</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="allowUnnaturalColors">
+        <span class="toggle-slider"></span>
+      </label>
+      <span>Allow Unnatural Colors</span>
+    </div>
+    
+    <div class="parents">
+      <div class="parent-cat">
+        <h2>Parent Cat 1</h2>
+        <div class="generation-label" id="parent1Generation">Gen 1</div>
+        <div class="cat-preview" id="cat1"></div>
+        <div class="controls">
+          <label>Base Color:
+            <input type="color" id="color1" value="#FFA500" onchange="updateCat(1)">
+          </label>
+          <label>Pattern:
+            <select id="pattern1" onchange="updateCat(1)">
+              <option value="solid">Solid</option>
+              <option value="tabby">Tabby</option>
+              <option value="spots">Spots</option>
+              <option value="patches">Patches</option>
+              <option value="calico">Calico</option>
+              <option value="socks">Socks</option>
+              <option value="tortoiseshell">Tortoiseshell</option>
+              <option value="siamese">Siamese</option>
+              <option value="tuxedo">Tuxedo</option>
+            </select>
+          </label>
+          <label>Pattern Color 1:
+            <input type="color" id="patternColor1" value="#8B4513" onchange="updateCat(1)">
+          </label>
+          <label>Pattern Color 2:
+            <input type="color" id="patternColor1_2" value="#FFA500" onchange="updateCat(1)">
+          </label>
+          <label>Eye Color:
+            <input type="color" id="eyeColor1" value="#4CAF50" onchange="updateCat(1)">
+          </label>
+          <label>Nose Color:
+            <input type="color" id="noseColor1" value="#FF69B4" onchange="updateCat(1)">
+          </label>
+          <input type="checkbox" id="hasFaceSpot1" style="display: none">
+          <input type="checkbox" id="faceSpotTransparent1" style="display: none">
+          <label>Face Spot Color:
+            <input type="color" id="faceSpotColor1" value="#FFFFFF" onchange="updateCat(1)">
+          </label>
+          <button onclick="toggleFaceSpot(1)" class="face-spot-button">Toggle Face Spot</button>
+          <button onclick="toggleFaceSpotTransparency(1)" class="face-spot-button">Toggle Spot Transparency</button>
+          <input type="checkbox" id="hasClaws1" style="display: none">
+          <label>Claw Color:
+            <input type="color" id="clawColor1" value="#E0E0E0" onchange="updateCat(1)">
+          </label>
+          <button onclick="toggleClaws(1)" class="claws-button">Toggle Claws</button>
+          <button onclick="randomizeColors(1)" class="randomize-colors-button">Randomize Colors</button>
+          <button onclick="randomizeCat(1)" class="randomize-button">Randomize Cat</button>
+        </div>
+      </div>
+
+      <div class="parent-cat">
+        <h2>Parent Cat 2</h2>
+        <div class="generation-label" id="parent2Generation">Gen 1</div>
+        <div class="cat-preview" id="cat2"></div>
+        <div class="controls">
+          <label>Base Color:
+            <input type="color" id="color2" value="#FFFFFF" onchange="updateCat(2)">
+          </label>
+          <label>Pattern:
+            <select id="pattern2" onchange="updateCat(2)">
+              <option value="solid">Solid</option>
+              <option value="tabby">Tabby</option>
+              <option value="spots">Spots</option>
+              <option value="patches">Patches</option>
+              <option value="calico">Calico</option>
+              <option value="socks">Socks</option>
+              <option value="tortoiseshell">Tortoiseshell</option>
+              <option value="siamese">Siamese</option>
+              <option value="tuxedo">Tuxedo</option>
+            </select>
+          </label>
+          <label>Pattern Color 1:
+            <input type="color" id="patternColor2" value="#000000" onchange="updateCat(2)">
+          </label>
+          <label>Pattern Color 2:
+            <input type="color" id="patternColor2_2" value="#FFA500" onchange="updateCat(2)">
+          </label>
+          <label>Eye Color:
+            <input type="color" id="eyeColor2" value="#87CEEB" onchange="updateCat(2)">
+          </label>
+          <label>Nose Color:
+            <input type="color" id="noseColor2" value="#FFB6C1" onchange="updateCat(2)">
+          </label>
+          <input type="checkbox" id="hasFaceSpot2" style="display: none">
+          <input type="checkbox" id="faceSpotTransparent2" style="display: none">
+          <label>Face Spot Color:
+            <input type="color" id="faceSpotColor2" value="#FFFFFF" onchange="updateCat(2)">
+          </label>
+          <button onclick="toggleFaceSpot(2)" class="face-spot-button">Toggle Face Spot</button>
+          <button onclick="toggleFaceSpotTransparency(2)" class="face-spot-button">Toggle Spot Transparency</button>
+          <input type="checkbox" id="hasClaws2" style="display: none">
+          <label>Claw Color:
+            <input type="color" id="clawColor2" value="#E0E0E0" onchange="updateCat(2)">
+          </label>
+          <button onclick="toggleClaws(2)" class="claws-button">Toggle Claws</button>
+          <button onclick="randomizeColors(2)" class="randomize-colors-button">Randomize Colors</button>
+          <button onclick="randomizeCat(2)" class="randomize-button">Randomize Cat</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="button-container">
+      <button onclick="generateKittens()">Generate Kittens!</button>
+      <button onclick="resetAll()" class="reset-button">Reset All</button>
+    </div>
+
+    <div class="kittens">
+      <div class="kitten">
+        <h3>Kitten 1</h3>
+        <div class="generation-label" id="kitten1Generation"></div>
+        <div class="cat-preview" id="kitten1"></div>
+        <div class="kitten-buttons">
+          <button onclick="setAsParent(1, 1)" class="set-parent-button">Set as Parent 1</button>
+          <button onclick="setAsParent(1, 2)" class="set-parent-button">Set as Parent 2</button>
+        </div>
+      </div>
+      <div class="kitten">
+        <h3>Kitten 2</h3>
+        <div class="generation-label" id="kitten2Generation"></div>
+        <div class="cat-preview" id="kitten2"></div>
+        <div class="kitten-buttons">
+          <button onclick="setAsParent(2, 1)" class="set-parent-button">Set as Parent 1</button>
+          <button onclick="setAsParent(2, 2)" class="set-parent-button">Set as Parent 2</button>
+        </div>
+      </div>
+      <div class="kitten">
+        <h3>Kitten 3</h3>
+        <div class="generation-label" id="kitten3Generation"></div>
+        <div class="cat-preview" id="kitten3"></div>
+        <div class="kitten-buttons">
+          <button onclick="setAsParent(3, 1)" class="set-parent-button">Set as Parent 1</button>
+          <button onclick="setAsParent(3, 2)" class="set-parent-button">Set as Parent 2</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="cat-renderer.js"></script>
+  <script src="genetics.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

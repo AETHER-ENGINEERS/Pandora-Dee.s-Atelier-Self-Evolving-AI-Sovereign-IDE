@@ -1,0 +1,168 @@
+:root{
+  --bg:#fffaf0;
+  --card:#ffffff;
+  --muted:#666;
+  --accent:#333;
+}
+*{box-sizing:border-box}
+html,body,#app{height:100%}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+  background:var(--bg);
+  color:var(--accent);
+  -webkit-font-smoothing:antialiased;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:12px;
+}
+
+.screen{width:100%;max-width:720px;min-height:100%;display:flex;align-items:flex-start;justify-content:center;padding-top:12px}
+.card{
+  width:100%;
+  background:var(--card);
+  border-radius:14px;
+  padding:12px;
+  box-shadow:0 8px 24px rgba(20,20,20,0.08);
+  display:flex;
+  gap:12px;
+  flex-direction:column;
+  max-height: calc(100vh - 24px);
+  overflow:auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Creator layout */
+.preview-area{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:8px;
+}
+.pet{
+  width:84px;
+  height:84px;
+  border-radius:50%;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow: inset 0 -6px 12px rgba(0,0,0,0.06);
+}
+.pet-large .pet{width:170px;height:170px}
+
+.eye{
+  width:28%;
+  height:28%;
+  border-radius:50%;
+  position:absolute;
+  top:30%;
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 2px 4px rgba(0,0,0,0.08);
+}
+.eye.left{left:16%}
+.eye.right{right:16%}
+
+.pupil{
+  width:46%;
+  height:46%;
+  border-radius:50%;
+  background:#222;
+}
+
+.accessory{
+  position:absolute;
+  font-size:36px;
+  line-height:1;
+  transform-origin:center;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+}
+
+/* controls */
+.controls{display:flex;flex-wrap:wrap;gap:8px;padding:6px}
+.controls label{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  min-width:140px;
+  background:#fafafa;
+  border-radius:8px;
+  padding:8px;
+  font-size:14px;
+}
+.controls input[type="text"]{flex:1;padding:6px;border-radius:6px;border:1px solid #eee}
+.controls select{padding:6px;border-radius:6px;border:1px solid #eee}
+
+.row{display:flex;gap:8px;align-items:center}
+.row.small{gap:6px}
+button{
+  padding:10px 12px;
+  border-radius:8px;
+  border:0;
+  background:#eee;
+  color:var(--accent);
+  font-weight:600;
+}
+button.primary{background:#3aa76e;color:white}
+button.danger{background:#d64545;color:white}
+
+.hidden{display:none}
+
+/* care area */
+.topbar{display:flex;flex-direction:column;gap:8px}
+.status{display:flex;gap:12px;justify-content:space-between;align-items:center}
+.happiness-bar{height:10px;background:#eee;border-radius:8px;overflow:hidden}
+.happiness-bar #happinessFill{height:100%;width:0;background:linear-gradient(90deg,#ffd166,#3aa76e)}
+
+.play-area{display:flex;gap:12px;align-items:center;justify-content:space-between;flex:1}
+.play-area .pet-large{flex:0 0 48%}
+.input-area{flex:1;display:flex;flex-direction:column;gap:8px}
+.input-area input{padding:12px;border-radius:10px;border:1px solid #eee;font-size:16px}
+
+.lists{display:flex;gap:8px;flex-wrap:wrap;overflow:auto;padding-top:6px}
+.list{flex:1 1 30%;min-width:110px;background:#fafafa;padding:8px;border-radius:8px;max-height:120px;overflow:auto}
+.list h4{margin:0 0 6px 0;font-size:13px}
+.list ul{padding:0;margin:0;list-style:none;font-size:14px}
+.list li{padding:4px 0;border-bottom:1px dashed rgba(0,0,0,0.03)}
+
+/* modal */
+.modal{
+  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.28);
+  z-index:40;
+}
+/* ensure .hidden can hide modal even though .modal sets display:flex */
+.modal.hidden{display:none}
+.modal-card{background:white;padding:16px;border-radius:12px;min-width:260px;text-align:center}
+.settings-card{max-width:360px}
+.settings-controls{flex-direction:column;gap:10px}
+.settings-controls label{min-width:0;padding:8px;display:flex;justify-content:space-between;align-items:center}
+.settings-controls input[type="number"]{width:96px;padding:6px;border-radius:6px;border:1px solid #eee;text-align:right}
+
+/* settings button */
+.settings-btn{
+  position:absolute;
+  right:18px;
+  top:12px;
+  background:transparent;
+  border:0;
+  font-size:20px;
+  line-height:1;
+  padding:8px;
+  border-radius:8px;
+  cursor:pointer;
+}
+.settings-btn:active{transform:translateY(1px)}
+@media (max-width:520px){
+  .controls label{min-width:100%}
+  .play-area{flex-direction:column}
+  .pet-large .pet{width:140px;height:140px}
+  .settings-btn{right:12px;top:6px}
+}

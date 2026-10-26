@@ -1,0 +1,90 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Care Game Maker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Care Game Maker</h1>
+
+        <div id="creation-mode" class="mode-section">
+            <h2>1. Create Your Creature</h2>
+            <div class="input-group">
+                <label for="creature-name">Creature Name (optional):</label>
+                <input type="text" id="creature-name" placeholder="e.g., Pet Rock">
+            </div>
+            <div class="input-group">
+                <label for="creature-start-emoji">Day 0 Appearance (Emoji):</label>
+                <input type="text" id="creature-start-emoji" maxlength="2" placeholder="🥚">
+            </div>
+            <div class="input-group">
+                <label for="day-unit-name">Unit for Day (e.g., Day, Cycle, Turn):</label>
+                <input type="text" id="day-unit-name" placeholder="Day" value="Day">
+            </div>
+
+            <h3>Growth Stages (for days > 0)</h3>
+            <div id="stages-container">
+                <!-- Growth stage inputs (day > 0) will be added here by JS -->
+                <!-- The Day 0 appearance is controlled by the input above and is not listed here -->
+            </div>
+            <button id="add-stage-btn" class="add-button">Add Growth Stage</button>
+
+            <h2>2. Define Care Items</h2>
+            <div class="care-item-input-form">
+                <div class="input-group">
+                    <label for="care-item-name">Care Item Name:</label>
+                    <input type="text" id="care-item-name" placeholder="e.g., Food">
+                </div>
+                <div class="input-group">
+                    <label for="care-item-emoji">Appearance (Emoji):</label>
+                    <input type="text" id="care-item-emoji" maxlength="2" placeholder="🍎">
+                </div>
+                <div class="input-group">
+                    <label for="care-item-daily-increase">Need Increase Per Day:</label>
+                    <input type="number" id="care-item-daily-increase" min="0" value="10">
+                </div>
+                <div class="input-group">
+                    <label for="care-item-decrease-on-use">Need Decrease When Used:</label>
+                    <input type="number" id="care-item-decrease-on-use" min="0" value="30">
+                </div>
+                <button id="add-care-item-btn" class="add-button">Add Care Item</button>
+            </div>
+
+            <h3>Your Care Items</h3>
+            <ul id="care-items-list" class="list-display">
+                <!-- Added care items will be displayed here -->
+            </ul>
+
+            <button id="start-game-btn" class="primary-button">Start Game</button>
+        </div>
+
+        <div id="game-mode" class="mode-section hidden">
+            <h2 id="game-creature-name">Your Creature</h2>
+            <p class="current-day"><span id="day-unit-display">Day</span>: <span id="current-day-display">0</span></p>
+
+            <div class="game-area">
+                <div id="creature-display" class="creature-drop-target">
+                    <span id="creature-emoji"></span>
+                </div>
+                <div id="care-items-tray">
+                    <h3>Care Items</h3>
+                    <!-- Draggable care items will be displayed here -->
+                </div>
+                <div class="needs-panel">
+                    <h3>Needs</h3>
+                    <ul id="needs-list">
+                        <!-- Needs will be displayed here -->
+                    </ul>
+                </div>
+            </div>
+
+            <button id="skip-day-btn" class="primary-button">Skip 1 <span id="skip-day-unit-btn">Day</span></button>
+            <button id="reset-game-btn" class="secondary-button">Reset Game</button>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>

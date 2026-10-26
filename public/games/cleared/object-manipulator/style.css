@@ -1,0 +1,559 @@
+body {
+    margin: 0;
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f0f0;
+    overflow: hidden; /* Prevent scrolling on body */
+}
+
+.container {
+    display: flex;
+    flex-direction: column; /* Stack elements vertically on mobile */
+    width: 100%;
+    max-width: 800px; /* Max width for larger screens */
+    height: 95vh; /* Use most of the viewport height */
+    border: 1px solid #ccc;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    background-color: #fff;
+}
+
+#game-area {
+    flex-grow: 1; /* Takes available space */
+    position: relative;
+    overflow: hidden; /* Objects shouldn't go outside */
+    background-color: #e0e0e0;
+    cursor: default; /* Use default cursor, object cursor indicates clickable */
+    touch-action: none; /* Prevent default touch actions like scrolling/zooming */
+}
+
+.object {
+    position: absolute;
+    width: 50px; /* Default size for box */
+    height: 50px; /* Default size for box */
+    background-color: var(--object-color, #3498db); /* Use CSS variable for color */
+    border: none; /* Removed border */
+    box-sizing: border-box;
+    transition: transform 0.2s ease-out, background-color 0.2s ease-out, border-bottom-color 0.2s ease-out, opacity 0.5s ease-out; /* Smooth transitions */
+    user-select: none; /* Prevent text selection */
+    cursor: grab; /* Indicate draggable object */
+    touch-action: none; /* Prevent default touch actions */
+    transform: translate(var(--translate-x, 0px), var(--translate-y, 0px)) rotate(var(--rotate, 0deg)) scale(var(--scale, 1)); /* Initial transform state */
+    opacity: 1; /* Initial opacity */
+    /* Removed --object-dark-color variable definition as it's not used */
+}
+
+.object.selected {
+    /* Removed selection styles as per previous prompt */
+    /* Kept for potential future use if selection style is re-introduced */
+    /* box-shadow: 0 0 10px 5px yellow; */
+}
+
+/* Box specific styles (mostly default) */
+.object.box {
+    /* Default width/height and border */
+}
+
+.object.sphere {
+    border-radius: 50%; /* Make it round */
+}
+
+.object.cone {
+    width: 50px; /* Standard size */
+    height: 50px; /* Standard size */
+    /* Use clip-path to create a triangle shape */
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    /* Remove border and margin styles used for the previous cone method */
+    border: none;
+    margin-left: 0;
+    /* background-color is used now, remove important transparent */
+    background-color: var(--object-color, #9b59b6);
+    border-radius: 0; /* Ensure no rounding */
+    /* Transition background-color now works */
+    /* Transition already defined in .object */
+    /* transition: transform 0.2s ease-out, background-color 0.2s ease-out; */
+}
+
+/* Specific selection style adjustment for cone border color (removed as per prompt) */
+/* .object.cone.selected {
+    border-bottom-color: yellow !important;
+} */
+
+.object.star {
+     /* Using clip-path to create a 5-pointed star */
+     clip-path: polygon(
+         50% 0%,
+         61.8% 38.2%,
+         100% 38.2%,
+         69.1% 61.8%,
+         80.9% 100%,
+         50% 76.4%,
+         19.1% 100%,
+         30.9% 61.8%,
+         0% 38.2%,
+         38.2% 38.2%
+     );
+     /* Adjust default size/border if needed, inheriting from .object */
+}
+
+/* --- Pattern Styles --- */
+/* Apply patterns as background-image based on data-pattern attribute */
+/* Note: Patterns will now work on Box, Sphere, Star, and Cone shapes as they all
+   use background-color and have defined dimensions/clip-paths. */
+
+/* Stripes pattern */
+.object[data-pattern="stripes"] {
+    background-image: linear-gradient(45deg, var(--object-color) 25%, var(--object-pattern-color) 25%, var(--object-pattern-color) 50%, var(--object-color) 50%, var(--object-color) 75%, var(--object-pattern-color) 75%, var(--object-pattern-color) 100%);
+    background-size: 20px 20px; /* Adjust size of stripes */
+}
+
+/* Spots pattern */
+.object[data-pattern="spots"] {
+    background-image: radial-gradient(circle, var(--object-pattern-color) 20%, transparent 20%), radial-gradient(circle, var(--object-pattern-color) 20%, transparent 20%);
+    background-size: 25px 25px; /* Adjust size and spacing of spots */
+    background-position: 0 0, 12.5px 12.5px; /* Offset the second gradient for a grid of spots */
+}
+
+/* Specks pattern */
+.object[data-pattern="specks"] {
+    /* Use multiple small radial gradients positioned to create scattered dots */
+    background-image: radial-gradient(circle at 25% 25%, var(--object-pattern-color) 5%, transparent 5%),
+                      radial-gradient(circle at 75% 75%, var(--object-pattern-color) 5%, transparent 5%),
+                      radial-gradient(circle at 25% 75%, var(--object-pattern-color) 5%, transparent 5%),
+                      radial-gradient(circle at 75% 25%, var(--object-pattern-color) 5%, transparent 5%),
+                      radial-gradient(circle at 50% 50%, var(--object-pattern-color) 5%, transparent 5%), /* Center speck */
+                      radial-gradient(circle at 10% 90%, var(--object-pattern-color) 5%, transparent 5%), /* More scattered specks */
+                      radial-gradient(circle at 90% 10%, var(--object-pattern-color) 5%, transparent 5%);
+    background-size: 15px 15px; /* Density/size of speck pattern tiles */
+    /* No background-position needed if positions are defined within each gradient */
+}
+
+/* Ensure no background image if pattern is 'none' */
+/* Removed .object.cone from this rule */
+.object[data-pattern="none"] {
+     background-image: none;
+}
+
+/* --- Shake Animation --- */
+/* Define keyframes for shaking */
+@keyframes shake {
+    /* Use current state from CSS variables */
+    0%, 100% { transform: translate(var(--translate-x, 0px), var(--translate-y, 0px)) rotate(var(--rotate, 0deg)) scale(var(--scale, 1)); }
+    10% { transform: translate(calc(var(--translate-x, 0px) + -2px), calc(var(--translate-y, 0px))) rotate(calc(var(--rotate, 0deg) + -1deg)) scale(var(--scale, 1)); }
+    20% { transform: translate(calc(var(--translate-x, 0px) + 2px), calc(var(--translate-y, 0px))) rotate(calc(var(--rotate, 0deg) + 1deg)) scale(var(--scale, 1)); }
+    30% { transform: translate(calc(var(--translate-x, 0px) + -2px), calc(var(--translate-y, 0px))) rotate(calc(var(--rotate, 0deg) + -1deg)) scale(var(--scale, 1)); }
+    40% { transform: translate(calc(var(--translate-x, 0px) + 2px), calc(var(--translate-y, 0px))) rotate(calc(var(--rotate, 0deg) + 1deg)) scale(var(--scale, 1)); }
+    50% { transform: translate(calc(var(--translate-x, 0px) + -2px), calc(var(--translate-y, 0px))) rotate(calc(var(--rotate, 0deg) + -1deg)) scale(var(--scale, 1)); }
+    60% { transform: translate(calc(var(--translate-x, 0px) + 2px), calc(var(--translate-y, 0px))) rotate(calc(var(--rotate, 0deg) + 1deg)) scale(var(--scale, 1)); }
+    70% { transform: translate(calc(var(--translate-x, 0px) + -2px), calc(var(--translate-y, 0px))) rotate(calc(var(--rotate, 0deg) + -1deg)) scale(var(--scale, 1)); }
+    80% { transform: translate(calc(var(--translate-x, 0px) + 2px), calc(var(--translate-y, 0px))) rotate(calc(var(--rotate, 0deg) + 1deg)) scale(var(--scale, 1)); }
+    90% { transform: translate(calc(var(--translate-x, 0px) + -2px), calc(var(--translate-y, 0px))) rotate(calc(var(--rotate, 0deg) + -1deg)) scale(var(--scale, 1)); }
+}
+
+/* Apply shake animation using a class */
+.object.shaking {
+    /* Temporarily override default transition for shaking */
+    transition: none;
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* --- Suck-in Animation for Mixing --- */
+/* Use a separate class to override default transition and define suck-in animation */
+.object.sucking-in {
+    /* Apply the sucking-in transition. This targets changes to transform and opacity.
+       The target values (scaled down, opacity 0, translated to center) are set by JS
+       by updating the CSS variables and style.opacity. The transition animates
+       from the current visual state to the target state. */
+    transition: transform 0.5s ease-in, opacity 0.5s ease-in !important; /* Important to override default */
+    /* Target transform and opacity are set by JS */
+}
+
+.object.is-dragging {
+    /* Disable transition while dragging for immediate visual feedback */
+    transition-property: none !important; /* Use !important to override default transition */
+}
+
+.piece {
+    position: absolute;
+    width: 10px; /* Default piece size, overridden by JS */
+    height: 10px; /* Default piece size, overridden by JS */
+    background-color: inherit; /* Should inherit --object-color */
+    /* No border for pieces usually */
+    box-sizing: border-box;
+    pointer-events: auto; /* Allow pieces to be clicked */
+    /* Transition now only for transform, opacity is handled explicitly */
+    transition: transform 0.5s ease-in-out; /* Animation for scattering/fixing */
+    /* Initial state before animation */
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 1; /* Keep pieces visible */
+    cursor: pointer; /* Indicate pieces are clickable */
+    user-select: none; /* Prevent text selection */
+}
+
+/* New style for crumbs */
+.crumb {
+    position: absolute;
+    width: 5px; /* Size of crumbs */
+    height: 5px; /* Size of crumbs */
+    border-radius: 50%; /* Make crumbs round */
+    background-color: var(--crumb-color, #000); /* Use CSS variable for crumb color */
+    pointer-events: none; /* Crumbs shouldn't be interactive */
+    /* Initial state */
+    opacity: 1;
+    transform: translate3d(0, 0, 0); /* Start at initial position */
+    /* Transition for falling and fading (fall takes 0.8s, fade takes 0.8s) */
+    transition: transform 0.8s ease-in, opacity 0.8s linear;
+}
+
+.controls {
+    padding: 15px;
+    background-color: #eee;
+    display: flex;
+    flex-direction: column; /* Stack elements vertically on mobile */
+    gap: 10px; /* Space between control elements */
+    align-items: stretch; /* Make elements fill the width */
+    /* Make controls scrollable on mobile */
+    max-height: 40vh; /* Set a max height */
+    overflow-y: auto; /* Enable vertical scrolling */
+    flex-shrink: 0; /* Prevent controls from shrinking below content */
+}
+
+/* Style for the header row in controls */
+.controls-header {
+    display: flex;
+    justify-content: space-between; /* Space out title and button */
+    align-items: center;
+    gap: 10px; /* Space between title and button */
+}
+
+.controls-header h3 {
+     margin: 0; /* Remove default margin from h3 */
+     font-size: 1.1em;
+}
+
+.controls-header button {
+    padding: 5px 10px; /* Smaller padding for the toggle button */
+    font-size: 0.9em; /* Smaller font size */
+    background-color: #ccc; /* Different color for toggle button */
+    color: #333;
+}
+
+.controls-header button:hover {
+    background-color: #bbb;
+}
+
+/* Class to hide sections */
+.hidden {
+    display: none !important; /* Use !important to ensure it overrides flex/block */
+}
+
+.controls p {
+    margin: 0;
+    font-size: 1em;
+}
+
+.controls select,
+.controls button,
+.controls input[type="text"],
+.controls input[type="color"] {
+    padding: 10px;
+    font-size: 1em;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box; /* Include padding/border in width */
+    min-width: 0; /* Allow shrinking in flex container */
+}
+
+.controls input[type="color"] {
+     padding: 5px; /* Adjust padding for color picker */
+     height: 40px; /* Match height of other inputs/buttons */
+}
+
+/* Add spacing for label and color picker */
+.controls label {
+    font-size: 1em;
+    margin-bottom: -5px; /* Adjust margin to be closer to the input */
+    display: block; /* Make label a block element */
+}
+
+/* Style for the pattern color choice section */
+.pattern-color-choice {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #ccc; /* Optional separator */
+}
+
+.pattern-color-choice label {
+    display: inline-block; /* Arrange labels and inputs side-by-side where appropriate */
+    margin-right: 10px;
+    margin-bottom: 5px; /* Add space below labels */
+}
+
+.pattern-color-choice input[type="radio"] {
+    margin-right: 5px;
+    vertical-align: middle; /* Align radio button vertically */
+}
+
+.pattern-color-choice input[type="color"] {
+     /* Inherits general input[type="color"] styles */
+     vertical-align: middle; /* Align color picker vertically */
+     display: inline-block; /* Ensure it sits next to its label */
+     width: auto; /* Allow color picker width to be natural */
+}
+
+/* Style for the mixer section */
+#object-mixer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #ccc;
+}
+
+#object-mixer div {
+    display: flex;
+    flex-direction: column; /* Stack label and select */
+    gap: 5px;
+}
+
+#object-mixer .mixer-logic label {
+    display: inline-block; /* Keep radio labels inline */
+    margin-right: 10px;
+}
+
+.controls button {
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.controls button:hover {
+    background-color: #27ad60;
+}
+
+/* Style the Remove button differently */
+/* Using attribute selector to target the specific action if needed */
+/* For simplicity, we can just style the button with its ID or parent context.
+   The JS doesn't dynamically change the ID/attribute of the apply button based on selection
+   so this specific rule won't work as intended without JS managing the attribute.
+   Keeping the rule commented out for now. */
+/* .controls button#apply-action-button[data-action="remove"] {
+    background-color: #e74c3c;
+}
+.controls button#apply-action-button[data-action="remove"]:hover {
+    background-color: #c0392b;
+} */
+
+/* Style for the randomizer options containers */
+.randomizer-options {
+    display: flex;
+    flex-wrap: wrap; /* Allow options to wrap */
+    gap: 8px; /* Space between checkbox options */
+    padding-top: 5px; /* Space above the options */
+}
+
+/* Style for individual checkbox options (label + input) */
+.randomizer-option {
+    display: flex; /* Align checkbox and text */
+    align-items: center;
+    cursor: pointer;
+    user-select: none; /* Prevent text selection */
+    font-size: 0.9em; /* Slightly smaller font */
+    padding: 4px 8px; /* Add padding */
+    border: 1px solid #ccc; /* Add a border to make them look like buttons */
+    border-radius: 4px; /* Rounded corners */
+    background-color: #f9f9f9; /* Light background */
+    transition: background-color 0.1s ease, border-color 0.1s ease;
+}
+
+.randomizer-option input[type="checkbox"] {
+    margin-right: 5px; /* Space between checkbox and label text */
+    margin-top: 0; /* Remove default top margin */
+    margin-bottom: 0; /* Remove default bottom margin */
+    flex-shrink: 0; /* Prevent checkbox from shrinking */
+}
+
+.randomizer-option:hover {
+    background-color: #eee;
+    border-color: #bbb;
+}
+
+.randomizer-option input[type="checkbox"]:checked + label {
+    /* Optional style for checked state text */
+}
+
+.randomizer-option input[type="checkbox"]:checked {
+    /* Optional style for checked checkbox itself */
+}
+
+/* Randomize Name Manager Section styles (inherits most from .controls-header and .randomizer-options) */
+#name-randomizer-manager {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #ccc;
+}
+
+#name-randomizer-manager p {
+    margin-bottom: 5px; /* Add a little space below the paragraph */
+}
+
+/* Style for the add custom chars section */
+.add-custom-chars {
+    display: flex; /* Arrange input and button side-by-side */
+    gap: 10px; /* Space between input and button */
+    align-items: center; /* Vertically align items */
+}
+
+.add-custom-chars input[type="text"] {
+    flex-grow: 1; /* Allow input to take available space */
+     min-width: 0; /* Allow shrinking */
+}
+
+.add-custom-chars button {
+     /* Inherits button styles */
+     padding: 10px; /* Standard button padding */
+     /* Ensure button doesn't grow unnecessarily */
+     flex-shrink: 0;
+     width: auto; /* Adjust width based on content */
+     background-color: #5cb85c; /* Different color for add button */
+}
+
+.add-custom-chars button:hover {
+    background-color: #4cae4c;
+}
+
+/* Styles for the name length controls */
+.name-length-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between labels and inputs */
+    margin-top: 10px; /* Space above this section */
+    padding-top: 10px;
+    border-top: 1px solid #ccc;
+}
+
+/* Display text above objects */
+.object-text-display {
+    position: absolute;
+    transform: translate(-50%, -120%);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 9999;
+    font-size: 14px;
+    line-height: 1;
+    padding: 6px 10px;
+    border-radius: 12px;
+    color: #000;
+    background: #fff;
+    border: 2px solid rgba(0,0,0,0.08);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+/* Bubble style shaped like 💬 (simple rounded rectangle with tail removed for simplicity) */
+.object-text-display.bubble {
+    font-weight: 500;
+    color: #000;
+    background: #fff;
+    border-radius: 14px;
+    padding: 8px 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* Emoji-only style: no background or border, slightly larger font */
+.object-text-display.emoji-only {
+    background: transparent;
+    border: none;
+    color: inherit;
+    padding: 0;
+    font-size: 22px;
+    text-shadow: none;
+    box-shadow: none;
+}
+
+.name-length-controls label {
+    /* Adjust label display if needed */
+    display: inline-block; /* Allow side-by-side layout */
+    margin-bottom: 0; /* Remove margin if not stacking */
+}
+
+.name-length-controls input[type="number"] {
+    /* Adjust input width if needed */
+    width: 60px; /* Give number inputs a fixed width */
+    text-align: center;
+    padding: 5px; /* Smaller padding for number inputs */
+    font-size: 1em;
+    height: auto; /* Allow height to adjust to padding */
+    /* Inherit border/border-radius from generic input styles */
+}
+
+/* Responsive adjustments */
+@media (min-width: 600px) {
+    .container {
+        flex-direction: row; /* Side-by-side on larger screens */
+        height: 80vh; /* Adjust height */
+    }
+
+    #game-area {
+        flex-grow: 1;
+        width: 70%; /* Game area takes more space */
+        /* Remove fixed height/width if previously set */
+    }
+
+    .controls {
+        width: 30%; /* Controls panel width */
+        flex-direction: column;
+        align-items: flex-start; /* Align controls to the start */
+        padding: 20px;
+        /* Remove mobile-specific scroll styles */
+        max-height: none;
+        overflow-y: visible;
+        flex-shrink: 1; /* Allow shrinking if needed */
+    }
+
+     .controls select,
+     .controls button,
+     .controls input[type="text"],
+     .controls input[type="color"] {
+         width: 100%; /* Make controls fill their container */
+     }
+
+     .controls label {
+         width: 100%; /* Make labels fill their container */
+     }
+
+     /* Adjust toggle button width on larger screens */
+     .controls-header button {
+          width: auto; /* Allow button width based on content */
+     }
+
+     /* Adjust layout for randomizer options on larger screens */
+     .randomizer-options {
+         gap: 10px; /* Slightly larger gap */
+     }
+
+      .randomizer-option {
+         /* Maybe allow slightly wider */
+         /* width: auto; */
+     }
+
+     /* Adjust layout for add custom chars on larger screens */
+    .add-custom-chars input[type="text"],
+    .add-custom-chars button {
+        /* Inherit 100% width from .controls children if preferred,
+           or manage flex-grow for layout */
+        /* For side-by-side, flex-grow on input is good */
+    }
+
+     /* Adjust layout for name length controls on larger screens */
+     .name-length-controls {
+         /* No major changes needed, flex layout should work */
+     }
+}

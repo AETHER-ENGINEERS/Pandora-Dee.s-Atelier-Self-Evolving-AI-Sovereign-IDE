@@ -1,0 +1,26 @@
+{
+  "pandora": [
+    {
+      "version": "2.9.9.2-enhanced",
+      "file": "pandora-dee-2.9.9.2-enhanced.html"
+    },
+    {
+      "version": "2.9.9.2",
+      "file": "pandora-dee-2.9.9.2.html"
+    },
+    {
+      "version": "2.9.0",
+      "file": "pandora-dee-2.9.0.html"
+    }
+  ],
+  "jade": [
+    {
+      "version": "2.18.2-enhanced",
+      "file": "jade-vault-2.18.2-enhanced.html"
+    },
+    {
+      "version": "2.18.2",
+      "file": "jade-vault-2.18.2.html"
+    }
+  ]
+}

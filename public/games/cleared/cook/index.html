@@ -1,0 +1,56 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emoji Cooking Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-container">
+    <div id="setup-screen" class="screen">
+      <div id="recipe-book">
+        <button id="toggle-recipes">📖 Recipe Book</button>
+        <div id="recipes-list" class="hidden">
+          <!-- Recipes will be populated by JavaScript -->
+        </div>
+      </div>
+      <div id="ingredients-input">
+        <label>Enter 2-6 ingredients (emojis):</label>
+        <input type="text" id="ingredients" maxlength="12">
+      </div>
+      <div id="result-input">
+        <label>Enter result emoji:</label>
+        <input type="text" id="result" maxlength="2">
+      </div>
+      <div id="drink-input-container">
+        <label>Enter drink emoji (optional):</label>
+        <input type="text" id="drink-input" maxlength="2">
+      </div>
+      <div id="container-selection">
+        <label>Choose cooking container:</label>
+        <div id="containers">
+          <span class="container-option" data-container="🥣">🥣</span>
+          <span class="container-option" data-container="🍳">🍳</span>
+          <span class="container-option" data-container="🍲">🍲</span>
+          <span class="container-option" data-container="🫕">🫕</span>
+        </div>
+      </div>
+      <button id="start-cooking">Done</button>
+    </div>
+
+    <div id="cooking-screen" class="screen hidden">
+      <div id="cooking-area"></div>
+      <div id="ingredients-tray"></div>
+    </div>
+
+    <div id="eating-screen" class="screen hidden">
+      <div id="eater" class="emoji">😃</div>
+      <div id="food"></div>
+      <div id="drink" class="emoji draggable">🥤</div>
+      <div id="chopsticks" class="emoji draggable">🥢</div>
+      <button id="next-round">Next Round</button>
+    </div>
+  </div>
+  <script type="module" src="game.js"></script>
+</body>
+</html>

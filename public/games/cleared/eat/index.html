@@ -1,0 +1,82 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Eating Simulator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <div id="input-screen">
+            <h2>Emoji Eating Simulator</h2>
+            <div class="button-container" style="margin-bottom: 10px;">
+                <button id="defaults-btn">Use Defaults</button>
+                <button id="suggestion-btn">Get Food Suggestion</button>
+            </div>
+            <div class="custom-suggestion-container">
+                <input type="text" id="custom-suggestion-input" placeholder="Enter emojis/letters/numbers/symbols">
+                <button id="update-suggestion-pool-btn">Change Showable Emojis/Letters/Numbers/Symbols in Suggestion</button>
+            </div>
+            <div id="suggestion-display" class="suggestion-container"></div>
+            <div class="suggestion-copy-container" style="display: flex; justify-content: center; margin-bottom: 10px;">
+                <button id="copy-suggestion-btn">Copy Suggestion to Foods</button>
+            </div>
+            <div id="emoji-inputs">
+                <div class="input-group">
+                    <input type="text" class="eater-emoji" placeholder="Eater Emoji (optional) 😃">
+                </div>
+                
+                <div class="input-group">
+                    <input type="text" class="food-emoji" placeholder="Food 1 🍎">
+                    <button class="copy-food-btn">Copy to All Foods</button>
+                </div>
+                <div class="input-group">
+                    <input type="text" class="reaction-input" placeholder="Reaction 1">
+                    <button class="copy-reaction-btn">Copy to All Reactions</button>
+                </div>
+                
+                <div class="input-group">
+                    <input type="text" class="food-emoji" placeholder="Food 2 🍌">
+                    <button class="copy-food-btn">Copy to All Foods</button>
+                </div>
+                <div class="input-group">
+                    <input type="text" class="reaction-input" placeholder="Reaction 2">
+                    <button class="copy-reaction-btn">Copy to All Reactions</button>
+                </div>
+                
+                <div class="input-group">
+                    <input type="text" class="food-emoji" placeholder="Food 3 🍕">
+                    <button class="copy-food-btn">Copy to All Foods</button>
+                </div>
+                <div class="input-group">
+                    <input type="text" class="reaction-input" placeholder="Reaction 3">
+                    <button class="copy-reaction-btn">Copy to All Reactions</button>
+                </div>
+                
+                <div class="input-group">
+                    <input type="text" class="food-emoji" placeholder="Food 4 🍦">
+                    <button class="copy-food-btn">Copy to All Foods</button>
+                </div>
+                <div class="input-group">
+                    <input type="text" class="reaction-input" placeholder="Reaction 4">
+                    <button class="copy-reaction-btn">Copy to All Reactions</button>
+                </div>
+            </div>
+            <div class="toggle-container">
+                <label for="revert-toggle">Revert to Eater After Reaction</label>
+                <input type="checkbox" id="revert-toggle" checked>
+            </div>
+            <div class="button-container">
+                <button id="done-btn">Done</button>
+                <button id="reset-btn">Reset</button>
+            </div>
+        </div>
+
+        <div id="eating-screen" class="hidden">
+            <div id="main-emoji">😃</div>
+            <div id="food-container"></div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

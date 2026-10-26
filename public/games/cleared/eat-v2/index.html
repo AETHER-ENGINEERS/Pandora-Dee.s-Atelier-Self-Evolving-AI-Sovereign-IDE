@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emoji Eater</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <section class="panel config">
+      <h2>Eater</h2>
+      <label>
+        <span>Default</span>
+        <input id="default-emoji" type="text" maxlength="4" value="😐" />
+      </label>
+      <label>
+        <span>Open mouth</span>
+        <input id="open-emoji" type="text" maxlength="4" value="😮" />
+      </label>
+      <label>
+        <span>Chewing</span>
+        <input id="chew-emoji" type="text" maxlength="4" value="😋" />
+      </label>
+
+      <h2>Chew duration</h2>
+      <label class="duration">
+        <input id="duration" type="number" min="1" value="2" />
+        <select id="duration-unit">
+          <option value="s" selected>seconds</option>
+          <option value="ms">milliseconds</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="panel stage">
+      <div class="eater-wrap">
+        <span id="eater" class="eater">😐</span>
+      </div>
+      <div id="dropped-zone" class="dropped-zone"></div>
+      <form id="food-form" class="food-form">
+        <input id="food-input" type="text" maxlength="4" placeholder="Enter an emoji…" />
+        <button id="food-submit" type="submit">＋</button>
+      </form>
+    </section>
+  </main>
+
+  <template id="food-tpl">
+    <span class="food" draggable="false">🍎</span>
+  </template>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

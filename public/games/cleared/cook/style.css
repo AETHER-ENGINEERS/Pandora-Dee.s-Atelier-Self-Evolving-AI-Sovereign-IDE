@@ -1,0 +1,227 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #f0f0f0;
+  font-family: Arial, sans-serif;
+  touch-action: none;
+}
+
+#game-container {
+  width: 100%;
+  max-width: 500px;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.screen {
+  width: 100%;
+}
+
+.hidden {
+  display: none;
+}
+
+#ingredients-input, #result-input, #container-selection {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  font-size: 20px;
+}
+
+#containers {
+  display: flex;
+  justify-content: space-around;
+  font-size: 30px;
+}
+
+.container-option {
+  cursor: pointer;
+  padding: 10px;
+}
+
+.container-option.selected {
+  background: #e0e0e0;
+  border-radius: 50%;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  font-size: 18px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#cooking-screen {
+  position: relative;
+  height: 70vh;
+}
+
+#cooking-area {
+  height: 70%;
+  position: relative;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+#ingredients-tray {
+  height: 25%;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+}
+
+#eating-screen {
+  height: 70vh;
+  position: relative;
+}
+
+.emoji {
+  font-size: 40px;
+  user-select: none;
+}
+
+.draggable {
+  cursor: move;
+  touch-action: none;
+}
+
+#eater {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#food {
+  position: absolute;
+  right: 30%;
+  top: 50%;
+  transform: translate(50%, -50%);
+}
+
+#drink {
+  position: absolute;
+  left: 30%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#chopsticks {
+  position: absolute;
+  left: 70%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+}
+
+.ingredient {
+  font-size: 30px;
+  position: absolute;
+  cursor: move;
+  user-select: none;
+}
+
+#next-round {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#recipe-book {
+  margin-bottom: 20px;
+}
+
+#toggle-recipes {
+  width: 100%;
+  padding: 10px;
+  font-size: 18px;
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+#recipes-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 5px;
+  max-height: 200px;  
+  overflow-y: auto;   
+  scrollbar-width: thin;  
+}
+
+#recipes-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+#recipes-list::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+#recipes-list::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+#recipes-list::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+.recipe-card {
+  background: white;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+.recipe-card:hover {
+  transform: scale(1.05);
+}
+
+.recipe-result {
+  font-size: 24px;
+  margin-bottom: 5px;
+}
+
+.recipe-ingredients {
+  font-size: 14px;
+  color: #666;
+}
+
+#drink-input-container {
+  margin-bottom: 20px;
+}

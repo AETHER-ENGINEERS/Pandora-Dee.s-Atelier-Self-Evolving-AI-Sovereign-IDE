@@ -1,0 +1,166 @@
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+#game-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.cats-grid, .eggs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  margin: 20px 0;
+}
+
+.cat-card, .egg-card {
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+  position: relative;
+}
+
+.cat-svg {
+  width: 150px;
+  height: 150px;
+}
+
+.egg-svg {
+  width: 100px;
+  height: 120px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 10px;
+  background: #eee;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress {
+  width: 0%;
+  height: 100%;
+  background: #4CAF50;
+  transition: width 0.1s linear;
+}
+
+button {
+  padding: 8px 16px;
+  margin: 5px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  background: #4CAF50;
+  color: white;
+}
+
+button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+button.super-experiment {
+  background: #f44336;
+  margin-top: 8px;
+}
+
+.selected {
+  border-color: #4CAF50;
+}
+
+#selected-parents {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 20px 0;
+}
+
+.trade-menu {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.2);
+  z-index: 1000;
+  max-width: 90%;
+}
+
+.trade-menu button {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+}
+
+.trade-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 999;
+}
+
+#food-counter {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: #fff;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 100;
+}
+
+.fed-indicator {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #FFD700;
+  display: none;
+}
+
+.cat-card.fed .fed-indicator {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .cats-grid, .eggs-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+  
+  .cat-svg {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .egg-svg {
+    width: 80px;
+    height: 100px;
+  }
+  button {
+    font-size: 0.9em;
+    padding: 6px 12px;
+  }
+  
+  .trade-menu {
+    width: 90%;
+    padding: 15px;
+  }
+  
+  .trade-menu button {
+    font-size: 0.9em;
+    padding: 8px;
+  }
+}

@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Worm Sandbox</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {}
+}
+</script>
+</head>
+<body>
+<div id="app">
+  <div id="toolbar">
+    <button id="createBtn">Create</button>
+    <select id="wormTypeSelect"></select>
+    <button id="spawnBtn">Spawn</button>
+    <button id="spawnBabyBtn" title="Spawn the selected species as a baby">Spawn Baby</button>
+    <label style="display:flex;align-items:center;gap:6px">
+      Spawn Type
+      <select id="spawnTypeSelect" style="height:34px;padding:6px;border-radius:6px;border:1px solid #ddd;">
+        <option value="all">All</option>
+        <option value="worm">Worm</option>
+        <option value="snake">Snake</option>
+        <option value="insect">Insect</option>
+      </select>
+    </label>
+    <button id="spawnRandomBtn" title="Spawn a random species of selected type">Spawn Random</button>
+    <button id="deleteTypeBtn" title="Delete selected custom type">Delete Type</button>
+    <button id="spawnFoodBtn">Spawn Food</button>
+    <label style="display:flex;align-items:center;gap:6px">
+      Size<input id="foodSize" type="number" min="2" max="64" value="8" style="width:72px;padding:6px;border-radius:6px;border:1px solid #ddd" />
+    </label>
+    <label style="display:flex;align-items:center;gap:6px">
+      Color<input id="foodColor" type="color" value="#7bd389" style="width:48px;height:38px;padding:0;border-radius:6px;border:1px solid #ddd" />
+    </label>
+    <button id="makeNestBtn">Make Nest</button>
+    <label style="display:flex;align-items:center;gap:6px">
+      Nest Size<input id="nestSize" type="number" min="4" max="240" value="48" style="width:72px;padding:6px;border-radius:6px;border:1px solid #ddd" />
+    </label>
+    <label style="display:flex;align-items:center;gap:6px">
+      Nest Color<input id="nestColor" type="color" value="#ffd24a" style="width:48px;height:38px;padding:0;border-radius:6px;border:1px solid #ddd" />
+    </label>
+    <button id="layEggBtn">Lay Egg</button>
+    <label class="toggle"><input id="eggsInheritLength" type="checkbox" checked>Babies inherit parent length</label>
+    <label style="display:flex;align-items:center;gap:6px">
+      Food to Grow<input id="babyGrowThreshold" type="number" min="1" max="50" value="5" style="width:72px;padding:6px;border-radius:6px;border:1px solid #ddd" />
+    </label>
+    <label class="toggle"><input id="babiesGrowOverTime" type="checkbox">Babies grow over time</label>
+    <label class="toolbar-setting">
+      Baby growth time<input id="babyGrowTime" type="number" min="1" value="60" style="width:72px;padding:6px;border-radius:6px;border:1px solid #ddd" />s
+    </label>
+    <label class="toggle"><input id="hungerMode" type="checkbox">Hunger mode</label>
+    <label class="toolbar-setting">
+      Hunger min<input id="hungerMinTime" type="number" min="1" value="5" style="width:64px;padding:6px;border-radius:6px;border:1px solid #ddd" />s
+    </label>
+    <label class="toolbar-setting">
+      Hunger max<input id="hungerMaxTime" type="number" min="1" value="100" style="width:64px;padding:6px;border-radius:6px;border:1px solid #ddd" />s
+    </label>
+    <button id="breedBtn" title="Breed two same-species creatures">Breed</button>
+    <button id="turnIntoBtn" title="Turn a creature into a spawnable species">Turn into species</button>
+    <label class="toggle"><input id="foodMakesLonger" type="checkbox" checked>Food makes longer</label>
+    <label class="toggle"><input id="snakesEatWorms" type="checkbox">Snakes eat worm parts</label>
+    <label class="toggle"><input id="snakesInheritColors" type="checkbox" checked>Snakes inherit eaten colors</label>
+
+    <!-- insect eating toggles -->
+    <label class="toggle"><input id="canEatInsects" type="checkbox">Worms &amp; Snakes eat insects</label>
+    <label class="toggle"><input id="wormsInheritFromInsects" type="checkbox">Worms inherit insect colors</label>
+
+    <!-- new face controls -->
+    <select id="faceSelector" title="Choose face expression">
+      <option value="open">Open eyes</option>
+      <option value="closed">Closed eyes</option>
+      <option value="left-wink">Left wink</option>
+      <option value="right-wink">Right wink</option>
+      <option value="happy-closed">Happy closed</option>
+      <option value="sad-closed">Sad closed</option>
+      <option value="scared">Scared (small pupils)</option>
+      <option value="pain-laughter">Pain / Laughter (&gt; &lt;)</option>
+      <option value="bored">Bored (top half hidden)</option>
+      <option value="happy">Happy (bottom half hidden)</option>
+      <option value="crying">Crying (open eyes + tears)</option>
+      <option value="closed-crying">Closed crying (sad closed + tears)</option>
+      <option value="big-pupils">Big pupils (large pupils)</option>
+    </select>
+
+    <select id="mouthSelector" title="Choose mouth expression" style="height:34px;padding:6px;border-radius:6px;border:1px solid #ddd;">
+      <option value="none">No mouth</option>
+      <option value="smile">Smile )</option>
+      <option value="neutral">Neutral |</option>
+      <option value="frown">Frown (</option>
+      <option value="open-smile">Open Smile D</option>
+      <option value="open-neutral">Open Neutral 0</option>
+      <option value="open-frown">Open Frown C</option>
+      <option value="surprised">Surprised o</option>
+      <!-- teeth mouth variants -->
+      <option value="teeth-smile">Teeth Smile</option>
+      <option value="teeth-neutral">Teeth Neutral</option>
+      <option value="teeth-frown">Teeth Frown</option>
+    </select>
+
+    <button id="faceChangeBtn">Face Change</button>
+
+    <!-- emoji controls -->
+    <input id="emojiInput" placeholder="Emoji" style="width:56px;padding:6px;border-radius:6px;border:1px solid #ddd" />
+    <button id="displayEmojiBtn">Display Emoji</button>
+
+    <button id="eraseBtn" title="Erase parts, nests, food, eggs">Erase</button>
+    <button id="clearBtn">Clear</button>
+  </div>
+
+  <div id="main">
+    <canvas id="sandbox"></canvas>
+
+    <div id="creator" class="hidden">
+      <div class="creator-inner">
+        <div class="creator-left">
+          <label>Type
+            <select id="entityTypeSelect">
+              <option value="worm">Worm</option>
+              <option value="snake">Snake</option>
+              <option value="insect">Insect</option>
+            </select>
+          </label>
+          <label>Legs per side for insects<input id="legsPerSide" type="number" min="0" max="6" value="3"></label>
+          <label>Name<input id="wormName" placeholder="Name"></label>
+          <label>Starting length<input id="startLength" type="number" min="1" value="8"></label>
+          <div id="palettes"></div>
+          <div class="palette-controls">
+            <button id="addColorBtn">Add Color to Pattern</button>
+            <button id="clearPatternBtn">Clear Pattern</button>
+            <button id="randomizeBtn">Randomize</button>
+            <button id="makeEyeBtn" title="Set single eye color from selected palette">Make Eye Color</button>
+            <label style="display:flex;align-items:center;gap:8px;margin-left:6px;">
+              <input id="twoEyeToggle" type="checkbox" /> 2 different eye colors
+            </label>
+            <button id="makeLeftEyeBtn" title="Set left eye color from selected palette" style="display:none;">Make Left Eye</button>
+            <button id="makeRightEyeBtn" title="Set right eye color from selected palette" style="display:none;">Make Right Eye</button>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:6px;padding-top:6px;">
+            <div style="display:flex;gap:6px;align-items:center;">
+              <button id="randomizeNameBtn" title="Generate a random name">Randomize name</button>
+              <input id="namePatternInput" placeholder="add order (e.g. cvcv)" style="padding:6px;border-radius:6px;border:1px solid #ddd;flex:1" />
+              <button id="addNameOrderBtn">Add</button>
+            </div>
+            <div style="font-size:12px;color:var(--muted)">Name orders (use c for consonant, v for vowel):</div>
+            <div id="nameOrdersList" class="pattern-list" style="min-height:54px;padding:8px;max-height:96px;overflow:auto"></div>
+          </div>
+
+          <div>Selected pattern (order matters):</div>
+          <div id="patternList" class="pattern-list"></div>
+          <div class="creator-actions">
+            <button id="doneCreateBtn">Done</button>
+            <button id="cancelCreateBtn">Cancel</button>
+          </div>
+        </div>
+        <div class="creator-right">
+          <div>Preview</div>
+          <canvas id="preview" width="240" height="240"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js" type="module"></script>
+</body>
+</html>

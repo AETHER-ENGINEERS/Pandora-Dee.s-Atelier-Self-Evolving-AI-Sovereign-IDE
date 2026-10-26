@@ -1,0 +1,352 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #e0f2f7;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.container {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    width: 100%;
+    max-width: 900px;
+    box-sizing: border-box;
+}
+
+h1, h2, h3 {
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+h2 {
+    border-bottom: 2px solid #a8dadc;
+    padding-bottom: 10px;
+    margin-top: 30px;
+}
+
+.mode-section {
+    margin-bottom: 40px;
+    padding: 20px;
+    border: 1px solid #dcdcdc;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.hidden {
+    display: none;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #4a6572;
+}
+
+.input-group input[type="text"],
+.input-group input[type="number"] {
+    width: calc(100% - 20px);
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
+}
+
+.add-button {
+    background-color: #4CAF50; /* Green */
+    color: white;
+}
+
+.add-button:hover {
+    background-color: #45a049;
+}
+
+.remove-button {
+    background-color: #f44336; /* Red */
+    color: white;
+    padding: 8px 12px;
+    font-size: 14px;
+    margin-left: 10px;
+}
+
+.remove-button:hover {
+    background-color: #da190b;
+}
+
+.primary-button {
+    background-color: #007bff; /* Blue */
+    color: white;
+    width: 100%;
+    margin-top: 25px;
+}
+
+.primary-button:hover {
+    background-color: #0056b3;
+}
+
+.secondary-button {
+    background-color: #6c757d; /* Grey */
+    color: white;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.secondary-button:hover {
+    background-color: #5a6268;
+}
+
+.stage-entry {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    background-color: #f0f8ff;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #cce7ff;
+}
+
+.stage-entry input[type="number"] {
+    width: 80px;
+}
+
+.stage-entry input[type="text"] {
+    width: 60px;
+    text-align: center;
+}
+
+.care-item-input-form {
+    border: 1px dashed #a8dadc;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    background-color: #effaff;
+}
+
+.list-display {
+    list-style-type: none;
+    padding: 0;
+}
+
+.list-display li {
+    background-color: #f5f5f5;
+    border: 1px solid #eee;
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+}
+
+.list-display li strong {
+    color: #007bff;
+}
+
+/* Game Mode Styles */
+#game-mode {
+    text-align: center;
+}
+
+#game-creature-name {
+    font-size: 2em;
+    margin-bottom: 15px;
+    color: #28a745;
+}
+
+.current-day {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #4a6572;
+    margin-bottom: 25px;
+}
+
+.game-area {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 30px;
+    margin-bottom: 30px;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
+.creature-drop-target {
+    width: 150px;
+    height: 150px;
+    border: 3px dashed #a8dadc;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 6em;
+    background-color: #e6f7ff;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    flex-shrink: 0;
+    margin-bottom: 20px; /* For smaller screens */
+}
+
+.creature-drop-target.drag-over {
+    background-color: #cce7ff;
+    border-color: #007bff;
+    transform: scale(1.05);
+}
+
+#creature-emoji {
+    display: block;
+    line-height: 1; /* Ensure emoji fits vertically */
+}
+
+.needs-panel {
+    background-color: #f0f8ff;
+    border: 1px solid #cce7ff;
+    border-radius: 8px;
+    padding: 15px 20px;
+    min-width: 250px;
+    text-align: left;
+    flex-grow: 1;
+}
+
+.needs-panel h3 {
+    margin-top: 0;
+    font-size: 1.5em;
+    color: #007bff;
+    border-bottom: 1px solid #cce7ff;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+#needs-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+#needs-list li {
+    font-size: 1.1em;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 5px;
+    border-bottom: 1px dashed #e0f2f7;
+}
+
+#needs-list li:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.need-value {
+    font-weight: bold;
+    color: #e74c3c; /* Red for needs */
+}
+
+#care-items-tray {
+    border: 1px solid #dcdcdc;
+    border-radius: 8px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    margin-top: 20px;
+}
+
+#care-items-tray h3 {
+    margin-top: 0;
+    font-size: 1.5em;
+    color: #28a745;
+    border-bottom: 1px solid #dcdcdc;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.draggable-item {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 60px;
+    height: 60px;
+    background-color: #fef9e7;
+    border: 2px solid #f39c12;
+    border-radius: 8px;
+    font-size: 2.5em;
+    cursor: grab;
+    margin: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+}
+
+.draggable-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.draggable-item:active {
+    cursor: grabbing;
+    transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.item-name-tag {
+    position: absolute;
+    bottom: -20px; /* Position below the emoji */
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7em;
+    color: #555;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 2px 5px;
+    border-radius: 3px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none; /* Make sure it doesn't interfere with drag */
+}
+
+.draggable-item:hover .item-name-tag {
+    opacity: 1;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+
+    .game-area {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .creature-drop-target {
+        margin-bottom: 30px; /* Add more space when stacked */
+    }
+
+    .needs-panel {
+        min-width: unset;
+        width: 100%;
+    }
+}
+

@@ -1,0 +1,171 @@
+/* ...existing styles... */
+:root{
+  --bg:#ffffff;
+  --fg:#111;
+  --muted:#666;
+}
+*{box-sizing:border-box}
+html,body,#stage{height:100%}
+body{
+  margin:0;
+  font-family:"Noto Sans",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+  background:var(--bg);
+  color:var(--fg);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  display:flex;
+  align-items:stretch;
+  justify-content:center;
+  min-height:100vh;
+  padding:16px;
+}
+.app{
+  width:100%;
+  max-width:900px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+header h1{
+  margin:0;
+  font-size:20px;
+  font-weight:700;
+  text-align:center;
+}
+.creator, .game{
+  background:transparent;
+  border-radius:10px;
+  padding:10px;
+}
+label{display:block;font-size:12px;color:var(--muted);margin-top:6px}
+input[type="text"], input[type="color"], input{
+  width:100%;
+  padding:8px 10px;
+  font-size:16px;
+  border:1px solid #e6e6e6;
+  border-radius:8px;
+  margin-top:6px;
+}
+.creator-actions{display:flex;gap:8px;margin-top:10px}
+button{
+  appearance:none;
+  border:0;
+  background:#111;
+  color:#fff;
+  padding:10px 14px;
+  border-radius:8px;
+  font-weight:600;
+  font-size:15px;
+}
+button:active{transform:translateY(1px)}
+.hidden{display:none}
+
+.controls{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:center;
+  margin-bottom:8px;
+}
+.controls .left{display:flex;gap:8px}
+.controls .right{display:flex;gap:12px;align-items:center}
+.stats{font-size:14px;color:var(--muted);display:flex;gap:10px;align-items:center}
+
+.stage{
+  position:relative;
+  background:transparent;
+  height:60vh;
+  min-height:320px;
+  border-radius:12px;
+  border:1px dashed #eee;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding-top:6px; /* small top padding so leaves/branches have breathing room */
+}
+
+/* canvas fills stage */
+#treeCanvas{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:block;
+}
+
+/* emoji & particle layers are absolute on top */
+#emojiLayer, #particleLayer{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+.leaf, .fruit{
+  position:absolute;
+  font-size:22px;
+  transform-origin:center;
+  user-select:none;
+  touch-action:none;
+  pointer-events:auto;
+  /* use CSS variable for rotation so animations (like .shake) can modify transform */
+  transform: rotate(var(--rot, 0));
+}
+.fruit{font-size:26px}
+.particle{
+  position:absolute;
+  width:6px;height:6px;border-radius:50%;
+  pointer-events:none;
+  opacity:0.95;
+}
+
+/* footer note */
+.note{
+  font-size:12px;
+  color:var(--muted);
+  text-align:center;
+  margin:8px 0;
+  position:relative;
+  z-index:3;
+}
+
+/* mobile adjustments */
+@media (max-width:520px){
+  .controls{flex-direction:column;align-items:stretch}
+  .controls .right{justify-content:space-between;width:100%}
+  .creator-actions{flex-direction:column}
+  button{width:100%}
+}
+
+/* ...existing styles... */
+@keyframes shake {
+  0% { transform: rotate(0deg) translateY(0) translateX(0); }
+  15% { transform: rotate(-10deg) translateY(-3px) translateX(-2px); }
+  35% { transform: rotate(8deg) translateY(2px) translateX(2px); }
+  55% { transform: rotate(-6deg) translateY(-1px) translateX(-1px); }
+  75% { transform: rotate(4deg) translateY(1px) translateX(0); }
+  100% { transform: rotate(0deg) translateY(0) translateX(0); }
+}
+.leaf.shake, .fruit.shake {
+  animation: shake 1000ms ease-in-out;
+}
+.leaf.falling {
+  transition: top 900ms cubic-bezier(.2,.7,.2,1), left 900ms cubic-bezier(.2,.7,.2,1), transform 900ms;
+  opacity: 0.95;
+}
+/* add styling for leaves that have fallen (stay in place until wind) */
+.leaf.fallen {
+  transition: left 1000ms cubic-bezier(.2,.7,.2,1), top 1000ms cubic-bezier(.2,.7,.2,1), opacity 600ms;
+  opacity: 0.95;
+  pointer-events: none;
+}
+.fruit.big {
+  font-size:36px;
+  padding:6px;
+  transform-origin:center;
+  z-index:4;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.06);
+}
+/* falling transition places element on ground */
+.fruit.falling {
+  transition: top 700ms cubic-bezier(.2,.7,.2,1), transform 700ms;
+}

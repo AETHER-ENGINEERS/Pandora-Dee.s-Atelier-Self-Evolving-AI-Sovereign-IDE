@@ -1,0 +1,37 @@
+:root{
+  --bg:#f6f5f3;
+  --panel:#ffffff;
+  --muted:#666;
+  --accent:#f5a623;
+}
+*{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,arial;margin:0;padding:0}
+html,body,#app{height:100%}
+body{background:var(--bg);display:flex;align-items:stretch;justify-content:center;padding:6px}
+#app{width:100%;max-width:980px;display:flex;flex-direction:column;gap:6px;height:100%}
+#toolbar{display:flex;gap:6px;align-items:center;padding:6px;background:var(--panel);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+#toolbar > *{height:38px}
+button,select,input[type=number]{border:1px solid #ddd;padding:6px 8px;border-radius:6px;background:white}
+button{cursor:pointer}
+.toggle{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.toolbar-setting{display:flex;flex-direction:row;align-items:center;gap:6px;white-space:nowrap}
+#main{flex:1;display:flex;gap:6px;align-items:stretch;position:relative}
+#sandbox{flex:1;border-radius:8px;background:linear-gradient(#fefefe,#f2f2f2);width:100%;height:100%}
+#creator{position:absolute;right:6px;top:54px;width:360px;height:calc(100% - 60px);background:var(--panel);border-radius:8px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:auto}
+.hidden{display:none}
+.creator-inner{display:flex;gap:8px;height:100%}
+.creator-left{flex:1;display:flex;flex-direction:column;gap:8px}
+.creator-right{width:260px;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:flex-start}
+#palettes{display:flex;flex-wrap:wrap;gap:6px;max-height:220px;overflow:auto;padding:4px;border:1px solid #eee;background:#fafafa;border-radius:6px}
+.color-swatch{width:36px;height:28px;border-radius:6px;border:1px solid #ccc;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:rgba(0,0,0,.6)}
+.color-swatch.selected{outline:3px solid rgba(0,0,0,.12)}
+.palette-controls{display:flex;gap:6px}
+.pattern-list{display:flex;gap:6px;flex-wrap:wrap;padding:6px;border:1px dashed #eee;border-radius:6px;min-height:44px}
+.pattern-item{width:28px;height:28px;border-radius:50%;border:1px solid #ccc}
+.creator-actions{display:flex;gap:6px;justify-content:flex-end;margin-top:6px}
+label{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+canvas{touch-action:none}
+@media (max-width:640px){
+  #creator{left:6px;right:6px;bottom:6px;top:auto;height:320px}
+  .creator-inner{flex-direction:column}
+  .creator-right{width:100%}
+}

@@ -1,0 +1,458 @@
+:root{
+  --bg: #0f0f12;
+  --panel: #15151b;
+  --panel2: #1b1b24;
+  --text: #f4f4f6;
+  --muted: rgba(244,244,246,.68);
+  --stroke: rgba(255,255,255,.10);
+  --accent: #ff4a4a;
+  --accent2:#ffd1d1;
+}
+
+*{ box-sizing: border-box; }
+html,body{ height:100%; margin:0; overflow:hidden; background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+
+.appRoot{ height:100%; display:flex; flex-direction:column; }
+
+.menu{ height:100%; display:flex; flex-direction:column; }
+.hidden{ display:none; }
+
+.roomArea{
+  flex:1;
+  min-height:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding: 10px;
+}
+
+.bottomBar{
+  height: 160px;
+  border-top: 1px solid var(--stroke);
+  background: rgba(20,20,26,.72);
+  backdrop-filter: blur(8px);
+  display:flex;
+  gap:12px;
+  align-items:center;
+  justify-content:center;
+  padding: 10px;
+}
+
+.bottomBarScroll{
+  flex-direction: column;
+  height: auto; /* allow surgery to fit picker + tools + reset row */
+  align-items:stretch;
+  justify-content:flex-start;
+}
+
+.primaryPick, .ghostPick{
+  border: 1px solid var(--stroke);
+  background: var(--panel2);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-weight: 800;
+  letter-spacing:.2px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.22);
+  touch-action: manipulation;
+}
+.primaryPick{ background: rgba(255,74,74,.12); border-color: rgba(255,74,74,.35); }
+.ghostPick{ background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.12); }
+
+.bigBtn{
+  width: calc(50% - 12px);
+  height: 56px;
+  font-size: 18px;
+}
+
+.exitPick{
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  font-weight: 900;
+  font-size: 20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index: 10000;
+  box-shadow: 0 10px 24px rgba(0,0,0,.22);
+  touch-action: manipulation;
+}
+.exitPick:active{ transform: scale(.98); }
+
+.centerHint{
+  width:100%;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap: 10px;
+  opacity:.95;
+}
+.bigEmoji{ font-size: 60px; }
+.subtle{ color: var(--muted); font-weight: 700; }
+
+.checkupLayout{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 12px;
+}
+.patientStage{
+  flex:1;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.patientCard{
+  width: min(420px, 92vw);
+  height: min(360px, 58vh);
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--stroke);
+  border-radius: 20px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap: 12px;
+  position:relative;
+}
+.patientLabel{
+  position:absolute;
+  top: 14px;
+  left: 14px;
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 13px;
+}
+.patientEmoji{
+  font-size: 120px;
+  line-height: 1;
+  filter: drop-shadow(0 14px 24px rgba(0,0,0,.35));
+  user-select:none;
+}
+.checkupDropZone{
+  width: 20%;
+  min-width: 120px;
+  height: min(360px, 58vh);
+  border-radius: 20px;
+  border: 1px dashed rgba(255,255,255,.18);
+  background: rgba(255,255,255,.03);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color: var(--muted);
+  padding: 10px;
+}
+.dropText{
+  text-align:center;
+  font-weight:800;
+  font-size: 12px;
+  line-height:1.2;
+}
+
+.pickerBlock{
+  flex:1;
+  min-width:0;
+  padding: 6px 2px 0 2px;
+}
+.toolBlock{
+  flex:1;
+  min-width:0;
+  padding: 6px 2px 0 2px;
+}
+.bottomActionsRow{
+  width:100%;
+  display:flex;
+  justify-content:flex-end;
+  gap: 12px;
+  align-items:center;
+  padding: 2px 2px 0 2px;
+}
+
+.pickerLabel{
+  color: var(--muted);
+  font-weight: 900;
+  font-size: 12px;
+  margin: 0 0 8px 0;
+}
+
+.emojiRow{
+  display:flex;
+  gap: 10px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  justify-content: flex-start;
+  align-items:center;
+  padding: 2px 2px;
+  -webkit-overflow-scrolling: touch;
+
+  scrollbar-width: none; /* Firefox */
+  touch-action: pan-x;
+}
+.emojiRow::-webkit-scrollbar{ display:none; } /* WebKit */
+
+.emojiPick{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+  font-size: 22px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  touch-action: manipulation;
+}
+.emojiPick:active{ transform: scale(.98); }
+.emojiPick[data-active="1"]{
+  border-color: rgba(255,74,74,.55);
+  background: rgba(255,74,74,.14);
+}
+
+.tonePick{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+  font-size: 20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  touch-action: manipulation;
+}
+.tonePick:active{ transform: scale(.98); }
+.tonePick[data-active="1"]{
+  border-color: rgba(255,74,74,.55);
+  background: rgba(255,74,74,.14);
+}
+
+.draggableTool{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+  font-size: 22px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  touch-action: none; /* we manage dragging */
+  user-select:none;
+}
+.draggableTool:active{
+  transform: scale(.98);
+}
+
+.ghostTool{
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  background: rgba(0,0,0,.35);
+  border: 1px solid rgba(255,255,255,.18);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 26px;
+  pointer-events:none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 22px 46px rgba(0,0,0,.35);
+  backdrop-filter: blur(6px);
+}
+
+.surgeryStage{
+  width:100%;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+  padding: 6px;
+  align-items:stretch;
+  justify-content: flex-start;
+}
+.canvasWrap{
+  flex:1;
+  min-height: 0;
+  position:relative;
+  border-radius: 18px;
+  border: 1px solid var(--stroke);
+  overflow:hidden;
+  background: #f0b68a;
+}
+.surgeryCanvas{
+  width:100%;
+  height:100%;
+  display:block;
+  touch-action: none;
+}
+.spawnLayer{
+  position:absolute;
+  inset:0;
+  pointer-events:none; /* items inside will enable pointer */
+}
+.tray{
+  position:absolute;
+  top: 10px;
+  right: 10px;
+  width: 116px;
+  height: 116px;
+  background: rgba(220,220,220,.28);
+  border: 2px solid rgba(235,235,235,.55);
+  border-radius: 18px;
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,.10);
+}
+.tray::after{
+  content:"TRAY";
+  position:absolute;
+  left: 0; right:0;
+  bottom: 8px;
+  text-align:center;
+  font-weight: 1000;
+  font-size: 12px;
+  color: rgba(255,255,255,.65);
+}
+
+.surgeryStatus{
+  align-self:flex-start;
+  display:flex;
+  gap: 10px;
+  align-items:center;
+  padding: 8px 10px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+}
+.statusDot{
+  width: 10px; height:10px;
+  border-radius: 50%;
+  background: rgba(255,74,74,.85);
+  box-shadow: 0 0 0 4px rgba(255,74,74,.14);
+}
+#surgeryStatusText{
+  font-weight: 900;
+  color: rgba(255,255,255,.78);
+  font-size: 12px;
+}
+
+.toolRow .toolPick{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+  font-size: 21px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  touch-action: manipulation;
+  user-select:none;
+  padding: 0;
+}
+.toolPick:active{ transform: scale(.98); }
+.toolPick[data-active="1"]{
+  border-color: rgba(255,74,74,.55);
+  background: rgba(255,74,74,.14);
+}
+
+.spawnEmoji{
+  position:absolute;
+  pointer-events:auto;
+  user-select:none;
+  font-size: 42px;
+  line-height:1;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,.35));
+  touch-action: none;
+}
+.spawnEmoji[data-ghost="1"]{
+  opacity:.7;
+}
+.spawnEmoji:active{
+  transform: translate(-50%, -50%) scale(.99);
+}
+
+/* Spawn choice modal */
+.spawnChoiceModal{
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: none;
+  background: rgba(0,0,0,.38);
+  backdrop-filter: blur(6px);
+  align-items: flex-end;
+  justify-content: center;
+  padding: 10px 10px 14px 10px;
+}
+.spawnChoiceModal:not(.hidden){
+  display: flex;
+}
+.spawnChoiceSheet{
+  width: 100%;
+  max-width: 520px;
+  border-radius: 18px;
+  background: rgba(21,21,27,.92);
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 24px 70px rgba(0,0,0,.45);
+  padding: 12px 12px 14px 12px;
+}
+.spawnChoiceHeader{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.spawnChoiceTitle{
+  font-weight: 1000;
+  color: rgba(255,255,255,.88);
+  font-size: 13px;
+}
+.spawnChoiceClose{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.9);
+  font-size: 18px;
+  touch-action: manipulation;
+}
+.spawnChoiceClose:active{ transform: scale(.98); }
+
+.spawnChoiceEmojiRow{
+  display:grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+.spawnChoiceEmojiPick{
+  width: 100%;
+  height: 56px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+  font-size: 22px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  touch-action: manipulation;
+  user-select:none;
+}
+.spawnChoiceEmojiPick:active{ transform: scale(.98); }

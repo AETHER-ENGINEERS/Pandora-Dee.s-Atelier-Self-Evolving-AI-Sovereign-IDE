@@ -1,0 +1,4158 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <base href="https://foo">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #f0f8ff;
+      font-family: Arial, sans-serif;
+      transition: background-color 0.3s ease; /* Smooth transition for background color */
+    }
+
+    body.dark-mode {
+      background: #1e1e1e; /* Dark background */
+      color: #e0e0e0; /* Light text */
+    }
+
+    .dark-mode .button-container {
+      background: rgba(30, 30, 30, 0.9); /* Darker button container background */
+    }
+    .dark-mode button {
+      background-color: #007bff; /* Dark mode button color */
+      color: white;
+    }
+    #tabbyOptions button, 
+    #toyOptions button, 
+    #sphynxOptions button, 
+    #tigerOptions button, 
+    #mainecoonOptions button,
+    #customCatModal button {
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .dark-mode #tabbyOptions button {
+        background-color: #0056b3;
+        color: white;
+    }
+    .dark-mode #toyOptions button {
+        background-color: #0056b3;
+        color: white;
+    }
+    .dark-mode #sphynxOptions button {
+        background-color: #0056b3;
+        color: white;
+    }
+    .dark-mode #tigerOptions button {
+        background-color: #ffc107;
+        color: black; 
+    }
+    .dark-mode #mainecoonOptions button {
+        background-color: #dc3545;
+        color: white;
+    }
+    .dark-mode #customCatModal button {
+        background-color: #007bff;
+        color: white;
+    }
+    .dark-mode #customCatModal {
+      background-color: #343a40; /* Dark background */
+      color: white; /* White text */
+    }
+    .cat {
+      width: 60px;
+      height: 60px;
+      position: absolute;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .kitten {
+      width: 30px; 
+      height: 30px;
+      position: absolute;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .kitten.medium {
+      width: 40px; 
+      height: 40px;
+    }
+
+    .bowl, .food, .toy {
+      width: 40px;
+      height: 40px;
+      position: absolute;
+      touch-action: none;
+      user-select: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+    }
+
+    .catnip {
+      width: 40px;
+      height: 40px;
+      position: absolute;
+      touch-action: none;
+      user-select: none;
+      font-size: 24px;
+    }
+
+    .breeding-zone {
+      width: 120px;
+      height: 120px;
+      position: absolute;
+      border: 3px dashed #ff69b4;
+      border-radius: 10px;
+      background: rgba(255, 192, 203, 0.2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      right: 20px;
+      top: 20px;
+    }
+
+    .dark-mode .breeding-zone {
+      border-color: #f8bbd0; /* Lighter pink border */
+      background-color: rgba(248, 187, 221, 0.2); /* Lighter pink background */
+    }
+
+    .breed-button {
+      display: none;
+      position: absolute;
+      right: 40px;
+      top: 150px;
+      padding: 8px 12px;
+      background: #ff69b4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .dark-mode .breed-button {
+      background-color: #e91e63;
+    }
+
+    .eating {
+      animation: eat 1s infinite;
+    }
+
+    .jumping {
+      animation: jump 0.5s;
+    }
+
+    .walking {
+      animation: walk 1s infinite; 
+    }
+
+    @keyframes eat {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes jump {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+      100% { transform: translateY(0); }
+    }
+
+    @keyframes walk {
+      0% { transform: translateX(0) rotate(0deg); }
+      25% { transform: translateX(10px) rotate(5deg); }
+      50% { transform: translateX(0) rotate(0deg); }
+      75% { transform: translateX(10px) rotate(-5deg); }
+      100% { transform: translateX(0) rotate(0deg); }
+    }
+
+    .button-container {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 10px;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px;
+      justify-content: center;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      max-height: 25vh; 
+      overflow-y: auto; 
+      transition: max-height 0.3s ease; 
+    }
+
+    .button-container::before {
+      content: '';
+      display: block;
+      width: 50px;
+      height: 5px;
+      background: #ccc;
+      border-radius: 3px;
+      margin: 0 auto 10px;
+      cursor: ns-resize;
+    }
+
+    button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      background: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:active {
+      transform: scale(0.95);
+    }
+
+    #tabbyOptions, #toyOptions, #sphynxOptions, #tigerOptions, #mainecoonOptions {
+      display: none;
+      margin: 5px 0;
+    }
+
+    #tabbyOptions button, #toyOptions button, #sphynxOptions button, #tigerOptions button, #mainecoonOptions button {
+      margin: 0 5px;
+      background: #5a8f5a;
+    }
+
+    #tigerOptions button {
+      margin: 0 5px;
+      background: #fca311; 
+    }
+
+    #mainecoonOptions button {
+      margin: 0 5px;
+      background: #8b0000; 
+    }
+
+    #customCatModal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      z-index: 1000;
+      min-width: 300px;
+      max-height: 90vh; 
+      overflow-y: auto; 
+    }
+
+    .dark-mode #customCatModal {
+      background-color: #343a40; /* Dark background */
+      color: white; /* White text */
+    }
+
+    #customCatModal::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #customCatModal::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    #customCatModal::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+
+    #customCatModal::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    .cat.retired {
+      filter: grayscale(0.3); 
+    }
+    .scottishfold, .kitten.scottishfold { 
+    }
+    .manx svg path:last-child { 
+    }
+    .sausage {
+      transform: scaleX(0.75); /* Skinny body */
+    }
+    .sausage svg ellipse:first-child, /* Adjust body shape in SVG */
+    .sausage svg circle {
+      rx: 22.5; /* 75% of original rx */
+    }
+
+    .kitten.sausage {
+      transform: scaleX(0.75);
+    }
+    .kitten.sausage svg ellipse:first-child, /* Adjust body shape in SVG */
+    .kitten.sausage svg circle {
+      rx: 16.875; /* 75% of original rx */
+    }
+
+    .manx svg path:last-child { /* Correct Manx tail style */
+      display: none; /* Hide the long tail */
+    }
+
+    .manx svg ellipse:nth-child(1)::after { /* Add the stumpy tail */
+      content: '';
+      position: absolute;
+      left: 70px;
+      top: 45px;
+      width: 20px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #3F000F; /* Tail color */
+      transform-origin: 50% 50%; 
+      animation: wag 1s ease-in-out infinite alternate;
+    }
+    .kitten.manx svg ellipse:nth-child(1)::after {
+      content: '';
+      position: absolute;
+      left: 65px;
+      top: 32.5px;
+      width: 15px;
+      height: 7.5px;
+      border-radius: 50%;
+      background-color: #3F000F; 
+      transform-origin: 50% 50%; 
+      animation: wag 1s ease-in-out infinite alternate;
+    }
+
+    @keyframes wag {
+      0% { transform: rotate(-10deg); }
+      100% { transform: rotate(10deg); }
+    }
+
+    .manx svg line:nth-last-child(1), /* Hide unnecessary tail lines */
+    .manx svg line:nth-last-child(2),
+    .manx svg line:nth-last-child(3) { 
+      display: none;
+    }
+    .kitten.manx svg line:nth-last-child(1), /* Hide unnecessary tail lines */
+    .kitten.manx svg line:nth-last-child(2),
+    .kitten.manx svg line:nth-last-child(3) { 
+      display: none;
+    }
+    .stick {
+      transform: scaleX(0.5); /* Skinnier body */
+    }
+    .stick svg ellipse:first-child, /* Adjust body shape in SVG */
+    .stick svg circle {
+      rx: 15; /* 50% of original rx */
+    }
+
+    .kitten.stick {
+      transform: scaleX(0.5);
+    }
+    .kitten.stick svg ellipse:first-child, /* Adjust body shape in SVG */
+    .kitten.stick svg circle {
+      rx: 11.25; /* 50% of original rx */
+    }
+    .mainecoon {
+      width: 80px;
+      height: 80px;
+    }
+    .kitten.mainecoon {
+      width: 40px;
+      height: 40px;
+    }
+    .kitten.mainecoon.medium {
+      width: 53.33px; /* 2/3 of 80px */
+      height: 53.33px;
+    }
+    .treat {
+      width: 30px;
+      height: 30px;
+      position: absolute;
+      touch-action: none;
+      user-select: none;
+      font-size: 20px; /* Slightly smaller font size */
+    }
+    .tortoiseshell {
+      /* No specific styles needed, the SVG will handle the colors */
+    }
+    .tiger {
+      width: 100px;
+      height: 100px;
+    }
+    .kitten.tiger {
+      width: 50px;
+      height: 50px;
+    }
+    .kitten.tiger.medium {
+      width: 66.67px; /* 2/3 of 100px */
+      height: 66.67px;
+    }
+    .sleep-zs {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .sleep-z {
+      position: absolute;
+      top: 2px;
+      right: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #888;
+      animation: sleepZ 2.4s ease-out forwards;
+    }
+    @keyframes sleepZ {
+      0% { opacity: 0; transform: translate(0, 0) scale(0.7); }
+      20% { opacity: 1; }
+      100% { opacity: 0; transform: translate(18px, -38px) scale(1.4); }
+    }
+    .heart {
+      position: absolute;
+      font-size: 30px;
+      animation: float-and-fade 2s forwards;
+      z-index: 100; /* Ensure heart appears above other elements */
+    }
+
+    @keyframes float-and-fade {
+      0% { opacity: 1; transform: translateY(0); }
+      50% { opacity: 0.5; transform: translateY(-20px); }
+      100% { opacity: 0; transform: translateY(-40px); }
+    }
+    .munchkin {
+      width: 45px; /* Smaller than regular cats */
+      height: 45px;
+    }
+    .kitten.munchkin {
+      width: 22.5px; /* Smaller than regular kittens */
+      height: 22.5px;
+    }
+    .kitten.munchkin.medium {
+      width: 30px; /* Smaller than medium kittens */
+      height: 30px;
+    }
+    .pregnant {
+      /* animation duration is set dynamically when pregnancy starts */
+      animation-name: pregnancy;
+      animation-fill-mode: forwards;
+    }
+    @keyframes pregnancy {
+      0%, 99% { transform: scaleX(1.2); } /* Wider during pregnancy */
+      100% { transform: scaleX(1); } /* Back to normal size after birth */
+    }
+    .pregnancy-text { /* Style for "pregnant" text */
+      position: absolute;
+      top: -20px; /* Adjust position relative to cat */
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #ff69b4;
+      /* animation duration is set dynamically when pregnancy starts */
+      animation-name: fade-out;
+      animation-fill-mode: forwards;
+    }
+    .dark-mode .pregnancy-text {
+      color: #f8bbd0; /* Lighter pink */
+    }
+
+    @keyframes fade-out {
+      0% { opacity: 1; }
+      99% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    .hand {
+      position: absolute;
+      font-size: 24px;
+      animation: hand-wave 1s 2; /* Animate twice */
+      z-index: 101;
+    }
+
+    @keyframes hand-wave {
+      0% { transform: translateY(0px); }
+      25% { transform: translateY(-10px); }
+      50% { transform: translateY(0px); }
+      75% { transform: translateY(-10px); }
+      100% { transform: translateY(0px); }
+    }
+
+    #hideMenuButton {
+      position: absolute;
+      top: 20px; 
+      left: 20px; 
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      background: #4CAF50; 
+      color: white;
+      cursor: pointer;
+      z-index: 1001; 
+    }
+
+    #zonesToggleButton {
+      position: absolute;
+      top: 70px;
+      left: 20px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      background: #4CAF50;
+      color: white;
+      cursor: pointer;
+      z-index: 1001;
+    }
+
+    #pregnancyToggleButton {
+      position: absolute;
+      top: 120px;
+      left: 20px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      background: #4CAF50;
+      color: white;
+      cursor: pointer;
+      z-index: 1001;
+    }
+
+    #modeToggleButton {
+      position: absolute;
+      top: 170px; /* Position below pregnancy toggle button */
+      left: 20px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      background: #4CAF50; /* Initial background color (light mode) */
+      color: white;
+      cursor: pointer;
+      z-index: 1001;
+      transition: background-color 0.3s ease, color 0.3s ease; /* Add smooth transitions */
+    }
+    .dark-mode #modeToggleButton {
+        background-color: #ffc107; /* Dark mode button color */
+        color: black;
+    }
+
+    #genderModal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      z-index: 1001; 
+      max-width: 90vw;
+    }
+    #eyeColorButtons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-width: 320px;
+      justify-content: center;
+    }
+    .eye-color-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid #ccc;
+      cursor: pointer;
+      padding: 0;
+    }
+    .eye-color-btn:hover {
+      border-color: #333;
+      transform: scale(1.1);
+    }
+    .eye-target-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .eye-target-btn.active {
+      background: #4CAF50;
+      color: white;
+      font-weight: bold;
+      border-color: #4CAF50;
+    }
+    .eye-extra-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .choice-zone {
+      width: 120px;
+      height: 60px;
+      position: absolute;
+      border: 2px solid #4CAF50;
+      border-radius: 5px;
+      background: rgba(76, 175, 80, 0.1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      right: 20px;
+      top: 190px;
+    }
+    .dark-mode .choice-zone {
+      border-color: #007bff; /* Blue border */
+      background-color: rgba(0, 123, 255, 0.1); /* Blue background */
+    }
+
+    .choice-button {
+      position: absolute;
+      right: 40px;
+      top: 260px;
+      padding: 5px 10px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .dark-mode .choice-button {
+      background-color: #007bff; /* Blue background */
+    }
+
+    .choice-result {
+      position: absolute;
+      right: 40px;
+      top: 300px;
+      background: #4CAF50;
+      color: white;
+      padding: 5px;
+      border-radius: 5px;
+      display: none; /* Initially hidden */
+    }
+    .dark-mode .choice-result {
+      background-color: #007bff; /* Blue background */
+    }
+
+    .relationship-zone {
+      width: 120px;
+      height: 60px;
+      position: absolute;
+      border: 2px solid #FFA0B4; /* Pink border */
+      border-radius: 5px;
+      background: rgba(255, 160, 180, 0.1); /* Pink background */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      right: 20px;
+      top: 310px; /* Positioned below choice zone */
+    }
+    .dark-mode .relationship-zone {
+      border-color: #f48fb1; /* Lighter pink border */
+      background-color: rgba(244, 143, 177, 0.1); /* Lighter pink background */
+    }
+
+    .test-relationship-button {
+      position: absolute;
+      right: 40px;
+      top: 380px; /* Positioned below relationship zone */
+      padding: 5px 10px;
+      background: #FFA0B4; /* Pink background */
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .dark-mode .test-relationship-button {
+      background-color: #f06292; /* Lighter pink background */
+    }
+
+    .relationship-result {
+      position: absolute;
+      right: 40px;
+      top: 420px;
+      background: #FFA0B4;
+      color: white;
+      padding: 5px;
+      border-radius: 5px;
+      display: none; /* Initially hidden */
+    }
+    .dark-mode .relationship-result {
+      background-color: #f06292; /* Lighter pink background */
+    }
+
+    .muddy {
+      animation: mud-splatter 1s forwards; /* Animation for mud splatter */
+    }
+
+    @keyframes mud-splatter {
+      0% { }
+      100% { } /* No changes needed, mud coloring handled in JS */
+    }
+    .mud {
+      width: 30px;
+      height: 30px;
+      position: absolute;
+      touch-action: none;
+      user-select: none;
+      font-size: 24px;
+    }
+
+    .bathwater {
+      width: 40px;
+      height: 40px;
+      position: absolute;
+      touch-action: none;
+      user-select: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+    }
+    .hand-item {
+      width: 40px;
+      height: 40px;
+      position: absolute;
+      touch-action: none;
+      user-select: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+    }
+    .cat svg path:nth-child(10), /* Hide cat mouth */
+    .kitten svg path:nth-child(10) {
+        display: none;
+    }
+    
+    #outsideButtons {
+      display: block; /* Initially show outside buttons */
+    }
+
+    #outsideButtons.hidden {
+      display: none;
+    }
+    .muddy-ear { fill: #A0522D !important; } /* Brown for muddy ears */
+    .muddy-tail { stroke: #A0522D !important; } /* Brown for muddy tail */
+    .box {
+      width: 50px;
+      height: 50px;
+      position: absolute;
+      touch-action: none;
+      user-select: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 30px;
+    }
+
+    .money {
+      width: 40px;
+      height: 40px;
+      position: absolute;
+      touch-action: none;
+      user-select: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+    }
+
+    .cat.hidden-in-box, .kitten.hidden-in-box {
+        display: none;
+        left: 0;
+        top: 0;
+        transform: translate(0, 0) !important;
+    }
+
+    .fixed { 
+    }
+    .fixed .cat-eye { 
+      fill: #D3D3D3;
+    }
+    .fixer { 
+      width: 40px;
+      height: 40px;
+      position: absolute;
+      touch-action: none;
+      user-select: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+    }
+    .sick {
+      animation: glow-green 1s infinite;
+    }
+    @keyframes glow-green {
+      0% { filter: drop-shadow(0 0 10px #00ff00); }
+      50% { filter: drop-shadow(0 0 20px #00ff00); }
+      100% { filter: drop-shadow(0 0 10px #00ff00); }
+    }
+    .injected {
+      animation: jump 0.5s; /* Re-use jump animation */
+    }
+    .care-need {
+      position: absolute;
+      top: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18px;
+      z-index: 150;
+      pointer-events: none;
+    }
+    .remover {
+      width: 40px;
+      height: 40px;
+      position: absolute;
+      touch-action: none;
+      user-select: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+    }
+    .herbs {
+      width: 40px;
+      height: 40px;
+      position: absolute;
+      touch-action: none;
+      user-select: none;
+      font-size: 24px;
+    }
+    .breeding-status {
+      position: absolute;
+      top: 140px; /* Position below breeding zone */
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(255, 105, 180, 0.7); /* Pink background with transparency */
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 14px;
+      display: none; /* Initially hidden */
+      z-index: 1000;
+    }
+    .dark-mode .breeding-status {
+      background-color: rgba(233, 30, 99, 0.7); /* Darker pink with transparency */
+    }
+    .sheared {
+      /* No specific styles needed, shearing is handled by changing SVG fill */
+    }
+  </style>
+</head>
+<body>
+<div id="outsideButtons">
+  <button id="settingsOpenButton" style="position:absolute;top:20px;left:20px;padding:8px;border-radius:6px;background:#FFC107;color:#000;font-size:18px;" onclick="openSettingsModal()">⚙️</button>
+</div>
+<div id="currencyDisplay" style="display:none;position:absolute;top:20px;right:20px;padding:8px 12px;border-radius:6px;background:rgba(255,255,255,0.9);box-shadow:0 2px 8px rgba(0,0,0,0.15);font-size:16px;font-weight:bold;z-index:50;"></div>
+<div id="currencyMsg" style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);padding:8px 14px;background:rgba(0,0,0,0.78);color:#fff;border-radius:6px;font-size:14px;z-index:3000;"></div>
+
+<div id="genderModal">
+  <div id="genderSection">
+    <p>Select cat gender:</p>
+    <button onclick="setCatGender('male')">Male</button>
+    <button onclick="setCatGender('female')">Female</button>
+    <button onclick="setCatGender('random')">Random</button>
+  </div>
+  <div id="eyeSection" style="display:none;">
+    <p>Select eye color:</p>
+    <div class="eye-target-row">
+      <button class="eye-target-btn" id="eyeTargetBoth" onclick="setEyeTarget('both')">Both</button>
+      <button class="eye-target-btn" id="eyeTargetLeft" onclick="setEyeTarget('left')">Left</button>
+      <button class="eye-target-btn" id="eyeTargetRight" onclick="setEyeTarget('right')">Right</button>
+    </div>
+    <div id="eyeColorButtons"></div>
+    <div class="eye-extra-row">
+      <button onclick="randomizeEye()">Randomize</button>
+      <button onclick="pickCustomEye()">Custom</button>
+      <input type="color" id="customEyeColorInput" value="#0000FF" style="display:none;">
+    </div>
+    <br>
+    <button onclick="cancelEyeColor()">Back</button>
+    <button onclick="confirmEyeColor()">OK</button>
+  </div>
+</div>
+
+<div class="breeding-zone">Breeding Zone</div>
+<button class="breed-button" onclick="breed()">Breed</button>
+<div class="breeding-status" id="breedingStatus"></div>
+
+<div class="button-container">
+  <button onclick="showTabbyOptions()">Add Tabby Cat</button>
+  <div id="tabbyOptions">
+    <button onclick="addCat('tabby_orange')">Orange Tabby</button>
+    <button onclick="addCat('tabby_grey')">Grey Tabby</button>
+    <button onclick="addCat('tabby_brown')">Brown Tabby</button>
+    <button onclick="addCat('tabby_cream')">Cream Tabby</button> 
+    <button onclick="addRandomTabby()">Random Tabby</button>
+  </div>
+
+  <button onclick="showToyOptions()">Add Toy</button>
+  <div id="toyOptions">
+    <button onclick="addSpecificToy('🎯')">Laser Pointer</button>
+    <button onclick="addSpecificToy('🐁')">Mouse Toy</button>
+    <button onclick="addSpecificToy('⚾')">Ball Toy</button>
+    <button onclick="addSpecificToy('🧶')">Yarn Ball</button>
+    <button onclick="addSpecificToy()">Random Toy</button>
+  </div>
+
+  <button onclick="addCat('calico')">Add Calico Cat</button>
+  <button onclick="addCat('white')">Add White Cat</button>
+  <button onclick="addCat('black')">Add Black Cat</button>
+  <button onclick="addCat('bluehair')">Add Bluehair Cat</button>
+  <button onclick="addCat('tuxedo')">Add Tuxedo Cat</button>
+  <button onclick="addCat('siamese')">Add Siamese Cat</button>
+  <button onclick="addCat('bengal')">Add Bengal Cat</button>
+  <button onclick="addCat('tortoiseshell')">Add Tortoiseshell Cat</button>
+  
+  <button onclick="showSphynxOptions()">Add Sphynx Cat</button>
+  <div id="sphynxOptions">
+    <button onclick="addCat('sphynx_grey')">Grey Sphynx</button>
+    <button onclick="addCat('sphynx_white')">White Sphynx</button>
+    <button onclick="addCat('sphynx_greyblack')">Greyish Black Sphynx</button>
+    <button onclick="addCat('sphynx_orangepink')">Orangish Pink Sphynx</button>
+    <button onclick="addCat('sphynx_pink')">Pink Sphynx</button>
+    <button onclick="addRandomSphynx()">Random Sphynx</button>
+  </div>
+
+  <button onclick="showTigerOptions()">Add Tiger Cat</button>
+  <div id="tigerOptions">
+    <button onclick="addCat('tiger_orange')">Orange Tiger</button>
+    <button onclick="addCat('tiger_white')">White Tiger</button>
+    <button onclick="addRandomTiger()">Random Tiger</button>
+  </div>
+
+  <button onclick="addCat('savannah')">Add Savannah Cat</button>
+  <button onclick="addCat('abyssinian')">Add Abyssinian Cat</button>
+
+  <button onclick="addCat('scottishfold')">Add Scottish Fold</button>
+  <button onclick="addCat('manx')">Add Manx Cat</button>
+  <button onclick="addCat('sausage')">Add Sausage Cat</button>
+  <button onclick="addCat('stick')">Add Stick Cat</button>
+  <button onclick="addCat('munchkin')">Add Munchkin Cat</button>
+  <button onclick="addCat('leafy')">Add Leafy Cat</button>
+
+  <button onclick="showRainbowOptions()">Add Rainbow Cat</button>
+  <div id="rainbowOptions" style="display:none; margin:5px 0;">
+    <button onclick="addCat('rainbow_red')">Red</button>
+    <button onclick="addCat('rainbow_orange')">Orange</button>
+    <button onclick="addCat('rainbow_yellow')">Yellow</button>
+    <button onclick="addCat('rainbow_green')">Green</button>
+    <button onclick="addCat('rainbow_cyan')">Cyan</button>
+    <button onclick="addCat('rainbow_blue')">Blue</button>
+    <button onclick="addCat('rainbow_violet')">Violet</button>
+    <button onclick="addCat('rainbow_purple')">Purple</button>
+    <button onclick="addCat('rainbow_magenta')">Magenta</button>
+    <button onclick="addCat('rainbow_pink')">Pink</button>
+  </div>
+
+  <button onclick="showMaineCoonOptions()">Add Maine Coon Cat</button>
+  <div id="mainecoonOptions">
+    <button onclick="addCat('mainecoon_brown')">Brown Maine Coon</button>
+    <button onclick="addCat('mainecoon_orange')">Orange Maine Coon</button>
+    <button onclick="addCat('mainecoon_grey')">Grey Maine Coon</button>
+    <button onclick="addCat('mainecoon_black')">Black Maine Coon</button>
+    <button onclick="addCat('mainecoon_white')">White Maine Coon</button>
+    <button onclick="addCat('mainecoon_cream')">Cream Maine Coon</button>
+    <button onclick="addRandomMaineCoon()">Random Maine Coon</button>
+  </div>
+  <button onclick="addBowl('food')">Add Food Bowl</button>
+  <button onclick="addBowl('water')">Add Water Bowl</button>
+  <button onclick="addFood('chicken')">Add Chicken Leg</button>
+  <button onclick="addFood('steak')">Add Steak</button>
+  <button onclick="addFood('fish')">Add Fish</button>
+  <button onclick="addFood('shrimp')">Add Shrimp</button>
+  <button onclick="addFood('lobster')">Add Lobster</button>
+  <button onclick="addFood('crab')">Add Crab</button>
+  <button onclick="addFood('meatloaf')">Add Meatloaf</button>
+  <button onclick="addFood('bacon')">Add Bacon</button>
+  <button onclick="addFood('rabbit')">Add Rabbit</button>
+  <button onclick="addFood('squirrel')">Add Squirrel</button>
+  <button onclick="addFood('mouse')">Add Mouse</button>
+  <button onclick="addFood('rat')">Add Rat</button>
+  <button onclick="addFood('bird')">Add Bird</button>
+  <button onclick="addFood('milk')">Add Milk</button>
+  <button onclick="addFood('catnip')">Add Catnip</button>
+  <button onclick="addRandomCat()">Add Random Cat</button>
+  <button onclick="addRandomFood()">Add Random Food</button>
+  <button onclick="resetAll()" style="background-color: #ff4444;">Reset All</button>
+  <button onclick="toggleAutoMovement()">Toggle Auto Movement</button>
+  <button onclick="addTreat()">Add Random Treat</button>
+  <button onclick="addTreat('🟫')">Add 🟫 Treat</button>
+  <button onclick="addTreat('🟤')">Add 🟤 Treat</button>
+  <button onclick="addTreat('🤎')">Add 🤎 Treat</button>
+  <button onclick="addHand()">Add Hand</button>
+  <button onclick="toggleOutsideButtons()">Toggle Outside Buttons</button>
+  <button onclick="addMud()">Add Mud</button>
+  <button onclick="addBathwater()">Add Bath Water</button>
+  <button onclick="addBox()">Add Box</button>
+  <button onclick="addMoney()">Add Money</button>
+  <button onclick="addFixer()">Add Fixer💉</button>
+  <button onclick="addSickness()">Add Sickness🦠</button>
+  <button onclick="addCure()">Add Cure💊</button>
+  <button onclick="addSyringe()">Add Syringe💉</button>
+  <button onclick="addRemover()">Add Remover🚫</button>
+  <button onclick="addSleepifier()">Add Sleepifier💤</button>
+  <button onclick="addRandomItem()">Add Random Item</button>
+  <button onclick="addHerbs()">Add Herbs🌿</button>
+  <button onclick="addScissors()">Add Scissors✂️</button>
+  <button onclick="openCustomBreedModal()">Create Custom Breed</button>
+  <button onclick="openCustomItemModal()">Create Custom Item</button>
+</div>
+
+<div id="customBreedModal" style="display:none; position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); background:white; padding:16px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.2); z-index:2000; min-width:300px;">
+  <h3 style="margin:0 0 10px 0;">Custom Breed Creator</h3>
+  <label>Breed name</label><br>
+  <input id="customBreedName" type="text" placeholder="e.g. duskling" style="width:100%; margin-bottom:8px;">
+  <label>Body color</label><br>
+  <input id="customBodyColor" type="color" value="#ffcc99" style="width:100%; height:34px; margin-bottom:8px;">
+
+  <div id="earSingleWrapper" style="display:none;">
+    <label>Ear color (single)</label><br>
+    <input id="customEarSingleColor" type="color" value="#fff5e6" style="width:100%; height:34px; margin-bottom:8px;">
+  </div>
+
+  <div id="earPairWrapper">
+    <label>Left ear color</label><br>
+    <input id="customLeftEarColor" type="color" value="#fff5e6" style="width:100%; height:34px; margin-bottom:8px;">
+    <label>Right ear color</label><br>
+    <input id="customRightEarColor" type="color" value="#fff5e6" style="width:100%; height:34px; margin-bottom:8px;">
+  </div>
+
+  <label><input type="checkbox" id="customLinkEars" checked> Link left & right ear colors</label><br><br>
+
+  <label>Tail color</label><br>
+  <input id="customTailColor" type="color" value="#ffcc99" style="width:100%; height:34px; margin-bottom:8px;">
+
+  <label><input type="checkbox" id="customScottishFold"> Scottish Fold ears</label><br>
+  <label><input type="checkbox" id="customManxTail"> Manx-style round tail</label><br><br>
+
+  <label>Body type</label><br>
+  <select id="customBodyType" style="width:100%; margin-bottom:12px;">
+    <option value="normal">Normal</option>
+    <option value="mainecoon">Maine Coon</option>
+    <option value="tiger">Tiger</option>
+    <option value="munchkin">Munchkin</option>
+    <option value="sausage">Sausage</option>
+    <option value="stick">Stick</option>
+  </select>
+  <div style="display:flex; gap:8px; justify-content:flex-end;">
+    <button onclick="closeCustomBreedModal()" style="background:#888;">Cancel</button>
+    <button onclick="addCustomBreed()" style="background:#4CAF50;">Add Custom Breed</button>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div id="settingsModal" style="display:none; position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); background:white; padding:16px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.25); z-index:2001; min-width:320px; max-height:80vh; overflow:auto;">
+  <h3 style="margin:0 0 10px 0;">Settings</h3>
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <button onclick="toggleButtonMenu()" style="width:100%;">Show/Hide Menu</button>
+    <button onclick="toggleZones()" style="width:100%;">Toggle Zones</button>
+    <button onclick="togglePregnancy()" id="settingsPregnancyBtn" style="width:100%;">Disable Pregnancy</button>
+    <button onclick="toggleDarkMode()" style="width:100%;">Toggle Dark Mode</button>
+    <button onclick="toggleAutoMovement()" id="settingsAutoMoveBtn" style="width:100%;">Toggle Auto Movement</button>
+    <button onclick="resetAll()" style="width:100%; background:#ff4444;">Reset All</button>
+
+    <hr>
+    <label><input type="checkbox" id="settingLimitKittens"> Limit kittens per birth to 1</label>
+    <label>Pregnancy duration (seconds): <input id="settingPregnancyDuration" type="number" min="0" value="30" style="width:100px; margin-left:8px;"></label>
+
+    <hr>
+    <label><input type="checkbox" id="settingDisableUnsuccessfulBreeding"> Disable unsuccessful breeding</label>
+    <label>Unsuccessful breeding chance (%): <input id="settingUnsuccessfulBreedingChance" type="number" min="0" max="100" value="30" style="width:70px; margin-left:8px;"></label>
+
+    <hr>
+    <div style="font-size:12px;color:#666;margin-bottom:4px;">First kitten resemblance to parents (later kittens are randomized):</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span id="resemblanceLeftLabel" style="min-width:48px;">Mother</span>
+      <input type="range" id="settingResemblanceSlider" min="0" max="100" value="50" style="flex:1;" oninput="updateResemblanceSliderLabel()">
+      <span id="resemblanceRightLabel" style="min-width:48px;">Father</span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button type="button" onclick="randomizeResemblanceSlider()">Randomize</button>
+      <span id="resemblanceSliderValue" style="font-size:12px;color:#666;"></span>
+    </div>
+    <label><input type="checkbox" id="settingResemblanceRandomize" onchange="toggleResemblanceSliderEnabled()"> Always randomize resemblance (disable slider)</label>
+    <label><input type="checkbox" id="settingResemblanceSwap" onchange="updateResemblanceLabels()"> Swap parent sides on slider</label>
+    <label><input type="checkbox" id="settingRandomEyes"> Always randomize kitten eye color</label>
+
+    <hr>
+    <label>Baseline chance for Scottish Fold / Manx when neither parent has it (%): <input id="settingBaselineScottishManx" type="number" min="0" max="100" value="5" style="width:70px; margin-left:8px;"></label>
+    <label>Baseline chance for size/shape traits when neither parent has them (%): <input id="settingBaselineOthers" type="number" min="0" max="100" value="1" style="width:70px; margin-left:8px;"></label>
+    <label>Chance for a novel/mutant color not from parents (%): <input id="settingMutationChance" type="number" min="0" max="100" value="1" style="width:70px; margin-left:8px;"></label>
+
+    <hr>
+    <label><input type="checkbox" id="settingCareMode"> Enable Care Mode</label>
+    <label>Care interval min (seconds): <input id="settingCareMin" type="number" min="1" value="5" style="width:70px; margin-left:8px;"></label>
+    <label>Care interval max (seconds): <input id="settingCareMax" type="number" min="1" value="60" style="width:70px; margin-left:8px;"></label>
+    <div id="careStatus" style="font-size:12px;color:#888;"></div>
+    <div style="font-size:12px;color:#666;">🍽 = bring any food &nbsp;•&nbsp; ❤️ = bring a hand &nbsp;•&nbsp; 🥎 = bring any toy</div>
+    <div style="font-size:12px;color:#666;">💧 = bring a water bowl &nbsp;•&nbsp; 🦠 = cure/syringe/herbs &nbsp;•&nbsp; 🚿 = bath water &nbsp;•&nbsp; 💤 = bring sleepifier</div>
+
+    <hr>
+    <div style="border:1px solid #ddd;border-radius:8px;padding:10px;">
+      <label><input type="checkbox" id="settingCurrency"> Enable Currency Mode</label>
+      <div style="font-size:12px;color:#666;margin:4px 0;">Add one or more currencies. Each has its own items that cost it and actions that earn it.</div>
+      <div id="currencyList" style="margin-top:6px;"></div>
+      <button type="button" onclick="addCurrency()" style="margin-top:8px;background:#4CAF50;color:#fff;">+ Add Currency</button>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="resetSettings()" style="background:#f0ad4e;color:#000;">Reset Settings</button>
+      <button onclick="closeSettingsModal()" style="background:#888;">Close</button>
+      <button onclick="saveSettings()" style="background:#4CAF50;">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Item Creator modal -->
+<div id="customItemModal" style="display:none; position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); background:white; padding:16px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.2); z-index:2002; min-width:300px;">
+  <h3 style="margin:0 0 10px 0;">Create Custom Item</h3>
+  <label>Name</label><br>
+  <input id="customItemName" type="text" placeholder="e.g. bouncy mouse" style="width:100%; margin-bottom:8px;">
+  <label>Emoji</label><br>
+  <input id="customItemEmoji" type="text" placeholder="e.g. 🐭" style="width:100%; margin-bottom:8px;">
+  <label>Type</label><br>
+  <select id="customItemType" style="width:100%; margin-bottom:12px;">
+    <option value="food">food</option>
+    <option value="toy">toy</option>
+    <option value="catnip">catnip</option>
+    <option value="sickness">sickness</option>
+    <option value="cure">cure</option>
+    <option value="syringe">syringe</option>
+    <option value="mud">mud</option>
+    <option value="bathwater">bathwater</option>
+    <option value="hand">hand</option>
+    <option value="box">box</option>
+    <option value="money">money</option>
+    <option value="fixer">fixer</option>
+    <option value="remover">remover</option>
+    <option value="sleepifier">sleepifier</option>
+    <option value="scissors">scissors</option>
+    <option value="none">none</option>
+  </select>
+
+  <!-- Mud-specific options (only relevant when type === "mud") -->
+  <div id="customItemMudOptions" style="display:none; margin-bottom:8px;">
+    <label>Mud color</label><br>
+    <input id="customItemMudColor" type="color" value="#A0522D" style="width:100%; height:34px; margin-bottom:8px;">
+    <label><input id="customItemMudRemovable" type="checkbox" checked> Removable with bathwater</label><br>
+    <small style="color:#666;">If unchecked, mud is permanent and bathwater won't clean it.</small>
+  </div>
+
+  <!-- Drink-specific option (only relevant when type === "food" or "catnip") -->
+  <div id="customItemDrinkOptions" style="display:none; margin-bottom:8px;">
+    <label><input id="customItemDrink" type="checkbox"> Is a drink (cures the 💧 need)</label>
+  </div>
+
+  <!-- Sleepifier-specific option (only relevant when type === "sleepifier") -->
+  <div id="customItemSleepOptions" style="display:none; margin-bottom:8px;">
+    <label>Sleep symbol (what floats from the head): <input id="customItemSleepSymbol" type="text" placeholder="Z" style="width:80px;"></label>
+  </div>
+
+  <div style="display:flex; gap:8px; justify-content:flex-end;">
+    <button onclick="closeCustomItemModal()" style="background:#888;">Cancel</button>
+    <button onclick="addCustomItem()" style="background:#4CAF50;">Create Item</button>
+  </div>
+</div>
+
+<div class="choice-zone">Choice Zone</div>
+<button class="choice-button" onclick="makeChoice()">Make Choice</button>
+<div class="choice-result" id="choiceResult"></div>
+
+<div class="relationship-zone">Relationship Zone</div>
+<button class="test-relationship-button" onclick="testRelationship()">Test Relationship</button>
+<div class="relationship-result" id="relationshipResult"></div>
+
+<script>
+let catBreedCounts = new Map();
+let kittenFeedCounts = new Map();
+const customBreeds = new Map(); // name -> {colorsPattern, bodyType}
+const customItems = new Map(); // name -> {emoji, type}
+const catColors = {
+  calico: '#FFFFFF,#8B4513;#FFA500,#000000,#000000',
+  tabby_orange: '#FFA500,#D2691E,#FF8C00',
+  tabby_grey: '#808080,#A9A9A9,#696969',
+  tabby_brown: '#D2691E,#8B4513,#A0522D',
+  tabby_cream: '#FFFDD0,#FAFAD2,#FFFFE0',
+  white: '#FFFFFF,#FFFAFA,#F8F8FF',
+  black: '#000000,#191970,#000000',
+  tuxedo: '#000000,#FFFFFF,#FFFFFF',
+  siamese: '#FFDAB9,#8B4513,#8B4513',
+  bengal: '#FFB347,#8B4513,#8B4513',
+  bluehair: '#6699CC,#4682B4,#4682B4',
+  sphynx_grey: '#A9A9A9,#808080,#A9A9A9',
+  sphynx_white: '#FFFFFF,#F5F5F5,#FFFFFF',
+  sphynx_greyblack: '#4A4A4A,#363636,#4A4A4A',
+  sphynx_orangepink: '#FFB6C1,#FFA07A,#FFB6C1',
+  sphynx_pink: '#FFE4E1,#FFC0CB,#FFE4E1',
+  sphynx: '#FFE4E1,#FFC0CB,#FFE4E1',
+  savannah: '#D2B48C,#8B4513,#000000',
+  tiger_orange: '#FFA500,#000000;#000000,#000000',
+  tiger_white: '#FFFFFF,#000000;#000000,#000000',
+  scottishfold: '#A9A9A9,#808080,#808080',
+  manx: '#A0522D,#3F000F,#3F000F',
+  sausage: '#e5989b,#b5838d,#b5838d', // Sausage cat color
+  stick: '#A0522D,#3F000F,#3F000F', // Stick cat color
+  mainecoon_brown: '#A0522D,#8B4513,#3F000F',
+  mainecoon_orange: '#FFA500,#D2691E,#8B4513',
+  mainecoon_grey: '#808080,#A9A9A9,#696969',
+  mainecoon_black: '#000000,#191970,#000000',
+  mainecoon_white: '#FFFFFF,#FFFAFA,#F8F8FF',
+  mainecoon_cream: '#FFFDD0,#FAFAD2,#FFFFE0',
+  tortoiseshell: '#000000,#8B4513,#BB5510,#D2691E,#FFA500',
+  munchkin: '#FFCC99,#FFFDD0,#FFFDD0', // Light orange with cream ears
+  leafy: '#CD853F,#8FBC8F,#2E8B57',
+  abyssinian: '#C0703A,#C0703A,#C0703A', // Abyssinian tawny single-tone base
+  // Rainbow single-color cats (body, ears, tail all same solid color)
+  rainbow_red: '#FF0000,#FF0000,#FF0000',
+  rainbow_orange: '#FF7F00,#FF7F00,#FF7F00',
+  rainbow_yellow: '#FFFF00,#FFFF00,#FFFF00',
+  rainbow_green: '#00FF00,#00FF00,#00FF00',
+  rainbow_cyan: '#00FFFF,#00FFFF,#00FFFF',
+  rainbow_blue: '#0000FF,#0000FF,#0000FF',
+  rainbow_violet: '#8B00FF,#8B00FF,#8B00FF',
+  rainbow_purple: '#800080,#800080,#800080',
+  rainbow_magenta: '#FF00FF,#FF00FF,#FF00FF',
+  rainbow_pink: '#FFC0CB,#FFC0CB,#FFC0CB'
+};
+const bowlColors = {
+  food: '#CD853F',
+  water: '#87CEEB'
+};
+const toys = ['🎯', '🐁', '⚾', '🧶'];
+
+function addBowl(type) {
+  const bowl = document.createElement('div');
+  bowl.className = 'bowl';
+  bowl.innerHTML = createBowlSVG(bowlColors[type]);
+  bowl.style.left = (window.innerWidth - 40) / 2 + 'px';
+  bowl.style.top = (window.innerHeight - 40) / 2 + 'px';
+  bowl.dataset.type = 'bowl';
+  bowl.dataset.variant = type || 'food';
+  document.body.appendChild(bowl);
+  makeDraggable(bowl);
+}
+
+function addFood(type) {
+  
+  const food = document.createElement('div');
+  
+  if (type === 'catnip') {
+    food.className = 'food catnip';
+    food.innerHTML = '🌿'; 
+  } else {
+    food.className = 'food';
+    food.innerHTML = type === 'chicken' ? '🍗' : type === 'steak' ? '🥩' : type === 'fish' ? '🐟' : type === 'shrimp' ? '🦐' : type === 'lobster' ? '🦞' : type === 'crab' ? '🦀' : type === 'meatloaf' ? '🍖' : type === 'bacon' ? '🥓' : type === 'rabbit' ? '🐇' : type === 'squirrel' ? '🐿' : type === 'mouse' ? '🐁' : type === 'rat' ? '🐀' : type === 'bird' ? '🐦' : type === 'milk' ? '🥛' : '🍖';
+  }
+  food.style.left = (window.innerWidth - 40) / 2 + 'px';
+  food.style.top = (window.innerHeight - 40) / 2 + 'px';
+  food.dataset.type = 'food';
+  if (type === 'milk') food.dataset.drink = 'true';
+  document.body.appendChild(food);
+  makeDraggable(food);
+}
+
+function addToy() {
+  const toy = document.createElement('div');
+  toy.className = 'toy';
+  toy.innerHTML = toys[Math.floor(Math.random() * toys.length)];
+  toy.style.left = (window.innerWidth - 40) / 2 + 'px';
+  toy.style.top = (window.innerHeight - 40) / 2 + 'px';
+  toy.dataset.type = 'toy';
+  document.body.appendChild(toy);
+  makeDraggable(toy);
+}
+
+function addRandomCat() {
+  const catTypes = ['calico', 'white', 'black', 'tuxedo', 'siamese', 'bengal', 'tabby_orange', 'tabby_grey', 'tabby_brown', 'bluehair', 'sphynx_grey', 'sphynx_white', 'sphynx_greyblack', 'sphynx_orangepink', 'sphynx_pink', 'savannah', 'manx', 'scottishfold', 'sausage', 'stick', 'mainecoon_brown', 'mainecoon_orange', 'mainecoon_grey', 'mainecoon_black', 'mainecoon_white', 'mainecoon_cream', 'tortoiseshell', 'tiger_orange', 'tiger_white', 'munchkin', 'leafy'];
+  const randomType = catTypes[Math.floor(Math.random() * catTypes.length)];
+    addCat(randomType);
+}
+
+function addRandomFood() {
+  const foodItems = [{
+    type: 'bowl',
+    variant: 'food'
+  }, {
+    type: 'bowl',
+    variant: 'water'
+  }, {
+    type: 'food',
+    variant: 'chicken'
+  }, {
+    type: 'food',
+    variant: 'steak'
+  }, {
+    type: 'food',
+    variant: 'fish'
+  }, {
+    type: 'food',
+    variant: 'shrimp'
+  }, {
+    type: 'food',
+    variant: 'lobster'
+  }, {
+    type: 'food',
+    variant: 'crab'
+    }, {
+    type: 'food',
+    variant: 'meatloaf'
+    }, {
+    type: 'food',
+    variant: 'bacon'
+    }, {
+    type: 'food',
+    variant: 'rabbit'
+    }, {
+    type: 'food',
+    variant: 'squirrel'
+    }, {
+    type: 'food',
+    variant: 'mouse'
+    }, {
+    type: 'food',
+    variant: 'rat'
+    }, {
+    type: 'food',
+    variant: 'bird'
+  }, {
+    type: 'food',
+    variant: 'catnip'
+  }, {
+    type: 'food',
+    variant: 'herbs'
+  }];
+  const randomItem = foodItems[Math.floor(Math.random() * foodItems.length)];
+  if (randomItem.type === 'bowl') {
+    addBowl(randomItem.variant);
+  } else {
+    addFood(randomItem.variant);
+  }
+}
+
+function addTreat(treatType) {
+  const treat = document.createElement('div');
+  treat.className = 'treat food'; 
+  const treatTypes = treatType ? [treatType] : ['🟫', '🟤', '🤎'];
+  treat.innerHTML = treatTypes[Math.floor(Math.random() * treatTypes.length)];
+  treat.style.left = (window.innerWidth - 30) / 2 + 'px';
+  treat.style.top = (window.innerHeight - 30) / 2 + 'px';
+  treat.dataset.type = 'food'; 
+  document.body.appendChild(treat);
+  makeDraggable(treat);
+}
+
+function makeDraggable(element) {
+  if (element.dataset.charged !== '1' && element.dataset.type && element.dataset.type !== 'cat' && element.dataset.type !== 'kitten') {
+    element.dataset.charged = '1';
+    if (!chargeCost(itemCostKey(element))) { element.remove(); return; }
+  }
+  let offset = { x: 0, y: 0 };
+  let isDragging = false; 
+
+  function drag(e) {
+    if (!isDragging) return; 
+    e.preventDefault();
+    element.style.left = e.clientX - offset.x + 'px';
+    element.style.top = e.clientY - offset.y + 'px';
+    if (element.classList.contains('cat')) {
+      const catsInZone = getCatsInBreedingZone();
+      document.querySelector('.breed-button').style.display = catsInZone.length === 2 ? 'block' : 'none';
+    }
+  }
+
+  function startDragging(e) {
+    isDragging = true; 
+    if (element.dataset.type === 'cat' || element.dataset.type === 'kitten') {
+      wakeCat(element);
+    }
+    const rect = element.getBoundingClientRect();
+    offset = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+    document.addEventListener('pointermove', drag);
+  }
+
+  function stopDragging(e) {
+    isDragging = false; 
+    document.removeEventListener('pointermove', drag);
+    if (element.dataset.type === 'cat' || element.dataset.type === 'kitten') {
+      const bowlsAndFood = [...document.querySelectorAll('.bowl'), ...document.querySelectorAll('.food')];
+      bowlsAndFood.forEach(item => {
+        const catRect = element.getBoundingClientRect();
+        const itemRect = item.getBoundingClientRect();
+        if (isOverlapping(catRect, itemRect)) {
+          let eatingDuration = 1000;
+
+          if (item.classList.contains('catnip')) {
+            if (!element.classList.contains('jumping')) {
+              element.classList.add('jumping');
+              eatingDuration = 500;
+            }
+            element.classList.remove('sick'); 
+          } else if (item.classList.contains('herbs')) { 
+             if (!element.classList.contains('eating')) {
+                element.classList.add('eating');
+             }
+             element.classList.remove('sick'); 
+             gain('cure');
+          } else if (!element.classList.contains('eating')) {
+            element.classList.add('eating');
+          }
+
+          gain('feed');
+          setTimeout(() => {
+            element.classList.remove('eating');
+            element.classList.remove('jumping'); // Remove jumping class after animation
+          }, eatingDuration);
+
+          if (element.classList.contains('kitten')) {
+            const kittenId = element.dataset.id;
+            const feedCount = (kittenFeedCounts.get(kittenId) || 0) + 1;
+            kittenFeedCounts.set(kittenId, feedCount);
+
+            if (feedCount >= 3 && !element.classList.contains('medium')) {
+              element.classList.add('medium');
+              gain('growHalf');
+              requestAnimationFrame(() => {
+                element.style.transition = 'width 0.5s, height 0.5s';
+                if (element.classList.contains('mainecoon')) {
+                  element.style.width = '53.33px';
+                  element.style.height = '53.33px';
+                } else if (element.classList.contains('tiger')) {
+                  element.style.width = '66.67px';
+                  element.style.height = '66.67px';
+                } else if (element.classList.contains('munchkin')) {
+                  element.style.width = '30px';
+                  element.style.height = '30px';
+                } else {
+                  element.style.width = '40px'; 
+                  element.style.height = '40px';
+                }
+              });
+            } else if (feedCount >= 6) {
+              element.classList.remove('kitten');
+              element.classList.remove('medium');
+              element.classList.add('cat');
+              kittenFeedCounts.delete(kittenId);
+              gain('growAdult');
+              requestAnimationFrame(() => {
+                element.style.transition = 'width 0.5s, height 0.5s';
+                element.style.width = element.classList.contains('mainecoon') ? '80px' : element.classList.contains('tiger') ? '100px' : element.classList.contains('munchkin') ? '45px' : '60px';
+                element.style.height = element.classList.contains('mainecoon') ? '80px' : element.classList.contains('tiger') ? '100px' : element.classList.contains('munchkin') ? '45px' : '60px';
+              });
+            }
+          }
+          handleCareDrop(element, item);
+          item.remove();
+        }
+      });
+    } else if (element.dataset.type === 'bowl' || element.dataset.type === 'food') {
+      const cats = document.querySelectorAll('.cat, .kitten');
+      cats.forEach(cat => {
+        const catRect = cat.getBoundingClientRect();
+        const itemRect = element.getBoundingClientRect();
+
+        if (isOverlapping(catRect, itemRect)) {
+          let eatingDuration = 1000;
+          if (element.classList.contains('catnip')) {
+             if (!cat.classList.contains('jumping')) {
+                cat.classList.add('jumping');
+                eatingDuration = 500;
+             }
+             cat.classList.remove('sick'); 
+          } else if (element.classList.contains('herbs')) { 
+             if (!cat.classList.contains('eating')) {
+                cat.classList.add('eating');
+             }
+             cat.classList.remove('sick'); 
+             gain('cure');
+          } else if (!cat.classList.contains('eating')) {
+            cat.classList.add('eating');
+          }
+
+          gain('feed');
+          setTimeout(() => {
+            cat.classList.remove('eating');
+            cat.classList.remove('jumping'); // Remove jumping class after animation
+          }, eatingDuration);
+
+          if (cat.classList.contains('kitten')) {
+            const kittenId = cat.dataset.id;
+            const feedCount = (kittenFeedCounts.get(kittenId) || 0) + 1;
+            kittenFeedCounts.set(kittenId, feedCount);
+
+            if (feedCount >= 3 && !cat.classList.contains('medium')) {
+              cat.classList.add('medium');
+              gain('growHalf');
+              requestAnimationFrame(() => {
+                cat.style.transition = 'width 0.5s, height 0.5s';
+                if (cat.classList.contains('mainecoon')) {
+                  cat.style.width = '53.33px';
+                  cat.style.height = '53.33px';
+                } else if (cat.classList.contains('tiger')) {
+                  cat.style.width = '66.67px';
+                  cat.style.height = '66.67px';
+                } else if (cat.classList.contains('munchkin')) {
+                  cat.style.width = '30px';
+                  cat.style.height = '30px';
+                } else {
+                  cat.style.width = '40px'; 
+                  cat.style.height = '40px';
+                }
+              });
+            } else if (feedCount >= 6) {
+              cat.classList.remove('kitten');
+              cat.classList.remove('medium');
+              cat.classList.add('cat');
+              kittenFeedCounts.delete(kittenId);
+              gain('growAdult');
+              requestAnimationFrame(() => {
+                cat.style.transition = 'width 0.5s, height 0.5s';
+                cat.style.width = cat.classList.contains('mainecoon') ? '80px' : cat.classList.contains('tiger') ? '100px' : cat.classList.contains('munchkin') ? '45px' : '60px';
+                cat.style.height = cat.classList.contains('mainecoon') ? '80px' : cat.classList.contains('tiger') ? '100px' : cat.classList.contains('munchkin') ? '45px' : '60px';
+              });
+            }
+          }
+          handleCareDrop(cat, element);
+          element.remove(); 
+        }
+      });
+    } else if (element.dataset.type === 'toy') {
+      const cats = document.querySelectorAll('.cat, .kitten');
+      cats.forEach(cat => {
+        const catRect = cat.getBoundingClientRect();
+        const toyRect = element.getBoundingClientRect();
+        if (isOverlapping(catRect, toyRect)) {
+          if (!cat.classList.contains('jumping')) { 
+            cat.classList.add('jumping');
+            setTimeout(() => {
+              cat.classList.remove('jumping');
+            }, 500);
+            gain('play');
+            handleCareDrop(cat, element);
+            element.remove();
+          }
+        }
+      });
+    } else if (element.dataset.type === 'mud') {
+      const cats = document.querySelectorAll('.cat, .kitten');
+      const chosenColor = element.dataset.mudColor || element.dataset.mudcolor || '#A0522D';
+      const removable = element.dataset.mudRemovable === 'false' ? false : true;
+      cats.forEach(cat => {
+        const catRect = cat.getBoundingClientRect();
+        const mudRect = element.getBoundingClientRect();
+        if (isOverlapping(catRect, mudRect)) {
+          cat.classList.add('muddy');
+
+          const svg = cat.querySelector('svg');
+          // capture original ear/tail colors more robustly
+          let leftEarEl = svg.querySelectorAll('path')[0] || svg.querySelectorAll('circle')[0];
+          let rightEarEl = svg.querySelectorAll('path')[1] || svg.querySelectorAll('circle')[1];
+          let tailEl = svg.querySelector('path:last-child') || svg.querySelector('circle:last-child');
+
+          const originalColors = {
+            leftEar: leftEarEl ? (leftEarEl.getAttribute('fill') || leftEarEl.style.fill || '#FFFFFF') : '#FFFFFF',
+            rightEar: rightEarEl ? (rightEarEl.getAttribute('fill') || rightEarEl.style.fill || '#FFFFFF') : '#FFFFFF',
+            tail: tailEl ? (tailEl.getAttribute('stroke') || tailEl.getAttribute('fill') || tailEl.style.stroke || '#000000') : '#000000'
+          };
+          cat.dataset.originalColors = JSON.stringify(originalColors);
+
+          // apply chosen mud color directly
+          if (leftEarEl) {
+            if (leftEarEl.tagName.toLowerCase() === 'path' || leftEarEl.tagName.toLowerCase() === 'circle' || leftEarEl.tagName.toLowerCase() === 'ellipse') {
+              leftEarEl.setAttribute('fill', chosenColor);
+              leftEarEl.style.fill = chosenColor;
+            }
+          }
+          if (rightEarEl) {
+            if (rightEarEl.tagName.toLowerCase() === 'path' || rightEarEl.tagName.toLowerCase() === 'circle' || rightEarEl.tagName.toLowerCase() === 'ellipse') {
+              rightEarEl.setAttribute('fill', chosenColor);
+              rightEarEl.style.fill = chosenColor;
+            }
+          }
+          if (tailEl) {
+            // tails sometimes use stroke
+            if (tailEl.tagName.toLowerCase() === 'path') {
+              tailEl.setAttribute('stroke', chosenColor);
+              tailEl.style.stroke = chosenColor;
+            } else {
+              tailEl.setAttribute('fill', chosenColor);
+              tailEl.style.fill = chosenColor;
+            }
+          }
+
+          // record removability on the cat so bathwater can check
+          cat.dataset.mudRemovable = removable ? 'true' : 'false';
+
+          element.remove();
+        }
+      });
+
+    } else if (element.dataset.type === 'bathwater') {
+      const muddyCats = document.querySelectorAll('.cat.muddy, .kitten.muddy');
+      muddyCats.forEach(cat => {
+        const catRect = cat.getBoundingClientRect();
+        const bathwaterRect = element.getBoundingClientRect();
+
+        if (isOverlapping(catRect, bathwaterRect)) {
+          // only clean if mud was marked removable
+          if (cat.dataset.mudRemovable === 'true' || typeof cat.dataset.mudRemovable === 'undefined') {
+            cat.classList.remove('muddy');
+            const originalColors = JSON.parse(cat.dataset.originalColors || '{}');
+
+            const svg = cat.querySelector('svg');
+            const left = svg.querySelectorAll('path')[0] || svg.querySelectorAll('circle')[0];
+            const right = svg.querySelectorAll('path')[1] || svg.querySelectorAll('circle')[1];
+            const tail = svg.querySelector('path:last-child') || svg.querySelector('circle:last-child');
+
+            if (left && originalColors.leftEar) {
+              left.setAttribute('fill', originalColors.leftEar);
+              left.style.fill = originalColors.leftEar;
+            }
+            if (right && originalColors.rightEar) {
+              right.setAttribute('fill', originalColors.rightEar);
+              right.style.fill = originalColors.rightEar;
+            }
+            if (tail && originalColors.tail) {
+              // tail might be stroke or fill
+              if (tail.tagName.toLowerCase() === 'path') {
+                tail.setAttribute('stroke', originalColors.tail);
+                tail.style.stroke = originalColors.tail;
+              } else {
+                tail.setAttribute('fill', originalColors.tail);
+                tail.style.fill = originalColors.tail;
+              }
+            }
+
+            // remove mud metadata after cleaning
+            delete cat.dataset.mudRemovable;
+            delete cat.dataset.originalColors;
+
+            handleCareDrop(cat, element);
+            gain('wash');
+            element.remove();
+          } else {
+            // mud is permanent on this cat; do nothing (but still remove the bathwater)
+            element.remove();
+          }
+        }
+      });
+    } else if (element.dataset.type === 'hand') {
+      const cats = document.querySelectorAll('.cat, .kitten');
+      cats.forEach(cat => {
+        const catRect = cat.getBoundingClientRect();
+        const handRect = element.getBoundingClientRect();
+        if (isOverlapping(catRect, handRect)) {
+          gain('pet');
+          handleCareDrop(cat, element);
+          showAffection(cat, element.innerHTML.trim());
+          element.remove();
+        }
+      });
+    } else if (element.dataset.type === 'box') {
+            const cats = document.querySelectorAll('.cat:not(.hidden-in-box), .kitten:not(.hidden-in-box)');
+            cats.forEach(cat => {
+                const catRect = cat.getBoundingClientRect();
+                const boxRect = element.getBoundingClientRect();
+
+                if (isOverlapping(catRect, boxRect) && !element.dataset.catId) {
+                    cat.style.display = 'none';
+                    cat.classList.add('hidden-in-box');
+                    element.dataset.catId = cat.dataset.id || 'cat' + Date.now();
+                    element.appendChild(cat);
+                }
+            });
+        } else if (element.dataset.type === 'money') {
+            const boxes = document.querySelectorAll('.box');
+            boxes.forEach(box => {
+                const boxRect = box.getBoundingClientRect();
+                const moneyRect = element.getBoundingClientRect();
+
+                if (isOverlapping(moneyRect, boxRect)) {
+                    gain('sell');
+                    element.remove();
+                    box.remove();
+                }
+            });
+
+        } else if (element.dataset.type === 'fixer') {
+        const cats = document.querySelectorAll('.cat:not(.kitten):not(.fixed)');
+        cats.forEach(cat => {
+            const catRect = cat.getBoundingClientRect();
+            const fixerRect = element.getBoundingClientRect();
+            if (isOverlapping(catRect, fixerRect)) {
+                cat.classList.add('fixed');  
+                cat.classList.add('retired');
+                element.remove();
+            }
+        });
+    } else if (element.dataset.type === 'sickness') {
+        const cats = document.querySelectorAll('.cat, .kitten');
+        cats.forEach(cat => {
+            const catRect = cat.getBoundingClientRect();
+            const sicknessRect = element.getBoundingClientRect();
+            if (isOverlapping(catRect, sicknessRect)) {
+                cat.classList.add('sick');
+                element.remove();
+
+                cat.addEventListener('pointerup', handleInfection);
+
+            }
+        });
+    } else if (element.dataset.type === 'cure') {
+        const sickCats = document.querySelectorAll('.cat.sick, .kitten.sick');
+        sickCats.forEach(cat => {
+          const catRect = cat.getBoundingClientRect();
+          const cureRect = element.getBoundingClientRect();
+
+          if (isOverlapping(catRect, cureRect)) {
+              handleCareDrop(cat, element);
+              cat.classList.remove('sick');
+              gain('cure');
+              cat.classList.add('eating');
+                setTimeout(() => {
+                    cat.classList.remove('eating');
+                }, 1000);
+              element.remove();
+          }
+        });
+    } else if (element.dataset.type === 'syringe') {
+        const sickCats = document.querySelectorAll('.cat.sick, .kitten.sick');
+        sickCats.forEach(cat => {
+          const catRect = cat.getBoundingClientRect();
+          const syringeRect = element.getBoundingClientRect();
+
+          if (isOverlapping(catRect, syringeRect)) {
+              handleCareDrop(cat, element);
+              cat.classList.remove('sick');
+              gain('cure');
+              cat.classList.add('injected'); // Add injected class for jump animation
+                setTimeout(() => {
+                    cat.classList.remove('injected');
+                }, 500);
+              element.remove();
+          }
+        });
+    } else if (element.dataset.type === 'sleepifier') {
+        const cats = document.querySelectorAll('.cat:not(.hidden-in-box), .kitten:not(.hidden-in-box)');
+        cats.forEach(cat => {
+            if (isOverlapping(cat.getBoundingClientRect(), element.getBoundingClientRect())) {
+                handleCareDrop(cat, element);
+                applySleep(cat, element.dataset.sleepSymbol || 'Z');
+                element.remove();
+            }
+        });
+    } else if (element.dataset.type === 'remover') {
+        const allItems = document.querySelectorAll('.cat, .kitten, .bowl, .food, .toy, .hand, .hand-item, .bathwater, .mud, .box, .money, .fixer, .sickness, .cure, .syringe, .sleepifier'); 
+        allItems.forEach(item => {
+            if (item !== element && isOverlapping(element.getBoundingClientRect(), item.getBoundingClientRect())) {
+                item.remove();
+                element.remove();
+            }
+        });
+    } else if (element.dataset.type === 'scissors') {
+            const cats = document.querySelectorAll('.cat:not(.sheared):not(.sphynx), .kitten:not(.sheared):not(.sphynx)');
+            cats.forEach(cat => {
+                const catRect = cat.getBoundingClientRect();
+                const scissorsRect = element.getBoundingClientRect();
+                if (isOverlapping(catRect, scissorsRect)) {
+                    const sphynxColors = ['#A9A9A9', '#FFFFFF', '#4A4A4A', '#FFB6C1', '#FFE4E1'];
+                    const randomSphynxColor = sphynxColors[Math.floor(Math.random() * sphynxColors.length)];
+
+                    const svg = cat.querySelector('svg');
+
+                    svg.querySelector('ellipse').style.fill = randomSphynxColor;
+                    svg.querySelector('circle').style.fill = randomSphynxColor;
+
+                    cat.classList.add('sheared');
+                    element.remove();
+                    gain('scissors');
+                }
+            });
+        }
+    document.removeEventListener('pointerup', stopDragging); 
+    document.removeEventListener('pointerleave', stopDragging); 
+  }
+
+  if (element.dataset.type === 'cat' || element.dataset.type === 'kitten') {
+    element.addEventListener('pointerdown', (e) => {
+      startDragging(e);
+    });
+
+    element.addEventListener('pointerup', stopDragging);
+    element.addEventListener('pointerleave', stopDragging);
+  } else {
+      element.addEventListener('pointerdown', startDragging);
+      element.addEventListener('pointerup', stopDragging);
+      element.addEventListener('pointerleave', stopDragging);
+  }
+}
+
+function isOverlapping(rect1, rect2) {
+  return !(rect1.right < rect2.left || rect1.left > rect2.right || rect1.bottom < rect2.top || rect1.top > rect2.bottom);
+}
+
+function resetAll() {
+  const elements = document.querySelectorAll('.cat, .kitten, .bowl, .food, .toy, .hand, .hand-item, .bathwater, .mud, .box, .money, .sleepifier');
+  elements.forEach(element => {
+    clearSleepZ(element);
+    element.remove();
+  });
+  document.querySelector('.breed-button').style.display = 'none';
+  kittenFeedCounts.clear();
+}
+
+function showTabbyOptions() {
+  const options = document.getElementById('tabbyOptions');
+  options.style.display = options.style.display === 'none' ? 'inline-block' : 'none';
+}
+
+function showToyOptions() {
+  const options = document.getElementById('toyOptions');
+  options.style.display = options.style.display === 'none' ? 'inline-block' : 'none';
+}
+
+function showSphynxOptions() {
+  const options = document.getElementById('sphynxOptions');
+  options.style.display = options.style.display === 'none' ? 'inline-block' : 'none';
+}
+
+function showTigerOptions() {
+  const options = document.getElementById('tigerOptions');
+  options.style.display = options.style.display === 'none' ? 'inline-block' : 'none';
+}
+
+function addRandomSphynx() {
+  const sphynxTypes = ['sphynx_grey', 'sphynx_white', 'sphynx_greyblack', 'sphynx_orangepink', 'sphynx_pink'];
+  const randomType = sphynxTypes[Math.floor(Math.random() * sphynxTypes.length)];
+  addCat(randomType);
+}
+
+function addRandomTabby() {
+  const tabbyTypes = ['tabby_orange', 'tabby_grey', 'tabby_brown', 'tabby_cream'];
+  const randomType = tabbyTypes[Math.floor(Math.random() * tabbyTypes.length)];
+  addCat(randomType);
+}
+
+function addRandomTiger() {
+  const tigerTypes = ['tiger_orange', 'tiger_white'];
+  const randomType = tigerTypes[Math.floor(Math.random() * tigerTypes.length)];
+  addCat(randomType);
+}
+
+function addSpecificToy(toyType) {
+  const toy = document.createElement('div');
+  toy.className = 'toy';
+  toy.innerHTML = toyType;
+  toy.style.left = (window.innerWidth - 40) / 2 + 'px';
+  toy.style.top = (window.innerHeight - 40) / 2 + 'px';
+  toy.dataset.type = 'toy';
+  document.body.appendChild(toy);
+  makeDraggable(toy);
+}
+
+function addRandomToy() {
+  addToy();
+}
+
+function eyeColorsPair(customEyeColor) {
+  if (customEyeColor && typeof customEyeColor === 'object') {
+    return { left: customEyeColor.left || '#000000', right: customEyeColor.right || '#000000' };
+  }
+  const c = customEyeColor || '#000000';
+  return { left: c, right: c };
+}
+
+function createCatSVG(colors, customEyeColor, gender) {
+  if (!colors) {
+    colors = '#FFFFFF,#FFFFFF,#FFFFFF';
+  }
+  let [color1 = '#FFFFFF', earColors = '#FFFFFF', tail = '#FFFFFF'] = colors.split(',');
+  let [leftEar = color1, rightEar = color1] = earColors?.includes(';') ? earColors.split(';') : [earColors, earColors];
+  tail = tail?.includes(';') ? tail.split(';')[0] : tail;
+  const ec = eyeColorsPair(customEyeColor);
+  const hasMouth = gender !== 'female';
+  const lashes = gender === 'female' ? `
+    <path d="M40 26 L38 22" stroke="#000000" stroke-width="1"/>
+    <path d="M42 25 L42 21" stroke="#000000" stroke-width="1"/>
+    <path d="M44 26 L46 22" stroke="#000000" stroke-width="1"/>
+    <path d="M56 26 L54 22" stroke="#000000" stroke-width="1"/>
+    <path d="M58 25 L58 21" stroke="#000000" stroke-width="1"/>
+    <path d="M60 26 L62 22" stroke="#000000" stroke-width="1"/>
+  ` : '';
+  const nose = `<path d="M48 38 L52 38 L50 41 Z" fill="#FFA0B4"/>`;
+  const mouth = hasMouth ? `
+    <path d="M46 42 Q50 45 54 42" stroke="#000000" stroke-width="1" fill="none"/>
+  ` : '';
+
+  return `<svg viewBox="0 0 100 100">
+    <ellipse cx="50" cy="55" rx="30" ry="25" fill="${color1}"/>
+    <circle cx="50" cy="35" r="20" fill="${color1}"/>
+    <path d="M35 25 L30 10 L45 20 Z" fill="${leftEar}"/>
+    <path d="M65 25 L70 10 L55 20 Z" fill="${rightEar}"/>
+    <ellipse cx="42" cy="32" rx="4" ry="6" class="cat-eye" fill="${ec.left}"/>
+    <ellipse cx="58" cy="32" rx="4" ry="6" class="cat-eye" fill="${ec.right}"/>
+    ${lashes}
+    <ellipse cx="42" cy="32" rx="2" ry="4" class="cat-pupil" fill="#000000"/>
+    <ellipse cx="58" cy="32" rx="2" ry="4" class="cat-pupil" fill="#000000"/>
+    ${nose}
+    ${mouth}
+    <line x1="30" y1="40" x2="15" y2="35" stroke="#999" stroke-width="1"/>
+    <line x1="30" y1="42" x2="15" y2="42" stroke="#999" stroke-width="1"/>
+    <line x1="30" y1="44" x2="15" y2="49" stroke="#999" stroke-width="1"/>
+    <line x1="70" y1="40" x2="85" y2="35" stroke="#999" stroke-width="1"/>
+    <line x1="70" y1="42" x2="85" y2="42" stroke="#999" stroke-width="1"/>
+    <line x1="70" y1="44" x2="85" y2="49" stroke="#999" stroke-width="1"/>
+    <path d="M80 55 Q90 45 85 35" stroke="${tail}" stroke-width="8" fill="none"/>
+  </svg>`;
+}
+
+function createScottishFoldSVG(colors, gender, customEyeColor) {
+  if (!colors) {
+    colors = '#A9A9A9,#808080,#808080'; 
+  }
+  let [color1 = '#A9A9A9', earColors = '#808080', tail = '#808080'] = colors.split(',');
+  tail = tail?.includes(';') ? tail.split(';')[0] : tail;
+  let [leftEar = earColors, rightEar = earColors] = earColors?.includes(';') ? earColors.split(';') : [earColors, earColors];
+
+  const ec = eyeColorsPair(customEyeColor);
+  const hasMouth = gender !== 'female';
+  const lashes = gender === 'female' ? `
+    <path d="M40 26 L38 22" stroke="#000000" stroke-width="1"/>
+    <path d="M42 25 L42 21" stroke="#000000" stroke-width="1"/>
+    <path d="M44 26 L46 22" stroke="#000000" stroke-width="1"/>
+    <path d="M56 26 L54 22" stroke="#000000" stroke-width="1"/>
+    <path d="M58 25 L58 21" stroke="#000000" stroke-width="1"/>
+    <path d="M60 26 L62 22" stroke="#000000" stroke-width="1"/>
+  ` : '';
+  const nose = `<path d="M48 38 L52 38 L50 41 Z" fill="#FFA0B4"/>`;
+  const mouth = hasMouth ? `
+    <path d="M46 42 Q50 45 54 42" stroke="#000000" stroke-width="1" fill="none"/>
+  ` : '';
+
+  return `<svg viewBox="0 0 100 100">
+    <ellipse cx="50" cy="55" rx="30" ry="25" fill="${color1}"/>
+    <circle cx="50" cy="35" r="20" fill="${color1}"/>
+    <circle cx="35" cy="25" r="7" fill="${leftEar}" />
+    <circle cx="65" cy="25" r="7" fill="${rightEar}" />
+    <ellipse cx="42" cy="32" rx="4" ry="6" class="cat-eye" fill="${ec.left}"/>
+    <ellipse cx="58" cy="32" rx="4" ry="6" class="cat-eye" fill="${ec.right}"/>
+    ${lashes}
+    <ellipse cx="42" cy="32" rx="2" ry="4" class="cat-pupil" fill="#000000"/>
+    <ellipse cx="58" cy="32" rx="2" ry="4" class="cat-pupil" fill="#000000"/>
+    ${nose}
+    ${mouth}
+
+    <line x1="30" y1="40" x2="15" y2="35" stroke="#999" stroke-width="1"/>
+    <line x1="30" y1="42" x2="15" y2="42" stroke="#999" stroke-width="1"/>
+    <line x1="30" y1="44" x2="15" y2="49" stroke="#999" stroke-width="1"/>
+    <line x1="70" y1="40" x2="85" y2="35" stroke="#999" stroke-width="1"/>
+    <line x1="70" y1="42" x2="85" y2="42" stroke="#999" stroke-width="1"/>
+    <line x1="70" y1="44" x2="85" y2="49" stroke="#999" stroke-width="1"/>
+    <path d="M80 55 Q90 45 85 35" stroke="${tail}" stroke-width="8" fill="none"/>
+  </svg>`;
+}
+
+function createKittenSVG(colors, customEyeColor, isScottishFold, isSausage, isStick, gender) { 
+  let svg = '';
+  if (isScottishFold) {
+    svg = createScottishFoldSVG(colors, gender, customEyeColor); 
+  } else if (isSausage) {
+    svg = createCatSVG(colors, customEyeColor, gender);
+  } else if (isStick) {
+    svg = createCatSVG(colors, customEyeColor, gender);
+  } else {
+    svg = createCatSVG(colors, customEyeColor, gender);
+  }
+
+  return svg;
+}
+
+function createBowlSVG(color) {
+  return `<svg viewBox="0 0 100 100">
+    <path d="M20 40 C20 20, 80 20, 80 40 
+             C80 60, 20 60, 20 40 Z" 
+          fill="${color}" 
+          stroke="#666666" 
+          stroke-width="2"/>
+    <ellipse cx="50" cy="40" 
+             rx="30" ry="10" 
+             fill="none" 
+             stroke="#666666" 
+             stroke-width="2"/>
+  </svg>`;
+}
+
+function mixHexColors(hex1, hex2, percentage = 0.5) {
+  hex1 = hex1.replace('#', '');
+  hex2 = hex2.replace('#', '');
+  const r1 = parseInt(hex1.substring(0, 2), 16);
+  const g1 = parseInt(hex1.substring(2, 4), 16);
+  const b1 = parseInt(hex1.substring(4, 6), 16);
+  const r2 = parseInt(hex2.substring(0, 2), 16);
+  const g2 = parseInt(hex2.substring(2, 4), 16);
+  const b2 = parseInt(hex2.substring(4, 6), 16);
+  const r = Math.round(r1 * percentage + r2 * (1 - percentage));
+  const g = Math.round(g1 * percentage + g2 * (1 - percentage));
+  const b = Math.round(b1 * percentage + b2 * (1 - percentage));
+  const mixed = '#' + r.toString(16).padStart(2, '0') + g.toString(16).padStart(2, '0') + b.toString(16).padStart(2, '0');
+  return mixed;
+}
+
+function getCatColors(breed, catElement) {
+  // Prefer explicit stored color pattern on the element (reliable for custom breeds & hybrids)
+  if ((breed === 'custom' || breed === 'hybrid' || customBreeds.has(breed)) && catElement) {
+    if (catElement.dataset && catElement.dataset.colorsPattern) {
+      return catElement.dataset.colorsPattern;
+    }
+  }
+
+  // Fallback: if breed key maps to a pattern, return it
+  if (catColors[breed]) return catColors[breed];
+
+  // Last resort: try to parse from SVG (legacy)
+  if (catElement && catElement.querySelector('svg')) {
+    try {
+      const svgElement = catElement.querySelector('svg');
+      const bodyFill = svgElement.querySelector('ellipse')?.getAttribute('fill') || '#FFFFFF';
+      // Attempt to find ear elements more robustly: prefer small circles (scottish) else first two path elements
+      let leftEarFill = '#FFFFFF', rightEarFill = '#FFFFFF';
+      const earCircles = svgElement.querySelectorAll('circle');
+      if (earCircles && earCircles.length >= 2) {
+        leftEarFill = earCircles[0].getAttribute('fill') || leftEarFill;
+        rightEarFill = earCircles[1].getAttribute('fill') || rightEarFill;
+      } else {
+        const earPaths = svgElement.querySelectorAll('path');
+        if (earPaths && earPaths.length >= 2) {
+          leftEarFill = earPaths[0].getAttribute('fill') || leftEarFill;
+          rightEarFill = earPaths[1].getAttribute('fill') || rightEarFill;
+        }
+      }
+      const tailStroke = svgElement.querySelector('path:last-child')?.getAttribute('stroke') || '#000000';
+      return `${bodyFill},${leftEarFill};${rightEarFill},${tailStroke}`;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+function getCatEyeColor(breed, catElement) {
+  const left = catElement?.dataset?.eyeColorLeft;
+  if (left) {
+    return { left, right: catElement.dataset.eyeColorRight || left };
+  }
+  if (catElement && catElement.dataset && catElement.dataset.eyeColor) {
+    const c = catElement.dataset.eyeColor;
+    return { left: c, right: c };
+  }
+  if (breed === 'custom' || breed === 'hybrid') {
+      if (catElement) {
+          const c = catElement.querySelector('ellipse:nth-child(4)')?.getAttribute('fill') || '#000000';
+          return { left: c, right: c };
+      }
+  } else if (catColors[breed]) {
+    return { left: '#000000', right: '#000000' };
+  }
+  return { left: '#000000', right: '#000000' };
+}
+
+const RANDOM_EYE_COLORS = ['#FF0000', '#FFA500', '#FFD700', '#228B22', '#00FFFF', '#0000FF', '#8A2BE2', '#800080', '#FF00FF', '#FF69B4', '#8B4513', '#000000', '#808080', '#FFFFFF'];
+
+// Pick a random eye color pair, with a higher chance of matching eyes
+function randomEyePair() {
+  const pick = () => RANDOM_EYE_COLORS[Math.floor(Math.random() * RANDOM_EYE_COLORS.length)];
+  const left = pick();
+  const right = Math.random() < 0.75 ? left : pick();
+  return { left, right };
+}
+
+function mixBreeds(breed1, breed2, parent1, parent2, percentageOverride) {
+  const percentage = (typeof percentageOverride === 'number') ? percentageOverride : Math.random();
+  let pattern1 = getCatColors(breed1, parent1);
+  let pattern2 = getCatColors(breed2, parent2);
+
+  if (!pattern1) pattern1 = pattern2 || '#FFFFFF,#FFFFFF,#FFFFFF';
+  if (!pattern2) pattern2 = pattern1 || '#FFFFFF,#FFFFFF,#FFFFFF';
+
+  const colors1 = pattern1.split(',');
+  const colors2 = pattern2.split(',');
+  while (colors1.length < 3) colors1.push(colors1[0]);
+  while (colors2.length < 3) colors2.push(colors2[0]);
+
+  let mixMainColor = mixHexColors(colors1[0], colors2[0], percentage);
+  let mixedLeftEar = mixHexColors(colors1[1].split(';')[0], colors2[1].split(';')[0], percentage);
+  let mixedRightEar = colors1[1].includes(';') && colors2[1].includes(';') ? mixHexColors(colors1[1].split(';')[1], colors2[1].split(';')[1], percentage) : mixedLeftEar;
+  let mixedTail = mixHexColors(colors1[2].split(';')[0], colors2[2].split(';')[0], percentage);
+
+  // small chance for a random strong mutation color (chance controlled by settings.mutationChance)
+  if (Math.random() < settings.mutationChance) {
+    const randomColor = getRandomHexColor();
+    const randomPart = Math.floor(Math.random() * 3);
+    if (randomPart === 0) {
+      mixMainColor = randomColor;
+    } else if (randomPart === 1) {
+      mixedLeftEar = randomColor;
+      mixedRightEar = randomColor;
+    } else {
+      mixedTail = randomColor;
+    }
+  }
+
+  const eyeColor1 = getCatEyeColor(breed1, parent1);
+  const eyeColor2 = getCatEyeColor(breed2, parent2);
+  let mixedEyeColor;
+  if (settings.randomEyesEnabled) {
+    mixedEyeColor = randomEyePair();
+  } else {
+    const mixedLeftEye = mixHexColors(eyeColor1?.left || '#000000', eyeColor2?.left || '#000000', percentage);
+    const mixedRightEye = mixHexColors(eyeColor1?.right || '#000000', eyeColor2?.right || '#000000', percentage);
+    mixedEyeColor = { left: mixedLeftEye, right: mixedRightEye };
+  }
+
+  // determine parental trait presence using DOM classes / dataset flags
+  const p1 = parent1 || document.createElement('div');
+  const p2 = parent2 || document.createElement('div');
+
+  const parent1Has = {
+    scottish: p1.classList.contains('scottishfold'),
+    mainecoon: p1.classList.contains('mainecoon') || (p1.dataset.breed && p1.dataset.breed.startsWith('mainecoon')),
+    tiger: p1.classList.contains('tiger') || (p1.dataset.breed && p1.dataset.breed.startsWith('tiger_')),
+    sausage: p1.classList.contains('sausage') || p1.dataset.breed === 'sausage',
+    stick: p1.classList.contains('stick') || p1.dataset.breed === 'stick',
+    munchkin: p1.classList.contains('munchkin') || p1.dataset.breed === 'munchkin',
+    manxTail: p1.classList.contains('manx') || p1.dataset.manxTail === 'true',
+    leafy: p1.classList.contains('leafy') || p1.dataset.breed === 'leafy'
+  };
+
+  const parent2Has = {
+    scottish: p2.classList.contains('scottishfold'),
+    mainecoon: p2.classList.contains('mainecoon') || (p2.dataset.breed && p2.dataset.breed.startsWith('mainecoon')),
+    tiger: p2.classList.contains('tiger') || (p2.dataset.breed && p2.dataset.breed.startsWith('tiger_')),
+    sausage: p2.classList.contains('sausage') || p2.dataset.breed === 'sausage',
+    stick: p2.classList.contains('stick') || p2.dataset.breed === 'stick',
+    munchkin: p2.classList.contains('munchkin') || p2.dataset.breed === 'munchkin',
+    manxTail: p2.classList.contains('manx') || p2.dataset.manxTail === 'true',
+    leafy: p2.classList.contains('leafy') || p2.dataset.breed === 'leafy'
+  };
+
+  // Helper: if both parents have the trait -> 100%, if one parent has it -> 50%, otherwise baseline chance
+  function inheritChance(parentFlag1, parentFlag2, baseline) {
+    if (parentFlag1 && parentFlag2) return true;
+    if (parentFlag1 || parentFlag2) return Math.random() < 0.5;
+    return Math.random() < baseline;
+  }
+
+  const mixedColors = {
+    colors: `${mixMainColor},${mixedLeftEar};${mixedRightEar},${mixedTail}`,
+    eyeColor: mixedEyeColor,
+    // scottish fold: 50% if either parent has it, baseline from settings otherwise
+    isScottishFold: inheritChance(parent1Has.scottish, parent2Has.scottish, settings.baselineScottishManx),
+    // manx tail: 50% if either parent has manx tail, baseline from settings otherwise
+    isManxTail: inheritChance(parent1Has.manxTail, parent2Has.manxTail, settings.baselineScottishManx),
+    // size/body traits: 50% if either parent has it, baseline from settings otherwise
+    isMaineCoon: inheritChance(parent1Has.mainecoon, parent2Has.mainecoon, settings.baselineOthers),
+    isTiger: inheritChance(parent1Has.tiger, parent2Has.tiger, settings.baselineOthers),
+    isMunchkin: inheritChance(parent1Has.munchkin, parent2Has.munchkin, settings.baselineOthers),
+    // shape traits: sausage and stick
+    isSausage: inheritChance(parent1Has.sausage, parent2Has.sausage, settings.baselineOthers),
+    isStick: inheritChance(parent1Has.stick, parent2Has.stick, settings.baselineOthers),
+    // leafy trait: respect parent presence with baseline
+    isLeafy: inheritChance(parent1Has.leafy, parent2Has.leafy, settings.baselineOthers)
+  };
+
+  return mixedColors;
+}
+
+function getRandomHexColor() {
+  return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+}
+
+function addCat(type) {
+  let currentCatGender = null;
+  let leftEye = null;
+  let rightEye = null;
+  let eyeTarget = 'both';
+  const modal = document.getElementById('genderModal');
+  const genderSection = document.getElementById('genderSection');
+  const eyeSection = document.getElementById('eyeSection');
+  const EYE_COLORS = {
+    red: '#FF0000',
+    orange: '#FFA500',
+    yellow: '#FFD700',
+    green: '#228B22',
+    cyan: '#00FFFF',
+    blue: '#0000FF',
+    violet: '#8A2BE2',
+    purple: '#800080',
+    magenta: '#FF00FF',
+    pink: '#FF69B4',
+    brown: '#8B4513',
+    black: '#000000',
+    grey: '#808080',
+    white: '#FFFFFF'
+  };
+  const EYE_VALUES = Object.values(EYE_COLORS);
+
+  const setTargetActive = (target) => {
+    for (const t of ['both', 'left', 'right']) {
+      const btn = document.getElementById('eyeTarget' + t.charAt(0).toUpperCase() + t.slice(1));
+      if (btn) btn.classList.toggle('active', t === target);
+    }
+  };
+
+  // populate the eye color buttons once
+  const eyeColorButtons = document.getElementById('eyeColorButtons');
+  if (eyeColorButtons && eyeColorButtons.children.length === 0) {
+    for (const [name, hex] of Object.entries(EYE_COLORS)) {
+      const btn = document.createElement('button');
+      btn.className = 'eye-color-btn';
+      btn.style.background = hex;
+      btn.title = name;
+      btn.setAttribute('aria-label', name);
+      btn.style.borderColor = name === 'white' || name === 'grey' || name === 'yellow' ? '#999' : '#ccc';
+      btn.onclick = () => setEye(hex);
+      eyeColorButtons.appendChild(btn);
+    }
+  }
+
+  window.setEyeTarget = (target) => {
+    eyeTarget = target;
+    setTargetActive(target);
+  };
+
+  window.setEye = (hex) => {
+    if (eyeTarget === 'both') {
+      leftEye = hex;
+      rightEye = hex;
+    } else if (eyeTarget === 'left') {
+      leftEye = hex;
+    } else {
+      rightEye = hex;
+    }
+  };
+
+  window.randomizeEye = () => {
+    if (eyeTarget === 'left') {
+      leftEye = randomEyePair().left;
+    } else if (eyeTarget === 'right') {
+      rightEye = randomEyePair().right;
+    } else {
+      const pair = randomEyePair();
+      leftEye = pair.left;
+      rightEye = pair.right;
+    }
+  };
+
+  window.pickCustomEye = () => {
+    const input = document.getElementById('customEyeColorInput');
+    input.style.display = 'block';
+    input.focus();
+    input.oninput = () => setEye(input.value);
+  };
+
+  genderSection.style.display = 'block';
+  eyeSection.style.display = 'none';
+  modal.style.display = 'block';
+
+  const createCat = (gender, eyeColors) => {
+    const ec = { left: eyeColors?.left || '#000000', right: eyeColors?.right || '#000000' };
+    const cat = document.createElement('div');
+    cat.className = 'cat';
+    // ensure gender is present both as a class and dataset so breeding/pregnancy logic reliably finds it
+    if (gender === 'male' || gender === 'female') {
+      cat.classList.add(gender);
+      cat.dataset.gender = gender;
+    } else {
+      // fallback random assignment
+      const gen = Math.random() < 0.5 ? 'male' : 'female';
+      cat.classList.add(gen);
+      cat.dataset.gender = gen;
+    }
+    cat.dataset.eyeColor = ec.left;
+    cat.dataset.eyeColorLeft = ec.left;
+    cat.dataset.eyeColorRight = ec.right;
+
+    if (!catColors[type]) {
+      console.warn(`Unknown cat type: ${type}, defaulting to white cat`);
+      type = 'white';
+    }
+    if (type.startsWith('mainecoon_')) {
+      cat.classList.add('mainecoon');
+      cat.innerHTML = createCatSVG(catColors[type], ec, gender);
+    } else if (type === 'scottishfold') {
+      cat.classList.add('scottishfold');
+      cat.innerHTML = createScottishFoldSVG(catColors[type], gender, ec); 
+    } else if (type === 'sausage') {
+      cat.classList.add('sausage');
+      cat.innerHTML = createCatSVG(catColors[type], ec, gender);
+    } else if (type === 'stick') {
+      cat.classList.add('stick');
+      cat.innerHTML = createCatSVG(catColors[type], ec, gender);
+    } else if (type.startsWith('tiger_')) {
+      cat.classList.add('tiger');
+      cat.innerHTML = createCatSVG(catColors[type], ec, gender);
+    } else if (type === 'manx') {
+      // Built-in manx breed should get the round tail treatment like custom manx breeds
+      cat.classList.add('manx');
+      // mark to replace the tail path with a circular tail after SVG insertion
+      cat.dataset.manxTail = 'true';
+      cat.innerHTML = createCatSVG(catColors[type], ec, gender);
+    } else if (type === 'munchkin') {
+      cat.classList.add('munchkin');
+      cat.innerHTML = createCatSVG(catColors[type], ec, gender);
+    } else if (type === 'leafy') {
+      cat.classList.add('leafy');
+      cat.innerHTML = createCatSVG(catColors[type], ec, gender);
+    } else {
+      cat.innerHTML = createCatSVG(catColors[type], ec, gender);
+    }
+    cat.dataset.type = 'cat';
+    cat.dataset.breed = type;
+    // store explicit colors pattern on the element so breeding/serialization can read exact ear/link info
+    if (catColors[type]) {
+      cat.dataset.colorsPattern = catColors[type];
+    }
+
+    // If this is a custom breed we registered, apply its body type class, special ear/tail flags and ensure colors are used
+    if (customBreeds.has(type)) {
+      const info = customBreeds.get(type);
+      // ensure the pattern is present in catColors so breeding and rendering can use it
+      catColors[type] = info.colorsPattern;
+      if (info.bodyType && info.bodyType !== 'normal') {
+        cat.classList.add(info.bodyType);
+      }
+if (info.scottishFold) {
+        // add class for styling and re-render using the Scottish Fold variant so folded ears appear correctly
+        cat.classList.add('scottishfold');
+        // replace the SVG with the Scottish Fold variant using the stored pattern and current gender
+        cat.innerHTML = createScottishFoldSVG(catColors[type], gender, ec);
+      }
+      if (info.manxTail) {
+        // mark for tail replacement after SVG is inserted
+        cat.dataset.manxTail = 'true';
+        cat.classList.add('manx'); // also add manx class for styling
+      }
+    }
+
+    // set size before positioning so centering is accurate
+    cat.style.width = cat.classList.contains('tiger') ? '100px' : cat.classList.contains('mainecoon') ? '80px' : cat.classList.contains('munchkin') ? '45px' : '60px';
+    cat.style.height = cat.classList.contains('tiger') ? '100px' : cat.classList.contains('mainecoon') ? '80px' : cat.classList.contains('munchkin') ? '45px' : '60px';
+    cat.style.left = (window.innerWidth - parseFloat(cat.style.width)) / 2 + 'px';
+    cat.style.top = (window.innerHeight - parseFloat(cat.style.height)) / 2 + 'px';
+    if (type.startsWith('mainecoon')) {
+      const subType = type.split('_')[1] || 'random';
+      type = 'mainecoon_' + subType;
+      cat.dataset.breed = type;
+    }
+    document.body.appendChild(cat);
+    // if this custom breed requested a manx-style round tail, replace the tail path with a circle
+    if (cat.dataset.manxTail === 'true') {
+      const svg = cat.querySelector('svg');
+      if (svg) {
+        // capture existing tail stroke color if present
+        const existingTailPath = svg.querySelector('path:last-child');
+        const tailColor = (existingTailPath && existingTailPath.getAttribute('stroke')) || (document.getElementById('customTailColor')?.value || '#000000');
+        // remove the existing tail path(s)
+        if (existingTailPath) existingTailPath.remove();
+        // add a circular tail element (positioned near the rear)
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', '85');
+        circle.setAttribute('cy', '55');
+        circle.setAttribute('r', '7');
+        circle.setAttribute('fill', tailColor);
+        svg.appendChild(circle);
+      }
+    }
+    makeDraggable(cat);
+    cat.style.width = cat.classList.contains('tiger') ? '100px' : cat.classList.contains('mainecoon') ? '80px' : cat.classList.contains('munchkin') ? '45px' : '60px';
+    cat.style.height = cat.classList.contains('tiger') ? '100px' : cat.classList.contains('mainecoon') ? '80px' : cat.classList.contains('munchkin') ? '45px' : '60px';
+  };
+
+  window.setCatGender = (gender) => {
+    currentCatGender = gender === 'random' ? (Math.random() < 0.5 ? 'male' : 'female') : gender;
+    leftEye = null;
+    rightEye = null;
+    eyeTarget = 'both';
+    setTargetActive('both');
+    const customInput = document.getElementById('customEyeColorInput');
+    if (customInput) customInput.style.display = 'none';
+    genderSection.style.display = 'none';
+    eyeSection.style.display = 'block';
+  };
+
+  window.confirmEyeColor = () => {
+    if (!chargeCost('cat')) {
+      modal.style.display = 'none';
+      return;
+    }
+    createCat(currentCatGender || (Math.random() < 0.5 ? 'male' : 'female'), { left: leftEye, right: rightEye });
+    modal.style.display = 'none';
+  };
+
+  window.cancelEyeColor = () => {
+    genderSection.style.display = 'block';
+    eyeSection.style.display = 'none';
+  };
+}
+
+function openCustomBreedModal() {
+  document.getElementById('customBreedModal').style.display = 'block';
+}
+function closeCustomBreedModal() {
+  document.getElementById('customBreedModal').style.display = 'none';
+}
+function addCustomBreed() {
+  const name = (document.getElementById('customBreedName').value || '').trim().toLowerCase().replace(/\s+/g,'_');
+  if (!name) {
+    alert('Please enter a breed name.');
+    return;
+  }
+  if (customBreeds.has(name)) {
+    alert('A custom breed with that name already exists.');
+    return;
+  }
+  const body = document.getElementById('customBodyColor').value || '#ffffff';
+  const linked = document.getElementById('customLinkEars').checked;
+  let left, right;
+  if (linked) {
+    const single = document.getElementById('customEarSingleColor').value || body;
+    left = single;
+    right = single;
+  } else {
+    left = document.getElementById('customLeftEarColor').value || body;
+    right = document.getElementById('customRightEarColor').value || left;
+  }
+  const tail = document.getElementById('customTailColor').value || body;
+  const scottish = !!document.getElementById('customScottishFold').checked;
+  const manxTail = !!document.getElementById('customManxTail').checked;
+  const bodyType = document.getElementById('customBodyType').value || 'normal';
+  const pattern = `${body},${left};${right},${tail}`;
+  // store custom breed metadata
+  customBreeds.set(name, { colorsPattern: pattern, bodyType, scottishFold: scottish, manxTail: manxTail });
+  catColors[name] = pattern;
+  // persist custom breeds
+  try {
+    const obj = Object.fromEntries(customBreeds);
+    localStorage.setItem('customBreeds', JSON.stringify(obj));
+  } catch (e) {
+    console.warn('Could not save custom breeds:', e);
+  }
+  // add quick-add UI element (button + delete)
+  const wrapper = document.createElement('span');
+  wrapper.style.display = 'inline-flex';
+  wrapper.style.gap = '6px';
+  wrapper.style.alignItems = 'center';
+  wrapper.dataset.customBreed = name;
+  const btn = document.createElement('button');
+  btn.textContent = 'Add ' + name.replace(/_/g,' ');
+  btn.onclick = () => addCat(name);
+  const del = document.createElement('button');
+  del.textContent = '✖';
+  del.style.background = '#ff4444';
+  del.title = 'Delete custom breed';
+  del.onclick = () => {
+    if (confirm('Delete custom breed "' + name.replace(/_/g,' ') + '"?')) {
+      // remove from maps and UI
+      customBreeds.delete(name);
+      delete catColors[name];
+      wrapper.remove();
+      try {
+        const obj = Object.fromEntries(customBreeds);
+        localStorage.setItem('customBreeds', JSON.stringify(obj));
+      } catch (e) {}
+      alert('Custom breed deleted.');
+    }
+  };
+  wrapper.appendChild(btn);
+  wrapper.appendChild(del);
+  const container = document.querySelector('.button-container');
+  container.insertBefore(wrapper, container.children[container.children.length-1]); // insert near end
+  closeCustomBreedModal();
+  alert('Custom breed "' + name.replace(/_/g,' ') + '" added.');
+}
+
+function breed() {
+  const breedingZone = document.querySelector('.breeding-zone');
+  if (!breedingZone) return;
+  if (!chargeCost('breed')) return;
+  const catsInZone = getCatsInBreedingZone().filter(cat => !cat.classList.contains('kitten') && !cat.classList.contains('retired'));
+
+  if (catsInZone.length === 2 && ((catsInZone[0].classList.contains('male') && catsInZone[1].classList.contains('female')) || (catsInZone[0].classList.contains('female') && catsInZone[1].classList.contains('male')))) {
+      if (!catsInZone[0].classList.contains('fixed') && !catsInZone[1].classList.contains('fixed')) {
+
+      const heart = document.createElement('div');
+      heart.className = 'heart';
+      heart.innerHTML = '❤️';
+      const breedingZoneRect2 = breedingZone.getBoundingClientRect();
+      heart.style.left = breedingZoneRect2.left + breedingZoneRect2.width / 2 - 15 + 'px';
+      heart.style.top = breedingZoneRect2.top + breedingZoneRect2.height / 2 - 15 + 'px';
+      document.body.appendChild(heart);
+
+
+      // unsuccessful breeding check - respect user setting and chance
+      if (settings.unsuccessfulBreedingEnabled && Math.random() < (settings.unsuccessfulBreedingChance || 0.3)) {
+        const breedingStatus = document.getElementById('breedingStatus');
+        breedingStatus.textContent = "Breeding unsuccessful!";
+        breedingStatus.style.display = 'block';
+        setTimeout(() => {
+          breedingStatus.style.display = 'none';
+        }, 2000);
+        setTimeout(() => {
+          heart.remove();
+        }, 2000);
+
+        return;
+      }
+
+      const femaleCat = catsInZone.find(cat => cat.classList.contains('female'));
+      const maleCat = catsInZone.find(cat => cat.classList.contains('male'));
+      if (!femaleCat) return;
+
+      gain('breed');
+      femaleCat.classList.add('pregnant');
+      // apply dynamic animation durations based on current settings
+      femaleCat.style.animation = `pregnancy ${settings.pregnancyDurationSeconds}s forwards`;
+
+      const pregnancyText = document.createElement('div');
+      pregnancyText.className = 'pregnancy-text';
+      pregnancyText.textContent = 'Pregnant';
+      // ensure the pregnancy text fades out in the same duration
+      pregnancyText.style.animation = `fade-out ${settings.pregnancyDurationSeconds}s forwards`;
+      femaleCat.appendChild(pregnancyText);
+
+
+
+      setTimeout(() => {
+        femaleCat.classList.remove('pregnant');
+        // clear inline animation so the cat returns to normal immediately (and will use new durations next pregnancy)
+        femaleCat.style.animation = '';
+        pregnancyText.remove();
+
+        let numKittens;
+        if (settings.limitKittensToOne) {
+          numKittens = 1;
+        } else {
+          numKittens = Math.random() < 0.2 ? Math.floor(Math.random() * 5) + 4 : Math.floor(Math.random() * 4) + 1;
+        }
+
+        gain('kittens');
+        const resemblanceRandomize = !!settings.resemblanceRandomize;
+        const resemblanceSwap = !!settings.resemblanceSwap;
+        const resemblanceSlider = Math.max(0, Math.min(100, Number(settings.resemblanceSlider) || 50));
+        // motherWeight = how strongly the kitten resembles the mother (0..1)
+        let motherWeight;
+        if (resemblanceRandomize) {
+          motherWeight = Math.random();
+        } else {
+          motherWeight = resemblanceSwap ? resemblanceSlider / 100 : (100 - resemblanceSlider) / 100;
+        }
+        for (let i = 0; i < numKittens; i++) {
+          const kitten = document.createElement('div');
+          kitten.className = 'kitten';
+          // keep parent1 = catsInZone[0], parent2 = catsInZone[1]; map mother weight onto it
+          const parent1 = catsInZone[0];
+          const parent2 = catsInZone[1];
+          const parent1IsMother = parent1 === femaleCat;
+          const weightForParent1 = parent1IsMother ? motherWeight : 1 - motherWeight;
+          const parent1Type = parent1.dataset.breed || 'white';
+          const parent2Type = parent2.dataset.breed || 'white';
+          // only the first kitten uses the slider; the rest are randomized
+          const percentageOverride = (i === 0 && !resemblanceRandomize) ? weightForParent1 : undefined;
+          const mixedColors = mixBreeds(parent1Type, parent2Type, parent1, parent2, percentageOverride);
+          const kittenGender = mixedColors.isTiger ? 'male' : (Math.random() < 0.5 ? 'male' : 'female');
+
+
+          kitten.innerHTML = createKittenSVG(mixedColors.colors, mixedColors.eyeColor, mixedColors.isScottishFold, mixedColors.isSausage, mixedColors.isStick, kittenGender); 
+
+          if (mixedColors.isScottishFold) {
+            kitten.classList.add('scottishfold');
+          }
+          if (mixedColors.isMunchkin) {
+            kitten.classList.add('munchkin');
+          }
+          if (mixedColors.isSausage) {
+            kitten.classList.add('sausage');
+          }
+          if (mixedColors.isStick) {
+            kitten.classList.add('stick');
+          }
+          if (mixedColors.isMaineCoon) {
+            kitten.classList.add('mainecoon');
+          }
+          if (mixedColors.isTiger) {
+            kitten.classList.add('tiger');
+          }
+          if (mixedColors.isLeafy) {
+            kitten.classList.add('leafy');
+          }
+          // If mixed result produced a Manx tail, mark and convert the SVG tail to a circular tail
+          if (mixedColors.isManxTail) {
+            kitten.classList.add('manx');
+            kitten.dataset.manxTail = 'true';
+            // replace tail path with circle in the kitten's SVG
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = kitten.innerHTML;
+            const svg = tempDiv.querySelector('svg');
+            if (svg) {
+              const existingTailPath = svg.querySelector('path:last-child');
+              const tailColor = (existingTailPath && existingTailPath.getAttribute('stroke')) || '#3F000F';
+              if (existingTailPath) existingTailPath.remove();
+              const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+              circle.setAttribute('cx', '85');
+              circle.setAttribute('cy', '55');
+              circle.setAttribute('r', '7');
+              circle.setAttribute('fill', tailColor);
+              svg.appendChild(circle);
+              kitten.innerHTML = svg.parentElement ? svg.parentElement.innerHTML : svg.outerHTML;
+            }
+          }
+          kitten.classList.add(kittenGender); 
+          kitten.dataset.gender = kittenGender;
+          const kittenEyes = mixedColors.eyeColor && typeof mixedColors.eyeColor === 'object'
+            ? { left: mixedColors.eyeColor.left || '#000000', right: mixedColors.eyeColor.right || '#000000' }
+            : { left: mixedColors.eyeColor || '#000000', right: mixedColors.eyeColor || '#000000' };
+          kitten.dataset.eyeColor = kittenEyes.left;
+          kitten.dataset.eyeColorLeft = kittenEyes.left;
+          kitten.dataset.eyeColorRight = kittenEyes.right;
+          kitten.style.left = parseFloat(femaleCat.style.left) + (femaleCat.offsetWidth - kitten.offsetWidth) / 2 + 'px';
+          kitten.style.top = parseFloat(femaleCat.style.top) + femaleCat.offsetHeight + 5 + (i * (parseFloat(kitten.style.height) || 30)) + 'px';
+
+          kitten.dataset.type = 'cat';
+          kitten.dataset.breed = 'hybrid';
+          kitten.dataset.id = Date.now() + i;
+          // store the exact mixed color pattern so subsequent breeding reads the intended ear pairing
+          if (mixedColors && mixedColors.colors) {
+            kitten.dataset.colorsPattern = mixedColors.colors;
+          }
+          document.body.appendChild(kitten);
+          makeDraggable(kitten);
+          kittenFeedCounts.set(kitten.dataset.id, 0);
+          kitten.style.width = kitten.classList.contains('tiger') ? '50px' : kitten.classList.contains('mainecoon') ? '40px' : kitten.classList.contains('munchkin') ? '22.5px' : '30px';
+          kitten.style.height = kitten.classList.contains('tiger') ? '50px' : kitten.classList.contains('mainecoon') ? '40px' : kitten.classList.contains('munchkin') ? '22.5px' : '30px';
+        }
+
+        catsInZone.forEach(cat => {
+          const catId = cat.dataset.id || Date.now();
+          const breedCount = (catBreedCounts.get(catId) || 0) + 1;
+          catBreedCounts.set(catId, breedCount);
+
+        });
+
+        document.querySelector('.breed-button').style.display = 'none';
+
+        setTimeout(() => {
+          heart.remove();
+        }, 2000);
+      }, settings.pregnancyEnabled ? (settings.pregnancyDurationSeconds * 1000) : 0);
+    }
+  }
+}
+
+function getCatsInBreedingZone() {
+  const breedingZone = document.querySelector('.breeding-zone');
+  const breedingZoneRect = breedingZone.getBoundingClientRect();
+  const cats = document.querySelectorAll('.cat, .kitten');
+  return Array.from(cats).filter(cat => {
+    const catRect = cat.getBoundingClientRect();
+    return isOverlapping(catRect, breedingZoneRect);
+  });
+}
+
+let autoMovement = false;
+let animationIntervals = {};
+function toggleAutoMovement() {
+  autoMovement = !autoMovement;
+  const cats = document.querySelectorAll('.cat, .kitten');
+  cats.forEach(cat => {
+    if (autoMovement) {
+      startAutomatedMovement(cat);
+    } else {
+      stopAutomatedMovement(cat);
+    }
+  });
+  const autoBtn = document.getElementById('settingsAutoMoveBtn');
+  if (autoBtn) autoBtn.textContent = autoMovement ? "Disable Auto Movement" : "Enable Auto Movement";
+}
+
+function startAutomatedMovement(cat) {
+  const catId = cat.dataset.id || Date.now();
+  if (animationIntervals[catId]) {
+    clearInterval(animationIntervals[catId]);
+  }
+  const interval = setInterval(() => {
+    const targets = [...document.querySelectorAll('.food'), ...document.querySelectorAll('.toy')];
+    if (Math.random() < 0.2) {
+      targets.push(...getCatsInBreedingZone().filter(c => c !== cat));
+      targets.push(document.querySelector('.breeding-zone'));
+    }
+    let targetX, targetY;
+    if (targets.length > 0) {
+      const randomTarget = targets[Math.floor(Math.random() * targets.length)];
+      const targetRect = randomTarget.getBoundingClientRect();
+      targetX = targetRect.left + targetRect.width / 2 - (parseFloat(cat.style.width) || (cat.classList.contains('kitten') ? 30 : 60)) / 2;
+      targetY = targetRect.top + targetRect.height / 2 - (parseFloat(cat.style.height) || (cat.classList.contains('kitten') ? 30 : 60)) / 2;
+      if (randomTarget.classList.contains('breeding-zone')) {
+        const catsInZone = getCatsInBreedingZone();
+        if (catsInZone.length >= 2) {
+          breed();
+        }
+      }
+    } else {
+      targetX = Math.random() * (window.innerWidth - (parseFloat(cat.style.width) || (cat.classList.contains('kitten') ? 30 : 60)));
+      targetY = Math.random() * (window.innerHeight - (parseFloat(cat.style.height) || (cat.classList.contains('kitten') ? 30 : 60)));
+    }
+    const currentX = parseFloat(cat.style.left) || 0;
+    const currentY = parseFloat(cat.style.top) || 0;
+    const distance = Math.sqrt(Math.pow(targetX - currentX, 2) + Math.pow(targetY - currentY, 2));
+    const duration = distance / 50;
+    cat.style.transition = `left ${duration}s linear, top ${duration}s linear`;
+    cat.style.left = `${targetX}px`;
+    cat.style.top = `${targetY}px`;
+    cat.classList.add('walking');
+    setTimeout(() => {
+      cat.classList.remove('walking');
+    }, duration * 1000);
+  }, 3000 + Math.random() * 2000);
+  animationIntervals[catId] = interval;
+}
+
+function stopAutomatedMovement(cat) {
+  const catId = cat.dataset.id || Date.now();
+  if (animationIntervals[catId]) {
+    clearInterval(animationIntervals[catId]);
+    delete animationIntervals[catId];
+    cat.classList.remove("walking");
+    cat.style.transition = '';
+  }
+}
+
+function showMaineCoonOptions() {
+  const options = document.getElementById('mainecoonOptions');
+  options.style.display = options.style.display === 'none' ? 'inline-block' : 'none';
+}
+
+function showRainbowOptions() {
+  const options = document.getElementById('rainbowOptions');
+  options.style.display = options.style.display === 'none' ? 'inline-block' : 'none';
+}
+
+function addRandomMaineCoon() {
+  const colors = ['brown', 'orange', 'grey', 'black', 'white', 'cream'];
+  const randomColor = colors[Math.floor(Math.random() * colors.length)];
+  addCat(`mainecoon_${randomColor}`);
+}
+
+let pettingEnabled = true;
+
+function showAffection(cat, emoji) {
+  const hand = document.createElement('div');
+  hand.className = 'hand';
+  hand.innerHTML = emoji || '🤚';
+  hand.style.left = cat.offsetLeft + cat.offsetWidth / 2 - 20 + 'px'; 
+  hand.style.top = cat.offsetTop + cat.offsetHeight /2 - 20 + 'px'; 
+  document.body.appendChild(hand);
+
+  setTimeout(() => {
+      const heart = document.createElement('div');
+      heart.className = 'heart';
+      heart.innerHTML = '❤️';
+      heart.style.left = cat.offsetLeft + cat.offsetWidth / 2 - 15 + 'px';
+      heart.style.top = cat.offsetTop - 15 + 'px';
+      document.body.appendChild(heart);
+      hand.remove();
+  }, 2000); 
+
+}
+
+function toggleButtonMenu() {
+  const buttonContainer = document.querySelector('.button-container');
+  if (buttonContainer.style.display === 'none') {
+    buttonContainer.style.display = 'flex'; 
+  } else {
+    buttonContainer.style.display = 'none';
+  }
+}
+
+function makeChoice() {
+  if (!chargeCost('choice')) return;
+  const choiceZone = document.querySelector('.choice-zone');
+  const itemsInZone = getItemsInChoiceZone();
+  const choiceResult = document.getElementById('choiceResult');
+  if (itemsInZone.length >= 1) {
+    // choose one of the items at random among all in the zone
+    const randomIndex = Math.floor(Math.random() * itemsInZone.length);
+    const chosenItem = itemsInZone[randomIndex];
+    const chosenItemType = chosenItem.dataset.type === 'toy' ? 'toy' : chosenItem.classList.contains('bowl') ? 'bowl' : chosenItem.classList.contains('food') ? 'food' : 'cat';
+    choiceResult.textContent = `Chose ${chosenItemType} ${randomIndex + 1} of ${itemsInZone.length}`;
+    gain('choice');
+    const count = itemsInZone.length;
+    gain(count === 1 ? 'choice1' : count === 2 ? 'choice2' : 'choice3');
+  } else {
+    choiceResult.textContent = "Need at least one item to choose!";
+  }
+  choiceResult.style.display = 'block';
+  setTimeout(() => {
+    choiceResult.style.display = 'none';
+  }, 2000);
+}
+
+function getItemsInChoiceZone() {
+  const choiceZone = document.querySelector('.choice-zone');
+  const choiceZoneRect = choiceZone.getBoundingClientRect();
+
+  const draggables = document.querySelectorAll('[data-type]');
+
+  return Array.from(draggables).filter(draggable => {
+      const draggableRect = draggable.getBoundingClientRect();
+      return isOverlapping(draggableRect, choiceZoneRect);
+  });
+}
+
+function testRelationship() {
+  if (!chargeCost('relationship')) return;
+  const relationshipZone = document.querySelector('.relationship-zone');
+  const itemsInZone = getItemsInRelationshipZone();
+  const relationshipResult = document.getElementById('relationshipResult');
+  
+  if (itemsInZone.length === 2 && itemsInZone.every(item => item.dataset.type === 'cat' || item.dataset.type === 'kitten')) {
+    const relationshipTypes = ['indifferent', 'hostile', 'like', 'love'];
+    const randomRelationship = relationshipTypes[Math.floor(Math.random() * relationshipTypes.length)];
+    relationshipResult.textContent = `They ${randomRelationship} each other.`;
+    gain('relationship');
+    const resultGainKey = 'relationship' + randomRelationship.charAt(0).toUpperCase() + randomRelationship.slice(1);
+    if ({indifferent:1, hostile:1, like:1, love:1}[randomRelationship]) gain(resultGainKey);
+  } else {
+    relationshipResult.textContent = "Need two cats to test relationship!";
+  }
+  relationshipResult.style.display = 'block';
+  setTimeout(() => {
+    relationshipResult.style.display = 'none';
+  }, 2000);
+  
+  if (relationshipResult.textContent === 'They indifferent each other.') {
+    relationshipResult.textContent = 'They are indifferent towards each other.';
+  } else if (relationshipResult.textContent === 'They hostile each other.') {
+    relationshipResult.textContent = 'They are hostile towards each other.';
+  }
+}
+
+function getItemsInRelationshipZone() {
+  const relationshipZone = document.querySelector('.relationship-zone');
+  const relationshipZoneRect = relationshipZone.getBoundingClientRect();
+
+  const draggables = document.querySelectorAll('.cat, .kitten');
+
+  return Array.from(draggables).filter(draggable => {
+      const draggableRect = draggable.getBoundingClientRect();
+      return isOverlapping(draggableRect, relationshipZoneRect);
+  });
+}
+
+function toggleZones() {
+  const choiceZone = document.querySelector('.choice-zone');
+  const relationshipZone = document.querySelector('.relationship-zone');
+  const choiceButton = document.querySelector('.choice-button');
+  const relationshipButton = document.querySelector('.test-relationship-button');
+
+  const displayStyle = choiceZone.style.display === 'none' ? 'block' : 'none';
+
+  choiceZone.style.display = displayStyle;
+  relationshipZone.style.display = displayStyle;
+  choiceButton.style.display = displayStyle;
+  relationshipButton.style.display = displayStyle;
+
+}
+
+function addMud() {
+  const mud = document.createElement('div');
+  mud.className = 'mud food';
+  mud.innerHTML = '🟤';
+  mud.style.left = (window.innerWidth - 30) / 2 + 'px';
+  mud.style.top = (window.innerHeight - 30) / 2 + 'px';
+  mud.dataset.type = 'mud';
+  document.body.appendChild(mud);
+  makeDraggable(mud);
+}
+
+function addBathwater() {
+  const bathwater = document.createElement('div');
+  bathwater.className = 'bathwater';
+  bathwater.innerHTML = '🚿';
+  bathwater.style.left = (window.innerWidth - 40) / 2 + 'px';
+  bathwater.style.top = (window.innerHeight - 40) / 2 + 'px';
+  bathwater.dataset.type = 'bathwater';
+  document.body.appendChild(bathwater);
+  makeDraggable(bathwater);
+}
+
+function addHand() {
+  const handItem = document.createElement('div');
+  handItem.className = 'hand-item';
+  handItem.innerHTML = '🤚';
+  handItem.style.left = (window.innerWidth - 40) / 2 + 'px';
+  handItem.style.top = (window.innerHeight - 40) / 2 + 'px';
+  handItem.dataset.type = 'hand';
+  document.body.appendChild(handItem);
+  makeDraggable(handItem);
+}
+
+let settings = {
+  pregnancyEnabled: true,
+  pregnancyDurationSeconds: 30,
+  limitKittensToOne: false,
+  baselineScottishManx: 0.05,
+  baselineOthers: 0.01,
+  mutationChance: 0.01, // default 1%
+  // unsuccessful breeding controls
+  unsuccessfulBreedingEnabled: true,
+  unsuccessfulBreedingChance: 0.30, // 30% by default
+  // care mode controls
+  careMode: false,
+  careMin: 5,
+  careMax: 60,
+  currencyEnabled: false,
+  currencies: [defaultCurrency('cur_1')],
+  // breeding resemblance controls
+  resemblanceSlider: 50,
+  resemblanceRandomize: false,
+  resemblanceSwap: false,
+  randomEyesEnabled: false
+};
+
+const CURRENCY_COST_TYPES = {
+  food: 'Food', drink: 'Drink', toy: 'Toy', catnip: 'Catnip', sickness: 'Sickness',
+  cure: 'Cure', syringe: 'Syringe', mud: 'Mud', bathwater: 'Bath water',
+  hand: 'Hand', box: 'Box', money: 'Money', fixer: 'Fixer', remover: 'Remover',
+  cat: 'Cat', breed: 'Breed', choice: 'Make choice', relationship: 'Test relationship',
+  sleepifier: 'Sleepifier', scissors: 'Scissors', other: 'Other / None'
+};
+const CURRENCY_GAIN_ACTIONS = {
+  feed: 'Feed a cat', cure: 'Cure a sick cat', pet: 'Pet a cat (hand)',
+  sell: 'Sell a cat (box + money)', breed: 'Breed cats',
+  kittens: 'Have kittens', growHalf: 'Grow kitten to half age',
+  growAdult: 'Grow half-age to adult', play: 'Play with a toy',
+  wash: 'Wash a muddy cat', sleep: 'Put a cat to sleep', scissors: 'Cut fur with scissors',
+  relationship: 'Test relationship',
+  relationshipIndifferent: 'Test relationship and get indifferent',
+  relationshipHostile: 'Test relationship and get hostile',
+  relationshipLike: 'Test relationship and get like',
+  relationshipLove: 'Test relationship and get love',
+  choice: 'Make choice',
+  choice1: 'Make choice and get 1',
+  choice2: 'Make choice and get 2',
+  choice3: 'Make choice and get 3+'
+};
+
+function defaultCurrency(id) {
+  return {
+    id: id,
+    name: 'Coins',
+    icon: '💰',
+    start: 100,
+    costs: { food: 0, drink: 0, toy: 0, catnip: 0, sickness: 0, cure: 0, syringe: 0, mud: 0, bathwater: 0, hand: 0, box: 0, money: 0, fixer: 0, remover: 0, cat: 0, breed: 0, choice: 0, relationship: 0, sleepifier: 0, scissors: 0, other: 0 },
+    gains: { feed: 0, cure: 0, pet: 0, sell: 0, breed: 0, kittens: 0, growHalf: 0, growAdult: 0, play: 0, wash: 0, sleep: 0, scissors: 0,
+      relationship: 0, relationshipIndifferent: 0, relationshipHostile: 0, relationshipLike: 0, relationshipLove: 0,
+      choice: 0, choice1: 0, choice2: 0, choice3: 0 }
+  };
+}
+
+let balances = {}; // currency id -> current balance
+let nextCurrencyId = 1;
+
+function allCurrencies() { return (settings && Array.isArray(settings.currencies)) ? settings.currencies : []; }
+function activeCurrencies() { return allCurrencies().filter(c => c && c.id !== undefined && c.enabled !== false); }
+function currencyEnabled() { return !!(settings && settings.currencyEnabled); }
+
+function loadBalances() {
+  try { balances = JSON.parse(localStorage.getItem('currencyBalances') || '{}') || {}; }
+  catch (e) { balances = {}; }
+}
+function persistBalances() {
+  try { localStorage.setItem('currencyBalances', JSON.stringify(balances)); }
+  catch (e) {}
+}
+function bal(c) { return (c && c.id in balances) ? Number(balances[c.id]) : (c ? c.start || 0 : 0); }
+function ensureCurrencyBalance(c) {
+  if (c && !(c.id in balances)) balances[c.id] = c.start || 0;
+}
+
+function currencyMsg(msg) {
+  const el = document.getElementById('currencyMsg');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.display = 'none'; }, 1800);
+}
+
+function updateCurrencyDisplay() {
+  const el = document.getElementById('currencyDisplay');
+  if (!el) return;
+  if (currencyEnabled()) {
+    el.style.display = 'block';
+    const parts = activeCurrencies().map(c =>
+      (c.icon || '💰') + ' ' + Math.floor(bal(c)) + ' ' + (c.name || ''));
+    el.textContent = parts.join('  ');
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function chargeCost(type) {
+  if (!currencyEnabled()) return true;
+  const affected = activeCurrencies().filter(c => (c.costs[type] || 0) > 0);
+  if (affected.length === 0) return true;
+  for (const c of affected) {
+    if (bal(c) < c.costs[type]) {
+      currencyMsg('Not enough ' + (c.icon || '') + ' ' + (c.name || 'money') + ' (' + (c.costs[type]) + ')');
+      return false;
+    }
+  }
+  affected.forEach(c => { balances[c.id] = bal(c) - c.costs[type]; });
+  persistBalances();
+  updateCurrencyDisplay();
+  return true;
+}
+
+function gain(type) {
+  if (!currencyEnabled()) return;
+  let changed = false;
+  activeCurrencies().forEach(c => {
+    const amt = c.gains[type] || 0;
+    if (amt > 0) { balances[c.id] = bal(c) + amt; changed = true; }
+  });
+  if (changed) { persistBalances(); updateCurrencyDisplay(); }
+}
+
+function itemCostKey(el) {
+  const t = el.dataset.type;
+  if (t === 'food') {
+    if (el.classList.contains('catnip')) return 'catnip';
+    if (el.dataset.drink) return 'drink';
+    if (el.classList.contains('herbs')) return 'other';
+    return 'food';
+  }
+  if (t === 'bowl') return el.dataset.variant === 'water' ? 'drink' : 'food';
+  if (t === 'none') return 'other';
+  return t;
+}
+
+function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function newCurrencyId() {
+  while (allCurrencies().some(c => c && c.id === ('cur_' + nextCurrencyId))) nextCurrencyId++;
+  return 'cur_' + (nextCurrencyId++);
+}
+
+function currencySectionHTML(c, index) {
+  const costRows = Object.entries(CURRENCY_COST_TYPES).map(([k, label]) =>
+    `<label style="display:flex;align-items:center;gap:3px;break-inside:avoid;">
+      <input type="checkbox" class="curCostOn" data-id="${esc(c.id)}" data-key="${k}">
+      <span style="flex:1">${label}</span>
+      <input type="number" class="curCost" data-id="${esc(c.id)}" data-key="${k}" min="0" value="0" step="1" style="width:46px;">
+    </label>`).join('');
+  const gainRows = Object.entries(CURRENCY_GAIN_ACTIONS).map(([k, label]) =>
+    `<label style="display:flex;align-items:center;gap:3px;break-inside:avoid;">
+      <input type="checkbox" class="curGainOn" data-id="${esc(c.id)}" data-key="${k}">
+      <span style="flex:1">${label}</span>
+      <input type="number" class="curGain" data-id="${esc(c.id)}" data-key="${k}" min="0" value="0" step="1" style="width:46px;">
+    </label>`).join('');
+  return `<div class="curSection" data-id="${esc(c.id)}" style="border:1px solid #ddd;border-radius:8px;padding:8px;margin-top:8px;">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      <b style="flex:1;">Currency ${index + 1}</b>
+      <label>Name <input class="curName" data-id="${esc(c.id)}" type="text" value="${esc(c.name)}" style="width:80px;"></label>
+      <label>Icon <input class="curIcon" data-id="${esc(c.id)}" type="text" value="${esc(c.icon)}" style="width:50px;"></label>
+      <label>Start <input class="curStart" data-id="${esc(c.id)}" type="number" min="0" value="0" style="width:70px;"></label>
+      <button type="button" class="curRemove" data-id="${esc(c.id)}" style="background:#ff4444;color:#fff;">Remove</button>
+    </div>
+    <div style="margin-top:6px;"><b>Items that cost this</b></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:13px;margin:4px 0;">${costRows}</div>
+    <div style="margin-top:8px;"><b>Actions that earn this</b></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:13px;margin:4px 0;">${gainRows}</div>
+  </div>`;
+}
+
+function buildCurrencyUI() {
+  const list = document.getElementById('currencyList');
+  if (!list) return;
+  const currs = allCurrencies();
+  list.innerHTML = currs.map((c, i) => currencySectionHTML(c, i)).join('');
+  list.querySelectorAll('.curRemove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      settings.currencies = allCurrencies().filter(c => c.id !== id);
+      delete balances[id];
+      buildCurrencyUI();
+      populateCurrencyUI();
+    });
+  });
+}
+
+function populateCurrencyUI() {
+  const en = document.getElementById('settingCurrency');
+  if (en) en.checked = !!settings.currencyEnabled;
+  activeCurrencies().forEach(c => {
+    const nameEl = document.querySelector('.curName[data-id="' + esc(c.id) + '"]');
+    const iconEl = document.querySelector('.curIcon[data-id="' + esc(c.id) + '"]');
+    const startEl = document.querySelector('.curStart[data-id="' + esc(c.id) + '"]');
+    if (nameEl) nameEl.value = c.name;
+    if (iconEl) iconEl.value = c.icon;
+    if (startEl) startEl.value = c.start;
+    for (const k of Object.keys(CURRENCY_COST_TYPES)) {
+      const on = document.querySelector('.curCostOn[data-id="' + esc(c.id) + '"][data-key="' + k + '"]');
+      const inp = document.querySelector('.curCost[data-id="' + esc(c.id) + '"][data-key="' + k + '"]');
+      const v = c.costs[k] || 0;
+      if (on) on.checked = v > 0;
+      if (inp) inp.value = v;
+    }
+    for (const k of Object.keys(CURRENCY_GAIN_ACTIONS)) {
+      const on = document.querySelector('.curGainOn[data-id="' + esc(c.id) + '"][data-key="' + k + '"]');
+      const inp = document.querySelector('.curGain[data-id="' + esc(c.id) + '"][data-key="' + k + '"]');
+      const v = c.gains[k] || 0;
+      if (on) on.checked = v > 0;
+      if (inp) inp.value = v;
+    }
+  });
+}
+
+function readCurrencyFromUI() {
+  settings.currencyEnabled = !!document.getElementById('settingCurrency').checked;
+  activeCurrencies().forEach(c => {
+    const nameEl = document.querySelector('.curName[data-id="' + esc(c.id) + '"]');
+    const iconEl = document.querySelector('.curIcon[data-id="' + esc(c.id) + '"]');
+    const startEl = document.querySelector('.curStart[data-id="' + esc(c.id) + '"]');
+    c.name = (nameEl ? nameEl.value : '') || 'Coins';
+    c.icon = (iconEl ? iconEl.value : '') || '💰';
+    c.start = Math.max(0, Number((startEl ? startEl.value : 0) || 0));
+    for (const k of Object.keys(CURRENCY_COST_TYPES)) {
+      const on = document.querySelector('.curCostOn[data-id="' + esc(c.id) + '"][data-key="' + k + '"]');
+      const inp = document.querySelector('.curCost[data-id="' + esc(c.id) + '"][data-key="' + k + '"]');
+      c.costs[k] = (on && on.checked) ? Math.max(0, Number((inp && inp.value) || 0)) : 0;
+    }
+    for (const k of Object.keys(CURRENCY_GAIN_ACTIONS)) {
+      const on = document.querySelector('.curGainOn[data-id="' + esc(c.id) + '"][data-key="' + k + '"]');
+      const inp = document.querySelector('.curGain[data-id="' + esc(c.id) + '"][data-key="' + k + '"]');
+      c.gains[k] = (on && on.checked) ? Math.max(0, Number((inp && inp.value) || 0)) : 0;
+    }
+    ensureCurrencyBalance(c);
+  });
+  persistBalances();
+  updateCurrencyDisplay();
+}
+
+function addCurrency() {
+  settings.currencies = allCurrencies().concat([defaultCurrency(newCurrencyId())]);
+  buildCurrencyUI();
+  populateCurrencyUI();
+}
+
+// Load settings from localStorage if present
+function loadSettings() {
+  try {
+    const stored = localStorage.getItem('gameSettings');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // only override keys that exist in defaults to avoid tampering
+      for (const key of Object.keys(settings)) {
+        if (key === 'currencies') continue;
+        if (key === 'currencyEnabled') continue;
+        if (parsed.hasOwnProperty(key)) settings[key] = parsed[key];
+      }
+      if (typeof parsed.currencyEnabled === 'boolean') {
+        settings.currencyEnabled = parsed.currencyEnabled;
+      }
+      if (Array.isArray(parsed.currencies)) {
+        settings.currencies = parsed.currencies.map((rc, i) =>
+          Object.assign(defaultCurrency('cur_' + (i + 1)), rc));
+        settings.currencies.forEach(c => {
+          c.costs = Object.assign({}, defaultCurrency().costs, c.costs || {});
+          c.gains = Object.assign({}, defaultCurrency().gains, c.gains || {});
+        });
+      } else if (parsed.currency && typeof parsed.currency === 'object') {
+        // migrate old single-currency format
+        const old = parsed.currency;
+        settings.currencyEnabled = !!old.enabled;
+        settings.currencies = [defaultCurrency('cur_1')];
+        const c = settings.currencies[0];
+        if (old.name) c.name = old.name;
+        if (old.icon) c.icon = old.icon;
+        if (old.start != null) c.start = old.start;
+        c.costs = Object.assign({}, defaultCurrency().costs, old.costs || {});
+        c.gains = Object.assign({}, defaultCurrency().gains, old.gains || {});
+        // carry over the old per-currency balance
+        const oldBal = Number(localStorage.getItem('currencyBalance') || 0);
+        if (oldBal) balances[c.id] = oldBal;
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to load settings:', e);
+  }
+}
+
+// Reset settings to defaults and persist
+function resetSettings() {
+  settings = {
+    pregnancyEnabled: true,
+    pregnancyDurationSeconds: 30,
+    limitKittensToOne: false,
+    baselineScottishManx: 0.05,
+    baselineOthers: 0.01,
+    mutationChance: 0.01,
+    unsuccessfulBreedingEnabled: true,
+    unsuccessfulBreedingChance: 0.30,
+    careMode: false,
+    careMin: 5,
+    careMax: 60,
+    currencyEnabled: false,
+    currencies: [defaultCurrency('cur_1')],
+    resemblanceSlider: 50,
+    resemblanceRandomize: false,
+    resemblanceSwap: false,
+    randomEyesEnabled: false
+  };
+  // reset all currency balances
+  balances = {};
+  try { localStorage.removeItem('currencyBalances'); } catch (e) {}
+  // persist defaults
+  try {
+    localStorage.setItem('gameSettings', JSON.stringify(settings));
+  } catch (e) {
+    console.warn('Could not persist reset settings:', e);
+  }
+  // update settings modal inputs if open
+  const limitInput = document.getElementById('settingLimitKittens');
+  if (limitInput) limitInput.checked = !!settings.limitKittensToOne;
+  const pregDur = document.getElementById('settingPregnancyDuration');
+  if (pregDur) pregDur.value = settings.pregnancyDurationSeconds;
+  const baseSM = document.getElementById('settingBaselineScottishManx');
+  if (baseSM) baseSM.value = Math.round(settings.baselineScottishManx * 100);
+  const baseOthers = document.getElementById('settingBaselineOthers');
+  if (baseOthers) baseOthers.value = Math.round(settings.baselineOthers * 100);
+  const mutInput = document.getElementById('settingMutationChance');
+  if (mutInput) mutInput.value = Math.round(settings.mutationChance * 100);
+  const disableUnsuccessful = document.getElementById('settingDisableUnsuccessfulBreeding');
+  if (disableUnsuccessful) disableUnsuccessful.checked = !settings.unsuccessfulBreedingEnabled;
+  const unsucInput = document.getElementById('settingUnsuccessfulBreedingChance');
+  if (unsucInput) unsucInput.value = Math.round(settings.unsuccessfulBreedingChance * 100);
+  const careInput = document.getElementById('settingCareMode');
+  if (careInput) careInput.checked = !!settings.careMode;
+  const careMin = document.getElementById('settingCareMin');
+  if (careMin) careMin.value = settings.careMin;
+  const careMax = document.getElementById('settingCareMax');
+  if (careMax) careMax.value = settings.careMax;
+  const resemblanceSlider = document.getElementById('settingResemblanceSlider');
+  if (resemblanceSlider) resemblanceSlider.value = Number(settings.resemblanceSlider) || 50;
+  const resemblanceRandomize = document.getElementById('settingResemblanceRandomize');
+  if (resemblanceRandomize) resemblanceRandomize.checked = !!settings.resemblanceRandomize;
+  const resemblanceSwap = document.getElementById('settingResemblanceSwap');
+  if (resemblanceSwap) resemblanceSwap.checked = !!settings.resemblanceSwap;
+  const randomEyes = document.getElementById('settingRandomEyes');
+  if (randomEyes) randomEyes.checked = !!settings.randomEyesEnabled;
+  updateResemblanceLabels();
+  toggleResemblanceSliderEnabled();
+  buildCurrencyUI();
+  populateCurrencyUI();
+  updateCurrencyDisplay();
+  stopCareMode();
+
+  alert('Settings reset to defaults.');
+}
+
+function updateResemblanceLabels() {
+  const swap = !!document.getElementById('settingResemblanceSwap')?.checked;
+  const left = document.getElementById('resemblanceLeftLabel');
+  const right = document.getElementById('resemblanceRightLabel');
+  if (left) left.textContent = swap ? 'Father' : 'Mother';
+  if (right) right.textContent = swap ? 'Mother' : 'Father';
+  updateResemblanceSliderLabel();
+}
+
+function updateResemblanceSliderLabel() {
+  const slider = document.getElementById('settingResemblanceSlider');
+  const value = document.getElementById('resemblanceSliderValue');
+  if (slider && value) value.textContent = slider.value + '%';
+}
+
+function randomizeResemblanceSlider() {
+  const slider = document.getElementById('settingResemblanceSlider');
+  if (slider) {
+    slider.value = Math.floor(Math.random() * 101);
+    updateResemblanceSliderLabel();
+  }
+}
+
+function toggleResemblanceSliderEnabled() {
+  const randomize = !!document.getElementById('settingResemblanceRandomize')?.checked;
+  const slider = document.getElementById('settingResemblanceSlider');
+  if (slider) slider.disabled = randomize;
+}
+
+function togglePregnancy() {
+  settings.pregnancyEnabled = !settings.pregnancyEnabled;
+  const pregnancyToggleButton = document.getElementById('pregnancyToggleButton');
+  if (pregnancyToggleButton) pregnancyToggleButton.textContent = settings.pregnancyEnabled ? "Disable Pregnancy" : "Enable Pregnancy";
+  const settingsBtn = document.getElementById('settingsPregnancyBtn');
+  if (settingsBtn) settingsBtn.textContent = settings.pregnancyEnabled ? "Disable Pregnancy" : "Enable Pregnancy";
+}
+
+function openSettingsModal() {
+  document.getElementById('settingsModal').style.display = 'block';
+  // populate current values
+  document.getElementById('settingLimitKittens').checked = !!settings.limitKittensToOne;
+  document.getElementById('settingPregnancyDuration').value = settings.pregnancyDurationSeconds;
+  document.getElementById('settingBaselineScottishManx').value = (settings.baselineScottishManx * 100);
+  document.getElementById('settingBaselineOthers').value = (settings.baselineOthers * 100);
+  // populate mutation chance input
+  const mutInput = document.getElementById('settingMutationChance');
+  if (mutInput) mutInput.value = (settings.mutationChance * 100);
+  // populate unsuccessful breeding fields
+  const disableUnsuccessful = document.getElementById('settingDisableUnsuccessfulBreeding');
+  if (disableUnsuccessful) disableUnsuccessful.checked = !settings.unsuccessfulBreedingEnabled;
+  const unsucInput = document.getElementById('settingUnsuccessfulBreedingChance');
+  if (unsucInput) unsucInput.value = Math.round((settings.unsuccessfulBreedingChance || 0.3) * 100);
+  const careInput = document.getElementById('settingCareMode');
+  if (careInput) careInput.checked = !!settings.careMode;
+  const careMin = document.getElementById('settingCareMin');
+  if (careMin) careMin.value = settings.careMin;
+  const careMax = document.getElementById('settingCareMax');
+  if (careMax) careMax.value = settings.careMax;
+  const autoBtn = document.getElementById('settingsAutoMoveBtn');
+  if (autoBtn) autoBtn.textContent = autoMovement ? "Disable Auto Movement" : "Enable Auto Movement";
+  const resemblanceSlider = document.getElementById('settingResemblanceSlider');
+  if (resemblanceSlider) resemblanceSlider.value = Number(settings.resemblanceSlider) || 50;
+  const resemblanceRandomize = document.getElementById('settingResemblanceRandomize');
+  if (resemblanceRandomize) resemblanceRandomize.checked = !!settings.resemblanceRandomize;
+  const resemblanceSwap = document.getElementById('settingResemblanceSwap');
+  if (resemblanceSwap) resemblanceSwap.checked = !!settings.resemblanceSwap;
+  const randomEyes = document.getElementById('settingRandomEyes');
+  if (randomEyes) randomEyes.checked = !!settings.randomEyesEnabled;
+  updateResemblanceLabels();
+  toggleResemblanceSliderEnabled();
+  buildCurrencyUI();
+  populateCurrencyUI();
+}
+
+function closeSettingsModal() {
+  document.getElementById('settingsModal').style.display = 'none';
+}
+
+function saveSettings() {
+  settings.limitKittensToOne = !!document.getElementById('settingLimitKittens').checked;
+  settings.pregnancyDurationSeconds = Math.max(0, Number(document.getElementById('settingPregnancyDuration').value || 30));
+  settings.baselineScottishManx = Math.max(0, Math.min(100, Number(document.getElementById('settingBaselineScottishManx').value || 5))) / 100;
+  settings.baselineOthers = Math.max(0, Math.min(100, Number(document.getElementById('settingBaselineOthers').value || 1))) / 100;
+  // read mutation chance (percentage -> fraction)
+  settings.mutationChance = Math.max(0, Math.min(100, Number(document.getElementById('settingMutationChance').value || 1))) / 100;
+  // unsuccessful breeding settings: disable checkbox means "no unsuccessful breeding"
+  const disableUnsuccessful = !!document.getElementById('settingDisableUnsuccessfulBreeding').checked;
+  settings.unsuccessfulBreedingEnabled = !disableUnsuccessful;
+  settings.unsuccessfulBreedingChance = Math.max(0, Math.min(100, Number(document.getElementById('settingUnsuccessfulBreedingChance').value || 30))) / 100;
+
+  // care mode settings
+  settings.careMode = !!document.getElementById('settingCareMode').checked;
+  settings.careMin = Math.max(1, Number(document.getElementById('settingCareMin').value || 5));
+  settings.careMax = Math.max(settings.careMin, Number(document.getElementById('settingCareMax').value || 60));
+
+  // breeding resemblance settings
+  const resemblanceSlider = document.getElementById('settingResemblanceSlider');
+  settings.resemblanceSlider = resemblanceSlider ? Math.max(0, Math.min(100, Number(resemblanceSlider.value || 50))) : 50;
+  const resemblanceRandomize = document.getElementById('settingResemblanceRandomize');
+  settings.resemblanceRandomize = !!resemblanceRandomize?.checked;
+  const resemblanceSwap = document.getElementById('settingResemblanceSwap');
+  settings.resemblanceSwap = !!resemblanceSwap?.checked;
+  const randomEyes = document.getElementById('settingRandomEyes');
+  settings.randomEyesEnabled = !!randomEyes?.checked;
+
+  // persist settings
+  try {
+    localStorage.setItem('gameSettings', JSON.stringify(settings));
+  } catch (e) {
+    console.warn('Could not save settings:', e);
+  }
+
+  if (settings.careMode) {
+    startCareMode();
+  } else {
+    stopCareMode();
+  }
+
+  readCurrencyFromUI();
+
+  closeSettingsModal();
+  alert('Settings saved.');
+}
+
+function toggleOutsideButtons() {
+  const outsideButtons = document.getElementById('outsideButtons');
+  outsideButtons.classList.toggle('hidden');
+}
+
+function addBox() {
+    const box = document.createElement('div');
+    box.className = 'box hand-item';
+    box.innerHTML = '📦';
+    box.style.left = (window.innerWidth - 50) / 2 + 'px';
+    box.style.top = (window.innerHeight - 50) / 2 + 'px';
+    box.dataset.type = 'box';
+    document.body.appendChild(box);
+
+    let touchStartTime = 0;
+
+    box.addEventListener('pointerdown', (e) => {
+        touchStartTime = Date.now();
+        e.stopPropagation();
+    });
+
+    box.addEventListener('pointerup', (e) => {
+        e.stopPropagation();
+        const touchEndTime = Date.now();
+        const tapDuration = touchEndTime - touchStartTime;
+
+        if (tapDuration < 300) {
+            const hiddenCat = box.querySelector('.cat, .kitten');
+            if (hiddenCat) {
+                hiddenCat.style.display = 'block';
+                hiddenCat.classList.remove('hidden-in-box');
+                hiddenCat.style.left = box.offsetLeft + 'px';
+                hiddenCat.style.top = (box.offsetTop - hiddenCat.offsetHeight) + 'px';
+
+                document.body.appendChild(hiddenCat);
+                delete box.dataset.catId;
+            } else {
+                const cats = document.querySelectorAll('.cat:not(.hidden-in-box), .kitten:not(.hidden-in-box)');
+                for (const cat of cats) { 
+                    const catRect = cat.getBoundingClientRect();
+                    const boxRect = box.getBoundingClientRect();
+
+                    if (isOverlapping(catRect, boxRect)) {
+                        cat.style.display = 'none';
+                        cat.classList.add('hidden-in-box');
+                        box.dataset.catId = cat.dataset.id || 'cat' + Date.now();
+                        box.appendChild(cat);
+                        cat.style.left = '0px';
+                        cat.style.top = '0px';
+                        break; 
+                    }
+                }
+            }
+        } else if (!box.dataset.catId) {
+            makeDraggable(box);
+        }
+
+        touchStartTime = 0;
+    });
+
+
+    if (!box.dataset.catId) {
+        makeDraggable(box);
+    }
+
+}
+function addMoney() {
+    const money = document.createElement('div');
+    money.className = 'money hand-item';
+    money.innerHTML = '💵';
+    money.style.left = (window.innerWidth - 40) / 2 + 'px';
+    money.style.top = (window.innerHeight - 40) / 2 + 'px';
+    money.dataset.type = 'money';
+    document.body.appendChild(money);
+    makeDraggable(money);
+}
+
+function addFixer() {
+    const fixer = document.createElement('div');
+    fixer.className = 'fixer hand-item';
+    fixer.innerHTML = '💉';
+    fixer.style.left = (window.innerWidth - 40) / 2 + 'px';
+    fixer.style.top = (window.innerHeight - 40) / 2 + 'px';
+    fixer.dataset.type = 'fixer';
+    document.body.appendChild(fixer);
+    makeDraggable(fixer);
+}
+
+function addSickness() {
+    const sickness = document.createElement('div');
+    sickness.className = 'sickness food';
+    sickness.innerHTML = '🦠';
+    sickness.style.left = (window.innerWidth - 30) / 2 + 'px';
+    sickness.style.top = (window.innerHeight - 30) / 2 + 'px';
+    sickness.dataset.type = 'sickness';
+    document.body.appendChild(sickness);
+    makeDraggable(sickness);
+}
+
+function addCure() {
+    const cure = document.createElement('div');
+    cure.className = 'cure food';
+    cure.innerHTML = '💊';
+    cure.style.left = (window.innerWidth - 30) / 2 + 'px';
+    cure.style.top = (window.innerHeight - 30) / 2 + 'px';
+    cure.dataset.type = 'cure';
+    document.body.appendChild(cure);
+    makeDraggable(cure);
+}
+
+function addSyringe() {
+    const syringe = document.createElement('div');
+    syringe.className = 'syringe food';
+    syringe.innerHTML = '💉';
+    syringe.style.left = (window.innerWidth - 30) / 2 + 'px';
+    syringe.style.top = (window.innerHeight - 30) / 2 + 'px';
+    syringe.dataset.type = 'syringe';
+    document.body.appendChild(syringe);
+    makeDraggable(syringe);
+}
+
+function addRemover() {
+    const remover = document.createElement('div');
+    remover.className = 'remover hand-item';
+    remover.innerHTML = '🚫';
+    remover.style.left = (window.innerWidth - 40) / 2 + 'px';
+    remover.style.top = (window.innerHeight - 40) / 2 + 'px';
+    remover.dataset.type = 'remover';
+    document.body.appendChild(remover);
+    makeDraggable(remover);
+}
+
+function addSleepifier(symbol) {
+    const s = document.createElement('div');
+    s.className = 'sleepifier hand-item';
+    s.innerHTML = '💤';
+    s.style.left = (window.innerWidth - 40) / 2 + 'px';
+    s.style.top = (window.innerHeight - 40) / 2 + 'px';
+    s.dataset.type = 'sleepifier';
+    if (symbol) s.dataset.sleepSymbol = symbol;
+    document.body.appendChild(s);
+    makeDraggable(s);
+}
+
+function applySleep(cat, symbol) {
+  if (cat.classList.contains('sleeping')) return;
+  cat.classList.add('sleeping');
+  cat.querySelectorAll('svg').forEach(svg => {
+    svg.querySelectorAll('.cat-eye').forEach(eye => {
+      if (!eye.dataset.sleepReset) {
+        eye.dataset.sleepReset = 'true';
+        eye.dataset.rx = eye.getAttribute('rx') || '4';
+        eye.dataset.ry = eye.getAttribute('ry') || '6';
+        eye.dataset.fill = eye.getAttribute('fill') || '#000000';
+        eye.setAttribute('rx', '5');
+        eye.setAttribute('ry', '0.8');
+        eye.setAttribute('fill', '#000000');
+      }
+    });
+    svg.querySelectorAll('.cat-pupil').forEach(pupil => { pupil.style.display = 'none'; });
+  });
+  cat.dataset.sleepSymbol = symbol || 'Z';
+  startSleepZ(cat, symbol || 'Z');
+  gain('sleep');
+}
+
+function wakeCat(cat) {
+  if (!cat.classList.contains('sleeping')) return;
+  cat.classList.remove('sleeping');
+  cat.querySelectorAll('svg').forEach(svg => {
+    svg.querySelectorAll('.cat-eye').forEach(eye => {
+      if (eye.dataset.sleepReset) {
+        eye.setAttribute('rx', eye.dataset.rx);
+        eye.setAttribute('ry', eye.dataset.ry);
+        eye.setAttribute('fill', eye.dataset.fill);
+        delete eye.dataset.sleepReset;
+      }
+    });
+    svg.querySelectorAll('.cat-pupil').forEach(pupil => { pupil.style.display = ''; });
+  });
+  clearSleepZ(cat);
+  delete cat.dataset.sleepSymbol;
+}
+
+function startSleepZ(cat, symbol) {
+  if (cat._sleepZ) clearInterval(cat._sleepZ);
+  if (cat.querySelector('.sleep-zs')) cat.querySelector('.sleep-zs').remove();
+  const container = document.createElement('div');
+  container.className = 'sleep-zs';
+  cat.appendChild(container);
+  const emit = () => {
+    if (!cat.classList.contains('sleeping')) return;
+    const z = document.createElement('div');
+    z.className = 'sleep-z';
+    z.textContent = symbol || 'Z';
+    z.style.top = (Math.random() * 6) + 'px';
+    z.addEventListener('animationend', () => z.remove());
+    container.appendChild(z);
+  };
+  cat._sleepZ = setInterval(emit, 650);
+  emit();
+}
+
+function clearSleepZ(cat) {
+  if (cat._sleepZ) { clearInterval(cat._sleepZ); cat._sleepZ = null; }
+  const c = cat.querySelector('.sleep-zs');
+  if (c) c.remove();
+}
+
+function handleInfection(e) {
+  const cat = e.currentTarget;
+  if (cat.classList.contains('sick')) {
+    const otherCats = document.querySelectorAll('.cat:not(.sick), .kitten:not(.sick)');
+    otherCats.forEach(otherCat => {
+      if (isOverlapping(cat.getBoundingClientRect(), otherCat.getBoundingClientRect())) {
+        otherCat.classList.add('sick');
+        otherCat.addEventListener('pointerup', handleInfection);
+      }
+    });
+  }
+  e.stopPropagation();
+}
+
+function addRandomItem() {
+    const items = [
+        { func: addRandomFood },
+        { func: addTreat },
+        { func: addRandomToy },
+        { func: addHand },
+        { func: addMud },
+        { func: addBathwater },
+        { func: addBox },
+        { func: addMoney },
+        { func: addFixer },
+        { func: addSickness },
+        { func: addCure },
+        { func: addSyringe },
+        { func: addRemover },
+        { func: addHerbs },
+        { func: addScissors }
+    ];
+
+    const randomItemIndex = Math.floor(Math.random() * items.length);
+    items[randomItemIndex].func();
+}
+
+function addHerbs() {
+    const herbs = document.createElement('div');
+    herbs.className = 'herbs food';
+    herbs.innerHTML = '🌿';
+    herbs.style.left = (window.innerWidth - 40) / 2 + 'px';
+    herbs.style.top = (window.innerHeight - 40) / 2 + 'px';
+    herbs.dataset.type = 'food';
+    document.body.appendChild(herbs);
+    makeDraggable(herbs);
+}
+
+function addScissors() {
+    const scissors = document.createElement('div');
+    scissors.className = 'scissors hand-item';
+    scissors.innerHTML = '✂️';
+    scissors.style.left = (window.innerWidth - 40) / 2 + 'px';
+    scissors.style.top = (window.innerHeight - 40) / 2 + 'px';
+    scissors.dataset.type = 'scissors';
+    document.body.appendChild(scissors);
+    makeDraggable(scissors);
+}
+
+function applyMud(cat, chosenColor) {
+  cat.classList.add('muddy');
+  const svg = cat.querySelector('svg');
+  let leftEarEl = svg.querySelectorAll('path')[0] || svg.querySelectorAll('circle')[0];
+  let rightEarEl = svg.querySelectorAll('path')[1] || svg.querySelectorAll('circle')[1];
+  let tailEl = svg.querySelector('path:last-child') || svg.querySelector('circle:last-child');
+
+  const originalColors = {
+    leftEar: leftEarEl ? (leftEarEl.getAttribute('fill') || leftEarEl.style.fill || '#FFFFFF') : '#FFFFFF',
+    rightEar: rightEarEl ? (rightEarEl.getAttribute('fill') || rightEarEl.style.fill || '#FFFFFF') : '#FFFFFF',
+    tail: tailEl ? (tailEl.getAttribute('stroke') || tailEl.getAttribute('fill') || tailEl.style.stroke || '#000000') : '#000000'
+  };
+  cat.dataset.originalColors = JSON.stringify(originalColors);
+
+  if (leftEarEl && ['path','circle','ellipse'].includes(leftEarEl.tagName.toLowerCase())) {
+    leftEarEl.setAttribute('fill', chosenColor);
+    leftEarEl.style.fill = chosenColor;
+  }
+  if (rightEarEl && ['path','circle','ellipse'].includes(rightEarEl.tagName.toLowerCase())) {
+    rightEarEl.setAttribute('fill', chosenColor);
+    rightEarEl.style.fill = chosenColor;
+  }
+  if (tailEl) {
+    if (tailEl.tagName.toLowerCase() === 'path') {
+      tailEl.setAttribute('stroke', chosenColor);
+      tailEl.style.stroke = chosenColor;
+    } else {
+      tailEl.setAttribute('fill', chosenColor);
+      tailEl.style.fill = chosenColor;
+    }
+  }
+  cat.dataset.mudRemovable = 'true';
+}
+
+function clearCareNeed(cat) {
+  const bubble = cat.querySelector('.care-need');
+  if (bubble) bubble.remove();
+  if (cat.dataset.careNeed === '🦠') cat.classList.remove('sick');
+  delete cat.dataset.careNeed;
+  delete cat.dataset.careMud;
+}
+
+function handleCareDrop(cat, item) {
+  const need = cat.dataset.careNeed;
+  if (!need) return;
+  let ok = false;
+  if (need === '🍽') {
+    ok = item.dataset.type === 'food' && !item.classList.contains('mud');
+  } else if (need === '❤️') {
+    ok = item.dataset.type === 'hand';
+  } else if (need === '🥎') {
+    ok = item.dataset.type === 'toy';
+  } else if (need === '💧') {
+    ok = item.dataset.type === 'bowl' && item.dataset.variant === 'water';
+    if (!ok && item.dataset.type === 'food') {
+      ok = !!item.dataset.drink && (item.classList.contains('food') || item.classList.contains('catnip'));
+    }
+  } else if (need === '🦠') {
+    ok = item.dataset.type === 'cure' || item.dataset.type === 'syringe' || (item.dataset.type === 'food' && item.classList.contains('herbs'));
+  } else if (need === '🚿') {
+    ok = item.dataset.type === 'bathwater';
+  } else if (need === '💤') {
+    ok = item.dataset.type === 'sleepifier';
+  }
+  if (ok) clearCareNeed(cat);
+}
+
+let careModeActive = false;
+let careTimeoutId = null;
+
+function startCareMode() {
+  if (careTimeoutId) { clearTimeout(careTimeoutId); careTimeoutId = null; }
+  careModeActive = true;
+  const status = document.getElementById('careStatus');
+  if (status) status.textContent = 'Care Mode ON';
+  scheduleNextCare();
+}
+
+function stopCareMode() {
+  if (careTimeoutId) { clearTimeout(careTimeoutId); careTimeoutId = null; }
+  careModeActive = false;
+  document.querySelectorAll('.cat, .kitten').forEach(cat => {
+    const bubble = cat.querySelector('.care-need');
+    if (bubble) bubble.remove();
+    if (cat.dataset.careNeed === '🦠') cat.classList.remove('sick');
+    if (cat.dataset.careMud === 'true' && cat.classList.contains('muddy')) {
+      const originalColors = JSON.parse(cat.dataset.originalColors || '{}');
+      const svg = cat.querySelector('svg');
+      const left = svg.querySelectorAll('path')[0] || svg.querySelectorAll('circle')[0];
+      const right = svg.querySelectorAll('path')[1] || svg.querySelectorAll('circle')[1];
+      const tail = svg.querySelector('path:last-child') || svg.querySelector('circle:last-child');
+      if (left && originalColors.leftEar) { left.setAttribute('fill', originalColors.leftEar); left.style.fill = originalColors.leftEar; }
+      if (right && originalColors.rightEar) { right.setAttribute('fill', originalColors.rightEar); right.style.fill = originalColors.rightEar; }
+      if (tail && originalColors.tail) {
+        tail.tagName.toLowerCase() === 'path'
+          ? (tail.setAttribute('stroke', originalColors.tail), tail.style.stroke = originalColors.tail)
+          : (tail.setAttribute('fill', originalColors.tail), tail.style.fill = originalColors.tail);
+      }
+      cat.classList.remove('muddy');
+    }
+    delete cat.dataset.careNeed;
+    delete cat.dataset.careMud;
+  });
+  const status = document.getElementById('careStatus');
+  if (status) status.textContent = '';
+}
+
+function scheduleNextCare() {
+  if (!careModeActive) return;
+  const min = Math.max(1, settings.careMin || 5);
+  const max = Math.max(min, settings.careMax || 60);
+  const secs = min + Math.random() * Math.max(0, max - min);
+  if (careTimeoutId) clearTimeout(careTimeoutId);
+  careTimeoutId = setTimeout(spawnCareNeed, secs * 1000);
+}
+
+function spawnCareNeed() {
+  careTimeoutId = null;
+  if (!careModeActive) return;
+  const cats = Array.from(document.querySelectorAll('.cat, .kitten')).filter(c => !c.classList.contains('hidden-in-box'));
+  const eligible = cats.filter(c => !c.dataset.careNeed);
+  if (eligible.length > 0) {
+    const cat = eligible[Math.floor(Math.random() * eligible.length)];
+    const needs = ['🍽', '❤️', '🥎', '💧', '🦠', '🚿', '💤'];
+    const need = needs[Math.floor(Math.random() * needs.length)];
+    cat.dataset.careNeed = need;
+    const bubble = document.createElement('div');
+    bubble.className = 'care-need';
+    bubble.textContent = need;
+    cat.appendChild(bubble);
+    if (need === '🦠') {
+      cat.classList.add('sick');
+    } else if (need === '🚿') {
+      applyMud(cat, '#A0522D');
+      cat.dataset.careMud = 'true';
+    }
+  }
+  scheduleNextCare();
+}
+
+function toggleDarkMode() {
+  const body = document.body;
+  body.classList.toggle('dark-mode');
+
+  const modeToggleButton = document.getElementById('modeToggleButton');
+  modeToggleButton.textContent = body.classList.contains('dark-mode') ? "Light Mode" : "Dark Mode";
+
+  localStorage.setItem('darkMode', body.classList.contains('dark-mode')); 
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const darkModeSetting = localStorage.getItem('darkMode') === 'true'; 
+  if (darkModeSetting) {
+    toggleDarkMode(); 
+  }
+  // load persisted settings so the UI and logic use saved preferences
+  loadBalances();
+  loadSettings();
+  if (settings.careMode) {
+    startCareMode();
+  }
+  activeCurrencies().forEach(ensureCurrencyBalance);
+  buildCurrencyUI();
+  updateCurrencyDisplay();
+
+  // Wire up ear-link toggle behavior in the custom breed modal
+  const linkEarsCheckbox = document.getElementById('customLinkEars');
+  const earSingleWrapper = document.getElementById('earSingleWrapper');
+  const earPairWrapper = document.getElementById('earPairWrapper');
+  const earSingleInput = document.getElementById('customEarSingleColor');
+  const leftEarInput = document.getElementById('customLeftEarColor');
+  const rightEarInput = document.getElementById('customRightEarColor');
+  
+  // Wire up settings modal buttons
+  window.openSettingsModal = openSettingsModal;
+  window.closeSettingsModal = closeSettingsModal;
+  window.saveSettings = saveSettings;
+  // Wire up custom item modal
+  window.openCustomItemModal = function() {
+    document.getElementById('customItemModal').style.display = 'block';
+    // sync mud and drink options visibility based on current select
+    const sel = document.getElementById('customItemType');
+    const mudOpts = document.getElementById('customItemMudOptions');
+    if (sel && mudOpts) mudOpts.style.display = sel.value === 'mud' ? 'block' : 'none';
+    const drinkOpts = document.getElementById('customItemDrinkOptions');
+    if (sel && drinkOpts) drinkOpts.style.display = (sel.value === 'food' || sel.value === 'catnip') ? 'block' : 'none';
+    const sleepOpts = document.getElementById('customItemSleepOptions');
+    if (sel && sleepOpts) sleepOpts.style.display = sel.value === 'sleepifier' ? 'block' : 'none';
+  };
+  window.closeCustomItemModal = function() {
+    document.getElementById('customItemModal').style.display = 'none';
+  };
+
+  // toggle mud-only and drink-only fields in custom item modal when type changes
+  const customItemTypeSelect = document.getElementById('customItemType');
+  const customItemMudOptions = document.getElementById('customItemMudOptions');
+  const customItemDrinkOptions = document.getElementById('customItemDrinkOptions');
+  if (customItemTypeSelect) {
+    const updateCustomItemOptions = () => {
+      if (customItemMudOptions) customItemMudOptions.style.display = customItemTypeSelect.value === 'mud' ? 'block' : 'none';
+      if (customItemDrinkOptions) customItemDrinkOptions.style.display = (customItemTypeSelect.value === 'food' || customItemTypeSelect.value === 'catnip') ? 'block' : 'none';
+      const sleepOpts = document.getElementById('customItemSleepOptions');
+      if (sleepOpts) sleepOpts.style.display = customItemTypeSelect.value === 'sleepifier' ? 'block' : 'none';
+    };
+    customItemTypeSelect.addEventListener('change', updateCustomItemOptions);
+    // set initial visibility on load
+    updateCustomItemOptions();
+  }
+
+  // Helper to render a custom-breed quick-add + delete UI (used on creation and restore)
+  function renderCustomBreedUI(name, info) {
+    const wrapper = document.createElement('span');
+    wrapper.style.display = 'inline-flex';
+    wrapper.style.gap = '6px';
+    wrapper.style.alignItems = 'center';
+    wrapper.dataset.customBreed = name;
+    const btn = document.createElement('button');
+    btn.textContent = 'Add ' + name.replace(/_/g,' ');
+    btn.onclick = () => addCat(name);
+    const del = document.createElement('button');
+    del.textContent = '✖';
+    del.style.background = '#ff4444';
+    del.title = 'Delete custom breed';
+    del.onclick = () => {
+      if (confirm('Delete custom breed "' + name.replace(/_/g,' ') + '"?')) {
+        customBreeds.delete(name);
+        delete catColors[name];
+        wrapper.remove();
+        try {
+          const obj = Object.fromEntries(customBreeds);
+          localStorage.setItem('customBreeds', JSON.stringify(obj));
+        } catch (e) {}
+        alert('Custom breed deleted.');
+      }
+    };
+    wrapper.appendChild(btn);
+    wrapper.appendChild(del);
+    const container = document.querySelector('.button-container');
+    container.insertBefore(wrapper, container.children[container.children.length-1]); // insert near end
+  }
+
+  // Helper to render a custom-item quick-add + delete UI (used on creation and restore)
+  function renderCustomItemUI(name, template) {
+    const wrapper = document.createElement('span');
+    wrapper.style.display = 'inline-flex';
+    wrapper.style.gap = '6px';
+    wrapper.style.alignItems = 'center';
+    wrapper.dataset.customItem = name;
+    const btn = document.createElement('button');
+    btn.textContent = 'Add ' + name;
+    btn.onclick = () => {
+      const t = customItems.get(name);
+      if (!t) return;
+      if (t.type === 'box') {
+        // create a new box instance with full behavior
+        const box = document.createElement('div');
+        box.className = 'box hand-item';
+        box.innerHTML = t.emoji || '📦';
+        box.style.left = (window.innerWidth - 50) / 2 + 'px';
+        box.style.top = (window.innerHeight - 50) / 2 + 'px';
+        box.dataset.type = 'box';
+        document.body.appendChild(box);
+        let touchStartTime = 0;
+        box.addEventListener('pointerdown', (e) => { touchStartTime = Date.now(); e.stopPropagation(); });
+        box.addEventListener('pointerup', (e) => {
+            e.stopPropagation();
+            const touchEndTime = Date.now();
+            const tapDuration = touchEndTime - touchStartTime;
+            if (tapDuration < 300) {
+                const hiddenCat = box.querySelector('.cat, .kitten');
+                if (hiddenCat) {
+                    hiddenCat.style.display = 'block';
+                    hiddenCat.classList.remove('hidden-in-box');
+                    hiddenCat.style.left = box.offsetLeft + 'px';
+                    hiddenCat.style.top = (box.offsetTop - hiddenCat.offsetHeight) + 'px';
+                    document.body.appendChild(hiddenCat);
+                    delete box.dataset.catId;
+                } else {
+                    const cats = document.querySelectorAll('.cat:not(.hidden-in-box), .kitten:not(.hidden-in-box)');
+                    for (const cat of cats) {
+                        const catRect = cat.getBoundingClientRect();
+                        const boxRect = box.getBoundingClientRect();
+                        if (isOverlapping(catRect, boxRect)) {
+                            cat.style.display = 'none';
+                            cat.classList.add('hidden-in-box');
+                            box.dataset.catId = cat.dataset.id || 'cat' + Date.now();
+                            box.appendChild(cat);
+                            cat.style.left = '0px';
+                            cat.style.top = '0px';
+                            break;
+                        }
+                    }
+                }
+            } else if (!box.dataset.catId) {
+                makeDraggable(box);
+            }
+            touchStartTime = 0;
+        });
+        makeDraggable(box);
+      } else {
+        const clone = document.createElement('div');
+        clone.className = (t.type === 'toy' ? 'toy' : (t.type === 'food' || t.type === 'catnip' ? 'food' : (t.type === 'sleepifier' ? 'sleepifier hand-item' : 'hand-item')));
+        clone.innerHTML = t.emoji;
+        clone.style.left = (window.innerWidth - 40) / 2 + 'px';
+        clone.style.top = (window.innerHeight - 40) / 2 + 'px';
+        clone.dataset.type = t.type;
+        // if this template is mud, attach mud metadata so that when applied it uses the chosen color/removability
+        if (t.type === 'mud') {
+          clone.dataset.mudColor = t.mudColor || '#A0522D';
+          clone.dataset.mudRemovable = (typeof t.removable !== 'undefined') ? (t.removable ? 'true' : 'false') : 'true';
+        }
+        // if this template is a drink, mark it so it can cure the 💧 need
+        if ((t.type === 'food' || t.type === 'catnip') && t.drink) {
+          clone.dataset.drink = 'true';
+        }
+        // if this template is a sleepifier, carry the custom sleep symbol
+        if (t.type === 'sleepifier') {
+          clone.dataset.sleepSymbol = t.sleepSymbol || 'Z';
+        }
+        document.body.appendChild(clone);
+        makeDraggable(clone);
+      }
+    };
+    const del = document.createElement('button');
+    del.textContent = '✖';
+    del.style.background = '#ff4444';
+    del.title = 'Delete custom item';
+    del.onclick = () => {
+      if (confirm('Delete custom item "' + name + '"?')) {
+        customItems.delete(name);
+        wrapper.remove();
+        try {
+          const obj = Object.fromEntries(customItems);
+          localStorage.setItem('customItems', JSON.stringify(obj));
+        } catch (e) {}
+        // remove one created instance if still on screen
+        alert('Custom item deleted.');
+      }
+    };
+    wrapper.appendChild(btn);
+    wrapper.appendChild(del);
+    const container = document.querySelector('.button-container');
+    container.insertBefore(wrapper, container.children[container.children.length-1]);
+  }
+
+  // Restore saved custom breeds from localStorage (if any)
+  (function restoreCustomBreeds() {
+    try {
+      const stored = localStorage.getItem('customBreeds');
+      if (!stored) return;
+      const obj = JSON.parse(stored);
+      if (!obj) return;
+      // obj is plain object; populate Map and recreate UI
+      for (const [name, info] of Object.entries(obj)) {
+        // info might be serialized as { colorsPattern, bodyType, scottishFold, manxTail }
+        customBreeds.set(name, info);
+        catColors[name] = info.colorsPattern;
+        // create quick-add UI
+        renderCustomBreedUI(name, info);
+      }
+    } catch (e) {
+      console.warn('Failed to restore custom breeds:', e);
+    }
+  })();
+
+  // Restore saved custom items from localStorage (if any)
+  (function restoreCustomItems() {
+    try {
+      const stored = localStorage.getItem('customItems');
+      if (!stored) return;
+      const obj = JSON.parse(stored);
+      if (!obj) return;
+      for (const [name, template] of Object.entries(obj)) {
+        customItems.set(name, template);
+        renderCustomItemUI(name, template);
+      }
+    } catch (e) {
+      console.warn('Failed to restore custom items:', e);
+    }
+  })();
+
+  // Wire up addCustomItem to also persist and render UI (keeps previous behavior but uses render helper)
+  window.addCustomItem = function() {
+    const name = (document.getElementById('customItemName').value || '').trim();
+    const emoji = (document.getElementById('customItemEmoji').value || '').trim() || '❓';
+    const type = document.getElementById('customItemType').value || 'toy';
+    const mudColor = document.getElementById('customItemMudColor') ? document.getElementById('customItemMudColor').value : '#A0522D';
+    const mudRemovable = document.getElementById('customItemMudRemovable') ? !!document.getElementById('customItemMudRemovable').checked : true;
+    if (!name) {
+      alert('Please enter a name for the item.');
+      return;
+    }
+    if (customItems.has(name)) {
+      alert('An item with that name already exists.');
+      return;
+    }
+    // include mud metadata when relevant
+    const template = { emoji, type };
+    if (type === 'mud') {
+      template.mudColor = mudColor;
+      template.removable = mudRemovable;
+    }
+    // include drink flag when relevant
+    const drinkInput = document.getElementById('customItemDrink');
+    if ((type === 'food' || type === 'catnip') && drinkInput && drinkInput.checked) {
+      template.drink = true;
+    }
+    const sleepSymbolInput = document.getElementById('customItemSleepSymbol');
+    if (type === 'sleepifier') {
+      template.sleepSymbol = (sleepSymbolInput && sleepSymbolInput.value.trim()) || 'Z';
+    }
+    // persist to customItems map and localStorage
+    customItems.set(name, template);
+    try {
+      const obj = Object.fromEntries(customItems);
+      localStorage.setItem('customItems', JSON.stringify(obj));
+    } catch (e) {
+      console.warn('Could not save custom items:', e);
+    }
+
+    // Render quick-add UI for the new template but do NOT spawn an instance immediately
+    renderCustomItemUI(name, template);
+    closeCustomItemModal();
+    alert('Custom item "' + name + '" created.');
+  };
+
+  // Wire up addCustomBreed to also persist and render UI (keeps previous behavior but uses render helper)
+  window.addCustomBreed = function() {
+    const name = (document.getElementById('customBreedName').value || '').trim().toLowerCase().replace(/\s+/g,'_');
+    if (!name) {
+      alert('Please enter a breed name.');
+      return;
+    }
+    if (customBreeds.has(name)) {
+      alert('A custom breed with that name already exists.');
+      return;
+    }
+    const body = document.getElementById('customBodyColor').value || '#ffffff';
+    const linked = document.getElementById('customLinkEars').checked;
+    let left, right;
+    if (linked) {
+      const single = document.getElementById('customEarSingleColor').value || body;
+      left = single;
+      right = single;
+    } else {
+      left = document.getElementById('customLeftEarColor').value || body;
+      right = document.getElementById('customRightEarColor').value || left;
+    }
+    const tail = document.getElementById('customTailColor').value || body;
+    const scottish = !!document.getElementById('customScottishFold').checked;
+    const manxTail = !!document.getElementById('customManxTail').checked;
+    const bodyType = document.getElementById('customBodyType').value || 'normal';
+    const pattern = `${body},${left};${right},${tail}`;
+    // store custom breed metadata
+    customBreeds.set(name, { colorsPattern: pattern, bodyType, scottishFold: scottish, manxTail: manxTail });
+    catColors[name] = pattern;
+    // persist custom breeds
+    try {
+      const obj = Object.fromEntries(customBreeds);
+      localStorage.setItem('customBreeds', JSON.stringify(obj));
+    } catch (e) {
+      console.warn('Could not save custom breeds:', e);
+    }
+    renderCustomBreedUI(name, { colorsPattern: pattern, bodyType, scottishFold: scottish, manxTail: manxTail });
+    closeCustomBreedModal();
+    alert('Custom breed "' + name.replace(/_/g,' ') + '" added.');
+  };
+
+  function updateEarVisibility() {
+    if (!linkEarsCheckbox) return;
+    if (linkEarsCheckbox.checked) {
+      earSingleWrapper.style.display = 'block';
+      earPairWrapper.style.display = 'none';
+      // sync single color into pair inputs so preview/creation uses same values
+      if (earSingleInput && leftEarInput && rightEarInput) {
+        leftEarInput.value = earSingleInput.value;
+        rightEarInput.value = earSingleInput.value;
+      }
+    } else {
+      earSingleWrapper.style.display = 'none';
+      earPairWrapper.style.display = 'block';
+    }
+  }
+
+  if (linkEarsCheckbox) {
+    linkEarsCheckbox.addEventListener('change', updateEarVisibility);
+  }
+  if (earSingleInput) {
+    earSingleInput.addEventListener('input', () => {
+      if (leftEarInput && rightEarInput) {
+        leftEarInput.value = earSingleInput.value;
+        rightEarInput.value = earSingleInput.value;
+      }
+    });
+  }
+  updateEarVisibility();
+});
+</script>
+</body>
+</html>

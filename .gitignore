@@ -1,0 +1,18 @@
+# dependencies and builds
+node_modules/
+dist/
+
+# this computer's own settings and data (keys, chats, notes, the library)
+pdd.config.json
+data/
+.env
+.env.*
+*.token
+
+# editors and the OS
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
