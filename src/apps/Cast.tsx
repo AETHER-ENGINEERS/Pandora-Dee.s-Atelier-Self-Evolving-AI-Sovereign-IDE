@@ -2,7 +2,7 @@ import { Num } from "../ui/Num.tsx";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Download, FolderOpen, LogIn, LogOut, Plus, Trash2, Upload } from "lucide-react";
 import { desk, useDesk, type CharPrefs } from "../lib/store.ts";
-import { explainError, listModels } from "../lib/model.ts";
+import { credential, explainError, listModels } from "../lib/model.ts";
 import { speak, voiceList } from "../lib/voice.ts";
 import { voiceFor } from "../lib/prefs.ts";
 import { openMenu } from "../ui/ContextMenu.tsx";
@@ -375,7 +375,7 @@ function CharAI({ c }: { c: Character }) {
     if (!conn) return;
     setNote("Checking…");
     try {
-      const m = await listModels(conn, conn.keyName ? desk().env[conn.keyName] ?? "" : "");
+      const m = await listModels(conn, credential(conn, desk().env));
       setModels(m);
       setNote(m.length ? "" : "That connection has no models.");
     } catch (e) {

@@ -4,6 +4,7 @@
 import { desk } from "../lib/store.ts";
 import { chatList, newChat, renameChat, switchChat } from "../lib/chats.ts";
 import { chainFor, retry, say, writeJournal } from "../lib/agent.ts";
+import { credential } from "../lib/model.ts";
 import { compact, usage } from "../lib/context.ts";
 import { findSkill, skillsOf } from "../lib/skills.ts";
 import { memoryLines } from "../lib/tools.ts";
@@ -127,7 +128,7 @@ export async function runSlash(raw: string): Promise<boolean> {
     }
     case "compact": {
       const c = s.character(s.focus) ?? s.roomCharacters()[0];
-      note(await compact(c ? chainFor(c.id).list : [], (conn) => (conn.keyName ? desk().env[conn.keyName] ?? "" : "")));
+      note(await compact(c ? chainFor(c.id).list : [], (conn) => credential(conn, desk().env)));
       return true;
     }
     case "context": {

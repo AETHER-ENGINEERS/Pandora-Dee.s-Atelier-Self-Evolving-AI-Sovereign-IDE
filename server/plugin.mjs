@@ -9,6 +9,7 @@ import { classicRelayScript, helperScript, webxdcScript } from "./inject.mjs";
 import { sshOp } from "./ssh.mjs";
 import { inbound } from "./inbound.mjs";
 import { relay } from "./relay.mjs";
+import * as aicordAuth from "./oauth.mjs";
 import { findCurl, findPython, forgetPrograms } from "./programs.mjs";
 
 const MIME = {
@@ -127,6 +128,17 @@ export function deskServer() {
     const parts = url.pathname.split("/").filter(Boolean).slice(1); // after "api"
     const m = req.method;
     const L = library();
+    if (parts[0] === "oauth" && parts[1] === "aicord") {
+      if (parts[2] === "start" && m === "POST") {
+        const b = JSON.parse((await readBody(req, 20_000)).toString("utf8") || "{}");
+        try {
+          return send(res, 200, aicordAuth.begin({ clientId: String(b.clientId || ""), redirectUri: String(b.redirectUri || ""), scopes: Array.isArray(b.scopes) ? b.scopes : [] }));
+        } catch (e) {
+          return send(res, 400, { error: e instanceof Error ? e.message : String(e) });
+        }
+      }
+      if (parts[2] === "result") return send(res, 200, aicordAuth.result(url.searchParams.get("state")));
+    }
     if (parts[0] === "relay" && parts[1] === "programs") {
       if (url.searchParams.get("refresh")) forgetPrograms();
       const py = findPython(url.searchParams.get("python") || "");
@@ -357,6 +369,9 @@ export function deskServer() {
         if (fromElsewhere(req)) return send(res, 403, { error: "Only the desktop's own page can use this." });
         return await api(req, res, url);
       }
+      // AICord's sign-in sends the browser back here (a top-level visit from aicordapp.com, so not under /api;
+      // it's only accepted with the state this desktop made)
+      if (url.pathname === "/oauth/aicord/callback" && !isAppHost(req)) return send(res, 200, await aicordAuth.callback(url), "text/html; charset=utf-8");
       // Classic pages, with the relay hook added as they're served (the files themselves stay as built)
       if (/^\/classic\/[^/]+\.html$/.test(url.pathname) && !isAppHost(req)) {
         const file = path.resolve(publicDir, url.pathname.slice(1));

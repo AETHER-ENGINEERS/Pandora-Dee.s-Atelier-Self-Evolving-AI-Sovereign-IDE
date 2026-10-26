@@ -2,7 +2,8 @@ import { Num } from "../ui/Num.tsx";
 import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { desk, uid, useDesk, type Account } from "../lib/store.ts";
-import { listModels, explainError, pickModel, PRESETS, sampleRequest, scopeOf, SCOPE_LABEL, type Connection } from "../lib/model.ts";
+import { credential, listModels, explainError, pickModel, PRESETS, sampleRequest, scopeOf, SCOPE_LABEL, type Connection } from "../lib/model.ts";
+import { AicordSignIn } from "../ui/AicordSignIn.tsx";
 import { ViaPicker } from "../ui/Via.tsx";
 import { askUser } from "../ui/Ask.tsx";
 import { allowed, FEATURES, MODES, type Feature, type Mode } from "../lib/privacy.ts";
@@ -112,7 +113,7 @@ function AiSection() {
     }
     setStatus((x) => ({ ...x, [c.id]: "Checking…" }));
     try {
-      const list = await listModels(c, c.keyName ? desk().env[c.keyName] ?? "" : "");
+      const list = await listModels(c, credential(c, desk().env));
       setModels((x) => ({ ...x, [c.id]: list }));
       if (!c.model && list.length) patchConn(c.id, { model: pickModel(list) });
       setStatus((x) => ({ ...x, [c.id]: list.length ? `Connected · ${list.length} model${list.length === 1 ? "" : "s"}` : "Connected, but it has no models yet." }));
@@ -233,8 +234,9 @@ function AiSection() {
                 <RefreshCw size={13} /> Check
               </button>
             </div>
+            {c.kind === "aicord" ? <AicordSignIn c={c} patch={(p) => patchConn(c.id, p)} /> : null}
             <div style={{ marginTop: 8 }}>
-              <ViaPicker value={c.via} onChange={(via) => patchConn(c.id, { via })} sample={() => sampleRequest(c, c.keyName ? desk().env[c.keyName] ?? "" : "")} />
+              <ViaPicker value={c.via} onChange={(via) => patchConn(c.id, { via })} sample={() => sampleRequest(c, credential(c, desk().env))} />
             </div>
             {status[c.id] ? <div className="small" style={{ marginTop: 6, color: /^Connected/.test(status[c.id]) ? "var(--good)" : "var(--muted)" }}>{status[c.id]}</div> : null}
             {blocked ? (

@@ -2,7 +2,7 @@
 
 import type { Character } from "./characters.ts";
 import { desk } from "./store.ts";
-import { explainError, listModels, pickModel, scopeOf, streamOnce, type Connection, type Turn } from "./model.ts";
+import { credential, explainError, listModels, pickModel, scopeOf, streamOnce, type Connection, type Turn } from "./model.ts";
 import { allowed, blockedBecause } from "./privacy.ts";
 import {
   TURN_NUDGE,
@@ -52,7 +52,7 @@ function setBusy(id: string, what: string | null) {
 }
 
 function keyFor(c: Connection) {
-  return c.keyName ? desk().env[c.keyName] ?? "" : "";
+  return credential(c, desk().env);
 }
 
 /** Connections to try for this character, in order, with the reason any were skipped. */

@@ -69,7 +69,8 @@ export async function relay(req, res, job) {
   }
 
   if (via === "curl") {
-    const args = ["-sS", "-N", "-L", "-D", "-", "--max-time", String(timeout), "-X", method];
+    // (Expect: off: cURL otherwise asks "100-continue" before big bodies, which some servers answer with 500)
+    const args = ["-sS", "-N", "-L", "-D", "-", "--max-time", String(timeout), "-X", method, "-H", "Expect:"];
     for (const [k, v] of Object.entries(headers)) args.push("-H", `${k}: ${v}`);
     if (body) args.push("--data-binary", "@-");
     args.push(url.href);

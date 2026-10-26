@@ -22,6 +22,8 @@ Done in 3.4.0:
   "Copy as" cURL / Python / JavaScript / HTTP. Classic inside the desktop uses the same relay (Settings → Classic). (highest)
 - ✅ AICord: calls go through the relay (aicordapp.com blocks browsers with CORS); key in the Authorization header as AICord's
   docs describe; AICord's docs server is a ready-made tool server. (high)
+- ✅ AICord sign-in (OAuth 2.0 with PKCE), ready for when AICord's chat API accepts it: needs a client ID from the AICord
+  team, registered with the callback `http://localhost:15693/oauth/aicord/callback`. API keys keep working meanwhile.
 - ✅ SearXNG: through the relay, and its results page is read when JSON output is off. (high)
 - ✅ Inbound API moved to port 15700 (Vector's bridge keeps 8787). (high)
 - ✅ Backup passphrase: typed twice right in Settings, strength check, and typed again to restore. (high)

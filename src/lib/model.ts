@@ -18,7 +18,20 @@ export type Connection = {
   enabled: boolean;
   /** How requests are sent (empty: the desktop relay). */
   via?: Via;
+  /** AICord: an API key (works today) or "Sign in with AICord" (OAuth, for endpoints that accept it). */
+  auth?: "key" | "oauth";
+  /** AICord OAuth: this desktop's client ID (registered by the AICord team), extra scopes, and the token's details. */
+  oauth?: { clientId: string; scopes: string[]; tokenName: string; expires?: number; scope?: string };
 };
+
+/** What goes in the Authorization header for this connection: its key from Keys, or its sign-in token. */
+export function credential(c: Connection, env: Record<string, string>): string {
+  if (c.kind === "aicord" && c.auth === "oauth") {
+    const t = env[c.oauth?.tokenName || "AICORD_OAUTH_TOKEN"] ?? "";
+    return t ? `Bearer ${t}` : "";
+  }
+  return c.keyName ? env[c.keyName] ?? "" : "";
+}
 
 export type ModelPrefs = {
   connections: Connection[];
