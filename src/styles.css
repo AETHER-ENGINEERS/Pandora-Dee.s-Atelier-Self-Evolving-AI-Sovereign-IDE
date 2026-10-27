@@ -894,3 +894,11 @@ p { line-height: 1.55; margin: 0 0 10px; }
 .vector-wrap { height: 100%; display: flex; flex-direction: column; min-height: 0; }
 .vector-wrap > .vector, .vector-wrap > .vector-signin { flex: 1; min-height: 0; }
 .vector-back { align-self: flex-start; margin: 6px 8px 0; }
+.vector-frame { flex: 1; min-height: 0; width: 100%; border: 0; background: #030303; margin-top: 6px; }
+/* touch screens: keep the dock (and its grip) out of the edges where swiping means "back" */
+.phone .dock-grip { display: none; } /* a phone's dock stays at the bottom: nothing to drag */
+.phone .dock { padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); }
+@media (pointer: coarse) {
+  .dock.vertical { left: 28px; }
+  .dock.right { left: auto; right: 28px; }
+}

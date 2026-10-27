@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronUp, Disc3, Folder, FolderOpen, FolderPlus, Globe2, ListMusic, Maximize2, Mic2, Pause, Play, Radio, Repeat, Repeat1, Search, Shuffle, SkipBack, Sparkles, SkipForward, Star, Trash2, Upload, Users, Volume2 } from "lucide-react";
+import { AudioWaveform, ChevronUp, Disc3, Folder, FolderOpen, FolderPlus, Globe2, ListMusic, Maximize2, Mic2, Pause, Play, Radio, Repeat, Repeat1, Search, Shuffle, SkipBack, Sparkles, SkipForward, Star, Trash2, Upload, Users, Volume2 } from "lucide-react";
 import { desk, useDesk } from "../lib/store.ts";
 import {
   addFiles,
@@ -80,6 +80,28 @@ export function MusicApp() {
     { label: "Properties…", run: () => openSongInfo({ track: list[i], made: desk().media.made.find((s) => s.file.replace(/\.[^.]+$/, "") === list[i].title || s.title === list[i].title) }) },
   ];
 
+  // the visualizer's choices: from the player's footer, and from the sidebar (where phones can reach them)
+  const vizMenu = (e: React.MouseEvent): void =>
+    openMenu(e, [
+      { heading: "Visualizer" },
+      ...(["bars", "scope", "milkdrop", "off"] as const).map((v) => ({
+        label: { bars: "Bars", scope: "Scope", milkdrop: "Milkdrop", off: "No visualizer" }[v],
+        checked: prefs.viz === v,
+        run: () => setPrefs({ viz: v }),
+      })),
+      { sep: true },
+      { label: "Open in its own window", run: () => desk().openApp("visualizer") },
+      { label: "Full screen", run: () => void vizBox.current?.requestFullscreen?.() },
+      { label: "As the desktop background", checked: prefs.vizBackground, run: () => setPrefs({ vizBackground: !prefs.vizBackground }) },
+      { label: "Milkdrop: a new preset every 25 seconds", checked: prefs.cycle, run: () => setPrefs({ cycle: !prefs.cycle }) },
+      { label: "Milkdrop: choose a preset…", run: () => void choosePreset() },
+      { label: "Import Milkdrop presets (.json)…", run: () => presetFiles.current?.click() },
+      { sep: true },
+      { heading: "While characters talk" },
+      { label: "Lower the music while one speaks", checked: prefs.duck, run: () => setPrefs({ duck: !prefs.duck }) },
+      { label: "Let the one in focus comment on new songs (uses the AI)", checked: prefs.comment, run: () => setPrefs({ comment: !prefs.comment }) },
+    ]);
+
   const side = (
     <nav className="side music-side">
       {(
@@ -98,6 +120,9 @@ export function MusicApp() {
           {icon} {text}
         </button>
       ))}
+      <button className="item" onClick={vizMenu} aria-haspopup="menu">
+        <AudioWaveform size={15} /> Visualizer
+      </button>
     </nav>
   );
 
@@ -312,21 +337,7 @@ export function MusicApp() {
           <button
             className="icon-btn"
             aria-label="Visualizer options"
-            onClick={(e) =>
-              openMenu(e, [
-                { heading: "Visualizer" },
-                { label: "Open in its own window", run: () => desk().openApp("visualizer") },
-                { label: "Full screen", run: () => void vizBox.current?.requestFullscreen?.() },
-                { label: "As the desktop background", checked: prefs.vizBackground, run: () => setPrefs({ vizBackground: !prefs.vizBackground }) },
-                { label: "Milkdrop: a new preset every 25 seconds", checked: prefs.cycle, run: () => setPrefs({ cycle: !prefs.cycle }) },
-                { label: "Milkdrop: choose a preset…", run: () => void choosePreset() },
-                { label: "Import Milkdrop presets (.json)…", run: () => presetFiles.current?.click() },
-                { sep: true },
-                { heading: "While characters talk" },
-                { label: "Lower the music while one speaks", checked: prefs.duck, run: () => setPrefs({ duck: !prefs.duck }) },
-                { label: "Let the one in focus comment on new songs (uses the AI)", checked: prefs.comment, run: () => setPrefs({ comment: !prefs.comment }) },
-              ])
-            }
+            onClick={vizMenu}
           >
             <Maximize2 size={15} />
           </button>

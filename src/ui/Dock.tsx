@@ -90,8 +90,10 @@ export function Dock({ front }: { front?: AppId }) {
       const [edge, gap] = Object.entries(dist).sort((a, b) => a[1] - b[1])[0];
       return gap <= SNAP ? (edge as Edge) : null;
     };
+    // on touch screens, clear of the side edges (swiping there is "back" on phones with gestures)
+    const side = window.matchMedia("(pointer: coarse)").matches ? 28 : 4;
     const place = (ev: PointerEvent) => ({
-      x: Math.max(4, Math.min(ev.clientX - dx, window.innerWidth - r.width - 4)),
+      x: Math.max(side, Math.min(ev.clientX - dx, window.innerWidth - r.width - side)),
       y: Math.max(room().top, Math.min(ev.clientY - dy, room().bottom - r.height)),
     });
     const move = (ev: PointerEvent) => {
