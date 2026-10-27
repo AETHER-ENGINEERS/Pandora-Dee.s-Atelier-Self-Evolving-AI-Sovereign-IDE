@@ -1,7 +1,7 @@
 // The built-in cast. Each character owns a separate file tree; SOUL.md, AGENTS.md and
 // MEMORY.md in that tree are what the model reads, so editing them changes the character.
 
-export type Look = "talking" | "chibi" | "photo";
+export type Look = "talking" | "chibi" | "photo" | "avatar";
 
 export type Character = {
   id: string;

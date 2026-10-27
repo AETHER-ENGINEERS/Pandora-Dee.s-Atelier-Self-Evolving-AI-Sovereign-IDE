@@ -16,8 +16,9 @@ function focusComposer() {
   setTimeout(() => document.querySelector<HTMLTextAreaElement>(".composer textarea")?.focus(), 30);
 }
 
-function openProfile(id: string) {
+function openProfile(id: string, section?: string) {
   sessionStorage.setItem("pdd-cast-view", id);
+  if (section) sessionStorage.setItem("pdd-cast-section", section);
   window.dispatchEvent(new CustomEvent("pdd-cast", { detail: id }));
   desk().set({ hangout: false });
   desk().openApp("cast");
@@ -35,12 +36,15 @@ export function lookItems(id: string): MenuItem[] {
   const s = desk();
   const c = s.character(id);
   const look = s.charPrefs[id]?.look ?? "talking";
-  const set = (l: "talking" | "chibi" | "photo") => s.setCharPrefs(id, { look: l });
+  const set = (l: "talking" | "chibi" | "photo" | "avatar") => s.setCharPrefs(id, { look: l });
+  const avatar = s.charPrefs[id]?.avatar;
   return [
     { heading: "Show as" },
     { label: "Talking", checked: look === "talking", run: () => set("talking") },
     { label: "Chibi", checked: look === "chibi", disabled: !c?.art.chibi && !c?.art.scene?.chibi, run: () => set("chibi") },
     { label: "Photo", checked: look === "photo", disabled: !c?.art.portrait, run: () => set("photo") },
+    { label: "Full avatar", checked: look === "avatar", disabled: !avatar, hint: avatar ? avatar.kind === "live2d" ? "Live2D" : avatar.kind === "vrm" ? "VRM" : "" : "none yet", run: () => set("avatar") },
+    { label: avatar ? "Change the avatar…" : "Add a full avatar…", run: () => openProfile(id, "avatar") },
   ];
 }
 

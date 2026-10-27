@@ -63,7 +63,15 @@ Commercial games (RuneScape, Jazz Jackrabbit, Half-Life) are never included: peo
 | ssh2 | MIT |
 | music-metadata | MIT |
 | Butterchurn, butterchurn-presets (Milkdrop) | MIT |
+| PixiJS 6, pixi-live2d-display (Live2D avatars) | MIT |
+| three.js, @pixiv/three-vrm (VRM avatars) | MIT |
+| Live2D Cubism Core for Web (`public/vendor/live2dcubismcore.min.js`) | **Live2D Proprietary Software License**: the "Redistributable Code", allowed inside apps under Live2D's terms (https://www.live2d.com/eula/live2d-proprietary-software-license-agreement_en.html). Publishers above Live2D's revenue threshold need a Live2D publication license. Copied unchanged from the Classic build by `scripts/extract-cubism.mjs`. |
 | Vite, TypeScript (build tools) | MIT, Apache-2.0 |
+
+## Avatars
+
+No avatar models are included. Live2D and VRM models people add are their own (or used under their makers' terms) and stay
+in their vault. Jade's Live2D cat in the Classic builds is the owner's own asset: not reused by the desktop.
 
 ## Services it can talk to
 

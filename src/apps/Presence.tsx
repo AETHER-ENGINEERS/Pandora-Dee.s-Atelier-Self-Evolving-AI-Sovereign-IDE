@@ -4,9 +4,17 @@ import { initials, type Character, type Look } from "../lib/characters.ts";
 import { useSpeech } from "../ui/common.tsx";
 import { openMenu } from "../ui/ContextMenu.tsx";
 import { characterMenu } from "../ui/menus.ts";
+import { FullAvatar } from "../ui/FullAvatar.tsx";
 
 /** The animated face: anime bust with lip-sync, chibi, or the photo. */
 export function Face({ c, look, mouth, speaking }: { c: Character; look: Look; mouth: number; speaking: boolean }) {
+  const avatar = useDesk((s) => s.charPrefs[c.id]?.avatar);
+  if (look === "avatar" && avatar)
+    return (
+      <div className={`portrait full-look${speaking ? " speaking" : ""}`} style={{ ["--c" as string]: c.accent }}>
+        <FullAvatar charId={c.id} a={avatar} />
+      </div>
+    );
   const still = c.art.still;
   if (look === "photo" || !still) {
     const src = c.art.portrait || still;

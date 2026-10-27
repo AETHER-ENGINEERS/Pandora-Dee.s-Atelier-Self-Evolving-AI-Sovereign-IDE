@@ -10,12 +10,19 @@ import { sshOp } from "./ssh.mjs";
 import { inbound } from "./inbound.mjs";
 import { relay } from "./relay.mjs";
 import { createMusic } from "./music.mjs";
+import { createAvatars } from "./avatars.mjs";
 import { checkUpdates, download } from "./upstreams.mjs";
 import * as aicordAuth from "./oauth.mjs";
 import { findCurl, findPython, forgetPrograms } from "./programs.mjs";
 
 const MIME = {
   html: "text/html; charset=utf-8",
+  apng: "image/apng",
+  avif: "image/avif",
+  mov: "video/quicktime",
+  vrm: "model/gltf-binary",
+  glb: "model/gltf-binary",
+  moc3: "application/octet-stream",
   htm: "text/html; charset=utf-8",
   js: "text/javascript; charset=utf-8",
   mjs: "text/javascript; charset=utf-8",
@@ -148,6 +155,21 @@ export function deskServer() {
       const py = findPython(url.searchParams.get("python") || "");
       const curl = findCurl();
       return send(res, 200, { python: py && { path: py.cmd + (py.args.length ? ` ${py.args.join(" ")}` : ""), version: py.version }, curl: curl && { path: curl.cmd, version: curl.version } });
+    }
+    if (parts[0] === "avatar") {
+      const A = createAvatars(vaultDir);
+      const charId = String(url.searchParams.get("char") || "");
+      try {
+        if (m === "POST") return send(res, 200, A.upload(charId, decodeURIComponent(String(req.headers["x-filename"] || "avatar")), await readBody(req, 300_000_000)));
+        if (m === "DELETE") return send(res, 200, A.remove(charId, String(url.searchParams.get("entry") || "")));
+      } catch (e) {
+        return send(res, 400, { error: e instanceof Error ? e.message : String(e) });
+      }
+    }
+    // Vault files by path (/api/vault/raw/a/b/model.model3.json), so a model's own relative paths work
+    if (parts[0] === "vault" && parts[1] === "raw" && m === "GET") {
+      const file = vaultFile(parts.slice(2).map(decodeURIComponent).join("/"));
+      return serveFile(res, file);
     }
     if (parts[0] === "music") {
       const M = music();

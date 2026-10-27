@@ -16,6 +16,7 @@ import { CharAvatar, Confirm, Seg } from "../ui/common.tsx";
 import { loadBackupFile } from "../ui/Desktop.tsx";
 import { useWidth } from "../ui/hooks.ts";
 import { Face } from "./Presence.tsx";
+import { FullAvatar, type AvatarAsset } from "../ui/FullAvatar.tsx";
 
 export function CastApp() {
   const s = useDesk();
@@ -173,17 +174,19 @@ function Profile({ c, onBack }: { c: Character; onBack: () => void }) {
       </div>
       <div style={{ padding: "0 14px 20px" }}>
         <div className="field">
-          <span>Look in the Presence window</span>
+          <span>How they're shown (Hangout, the desktop, Presence); right-click them anywhere to switch</span>
           <Seg<Look>
             value={pref.look}
             options={[
               { id: "talking", label: "Talking" },
               { id: "chibi", label: "Chibi" },
               { id: "photo", label: "Photo" },
+              ...(pref.avatar ? [{ id: "avatar" as Look, label: "Full avatar" }] : []),
             ]}
             onChange={(look) => desk().setCharPrefs(c.id, { look })}
           />
         </div>
+        <AvatarEditor c={c} />
         <CharAI c={c} />
         <CharVoice c={c} />
         {!c.builtIn ? (
@@ -354,6 +357,97 @@ function Own({ label, own, shared, children, onReset }: { label: string; own: bo
         )}
       </span>
       {children}
+    </div>
+  );
+}
+
+/** Their full avatar: upload (Live2D zip, VRM, animated picture or video), preview, size, remove. */
+function AvatarEditor({ c }: { c: Character }) {
+  const a = useDesk((s) => s.charPrefs[c.id]?.avatar);
+  const [busy, setBusy] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (sessionStorage.getItem("pdd-cast-section") !== "avatar") return;
+    sessionStorage.removeItem("pdd-cast-section");
+    box.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, []);
+  const set = (p: Partial<AvatarAsset>) => a && desk().setCharPrefs(c.id, { avatar: { ...a, ...p } });
+  const upload = async (f: File) => {
+    setBusy(`Bringing in ${f.name}…`);
+    try {
+      const r = await fetch(`/api/avatar?char=${encodeURIComponent(c.id)}`, { method: "POST", headers: { "x-filename": encodeURIComponent(f.name) }, body: f });
+      const j = (await r.json()) as { kind?: AvatarAsset["kind"]; entry?: string; error?: string };
+      if (!j.kind || !j.entry) throw new Error(j.error || "That couldn't be used as an avatar.");
+      const old = a;
+      desk().setCharPrefs(c.id, { avatar: { kind: j.kind, entry: j.entry, name: f.name, scale: 1, offsetY: 0 }, look: "avatar" });
+      if (old) void fetch(`/api/avatar?char=${encodeURIComponent(c.id)}&entry=${encodeURIComponent(old.entry)}`, { method: "DELETE" });
+      setBusy("");
+    } catch (e) {
+      setBusy(e instanceof Error ? e.message : String(e));
+    }
+  };
+  return (
+    <div className="field" ref={box}>
+      <span>Full avatar</span>
+      <div className="avatar-editor">
+        <div className="preview">{a ? <FullAvatar charId={c.id} a={a} /> : <div className="empty small">None yet</div>}</div>
+        <div>
+          <p className="small muted" style={{ marginTop: 0 }}>
+            A Live2D model (a .zip with its .model3.json and files, Cubism 3 or 4), a VRM 3D model (.vrm), or an animated picture or video (GIF, WebP, APNG, WebM, MP4). It
+            stands in Hangout and on the desktop and fills Presence, moving its mouth as {c.short} speaks (Live2D and VRM). Kept in the vault on this computer.
+          </p>
+          <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+            <button className="btn primary small" onClick={() => fileRef.current?.click()}>
+              <Upload size={13} /> {a ? "Change it…" : "Add one…"}
+            </button>
+            {a ? (
+              <>
+                <button className="btn small" onClick={() => desk().setCharPrefs(c.id, { look: "avatar" })}>
+                  Show it
+                </button>
+                <button
+                  className="btn small danger-text"
+                  onClick={() => {
+                    void fetch(`/api/avatar?char=${encodeURIComponent(c.id)}&entry=${encodeURIComponent(a.entry)}`, { method: "DELETE" });
+                    const look = desk().charPrefs[c.id]?.look === "avatar" ? "talking" : desk().charPrefs[c.id]?.look ?? "talking";
+                    desk().setCharPrefs(c.id, { avatar: undefined, look });
+                  }}
+                >
+                  <Trash2 size={13} /> Remove
+                </button>
+              </>
+            ) : null}
+          </div>
+          {a ? (
+            <>
+              <div className="small faint" style={{ margin: "6px 0" }}>
+                {a.kind === "live2d" ? "Live2D" : a.kind === "vrm" ? "VRM" : a.kind === "video" ? "Video" : "Picture"} · {a.name}
+              </div>
+              <label className="field" style={{ marginBottom: 4 }}>
+                <span>Size</span>
+                <Num min={0.4} max={2.5} step={0.05} value={a.scale} onChange={(scale) => set({ scale })} percent />
+              </label>
+              <label className="field" style={{ marginBottom: 0 }}>
+                <span>Up or down</span>
+                <Num min={-0.5} max={0.5} step={0.02} value={a.offsetY} onChange={(offsetY) => set({ offsetY })} percent />
+              </label>
+            </>
+          ) : null}
+          {busy ? <div className="small" style={{ marginTop: 6 }}>{busy}</div> : null}
+        </div>
+      </div>
+      <input
+        ref={fileRef}
+        type="file"
+        hidden
+        accept=".zip,.vrm,.gif,.webp,.png,.apng,.webm,.mp4"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void upload(f);
+        }}
+      />
     </div>
   );
 }

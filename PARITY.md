@@ -132,7 +132,7 @@ and their slash commands. The rule: nothing is dropped; where the two differ, yo
 | Feature | Src | Desktop | Notes |
 | --- | --- | --- | --- |
 | Read replies aloud, voice, pitch, speed | | ✅ | Per character, plus volume |
-| Avatar with lip-sync | | ✅ | Anime art; Classic keeps Live2D |
+| Avatar with lip-sync | | ✅ | Anime busts, chibi, photo, and full avatars: Live2D, VRM or animated picture, per character |
 | Speech to text, hands-free listening, wake phrases, end-of-sentence pause | | ❌ | |
 | Gem themes; hair, clothes, stockings, boots, skin colours | P | ❌ | Live2D-specific; desktop has character colours |
 | Pointer-following eyes, scanlines, cyber grid | P | ❌ | |

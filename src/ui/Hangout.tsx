@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { FullAvatar } from "./FullAvatar.tsx";
 import { runSlash } from "./slash.ts";
 import { MessagesSquare, Monitor, Send, Square, Settings as SettingsIcon, Users } from "lucide-react";
 import { desk, useDesk } from "../lib/store.ts";
@@ -133,13 +134,14 @@ function Avatar({
 }) {
   const hang = useDesk((s) => s.hang);
   const look = useDesk((s) => s.charPrefs[c.id]?.look);
+  const avatar = useDesk((s) => s.charPrefs[c.id]?.avatar);
   const el = useRef<HTMLDivElement>(null);
   // their own look first (right-click → Show as), then the scene's style
-  const style = look === "photo" && c.art.portrait ? "photo" : look === "chibi" || (hang.style === "chibi" && look !== "talking" && look !== "photo") ? "chibi" : "talking";
+  const style = look === "avatar" && avatar ? "avatar" : look === "photo" && c.art.portrait ? "photo" : look === "chibi" || (hang.style === "chibi" && look !== "talking" && look !== "photo") ? "chibi" : "talking";
   const sc = c.art.scene;
   const still = style === "photo" ? c.art.portrait : sc ? (style === "chibi" ? sc.chibi ?? sc.still : sc.still) : c.art.portrait || c.art.still;
   const open = sc && style === "talking" ? sc.open : undefined;
-  const framed = style === "photo" || !sc;
+  const framed = style === "photo" || (!sc && style !== "avatar");
 
   const down = (e: React.PointerEvent) => {
     if (!interactive || e.button > 0) return;
@@ -179,8 +181,8 @@ function Avatar({
   return (
     <div
       ref={el}
-      className={`avatar-sprite ${style}${talking ? " speaking" : ""}${focus ? " focus" : ""}${framed ? " framed" : ""}`}
-      style={{ left: `${x * 100}%`, top: `${y * 100}%`, height: `${hang.size * 100}vh`, ["--c" as string]: c.accent }}
+      className={`avatar-sprite ${style === "avatar" ? "full-look" : style}${talking ? " speaking" : ""}${focus ? " focus" : ""}${framed ? " framed" : ""}`}
+      style={{ left: `${x * 100}%`, top: `${y * 100}%`, height: `${hang.size * 100}vh`, ...(style === "avatar" ? { width: `${hang.size * 75 * ((avatar?.scale ?? 1) > 1 ? avatar!.scale : 1)}vh` } : {}), ["--c" as string]: c.accent }}
       onPointerDown={down}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -201,7 +203,13 @@ function Avatar({
     >
       {bubble ? <div className="speech">{bubble.length > 260 ? `${bubble.slice(0, 260)}…` : bubble}</div> : null}
       <div className="sprite-body">
-        {still ? <img src={still} alt="" draggable={false} /> : <span className="sprite-initials">{c.short.slice(0, 2)}</span>}
+        {style === "avatar" && avatar ? (
+          <FullAvatar charId={c.id} a={avatar} />
+        ) : still ? (
+          <img src={still} alt="" draggable={false} />
+        ) : (
+          <span className="sprite-initials">{c.short.slice(0, 2)}</span>
+        )}
         {open ? <img className="open" src={open} alt="" draggable={false} style={{ opacity: talking ? Math.min(1, mouth * 0.95) : 0 }} /> : null}
       </div>
       <span className="sprite-name">{c.short}</span>

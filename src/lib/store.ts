@@ -9,6 +9,7 @@ import { VOICE_DEFAULT, type VoicePrefs } from "./voice.ts";
 import type { Sealed } from "./secure.ts";
 import { pythonFrom, type Via } from "./outbound.ts";
 import { MUSIC_DEFAULT, type MusicPrefs } from "./musicPrefs.ts";
+import type { AvatarAsset } from "../ui/FullAvatar.tsx";
 import { CLOCK_DEFAULT, type ClockPrefs } from "./clock.ts";
 
 export type AppId =
@@ -262,6 +263,8 @@ export type CharPrefs = {
   length?: "short" | "normal" | "long";
   /** volume here is relative to the master voice volume, 0..1.5. */
   voice?: { on?: boolean; voiceName?: string; rate?: number; pitch?: number; volume?: number };
+  /** Their full avatar (Live2D, VRM, or an animated picture), kept in the vault. */
+  avatar?: AvatarAsset;
 };
 
 export type ClassicApp = "pandora" | "jade";

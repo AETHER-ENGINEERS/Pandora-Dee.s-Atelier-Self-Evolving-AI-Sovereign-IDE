@@ -45,8 +45,11 @@ Done in 3.4.0:
   can come later; YouTube by its player; Amazon Music has no web playback. Classic Milkdrop `.milk` presets need
   converting to Butterchurn's `.json` first.
 
+- ✅ Full avatars (3.6.0): Live2D (Cubism 3/4, .zip), VRM 3D (.vrm), or an animated picture/video, uploaded and changed in a
+  character's profile, shown in Hangout, on the desktop and in Presence, with lip-sync; "Full avatar" in the right-click look menu.
+  All Live2D avatars share one WebGL renderer (Cubism's shaders can't span contexts), so any number can be on screen.
+
 Still to build:
-- Hangout: a third look, full avatar (Live2D / VRM) when a character has one, and uploading or changing avatars. (moderate)
 - Tabbed open-source web browser inside the desktop. (moderate)
 - XDC Studio: import assets, and an asset view. (moderate)
 - Voice: download free (FOSS) voice models (Piper, Kokoro) or add your own. (low)
