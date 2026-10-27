@@ -20,6 +20,8 @@ export type MusicPrefs = {
   vizBackground: boolean;
   /** How strongly the background visualizer shows (0..1). */
   vizBackgroundOpacity: number;
+  /** Height of the visualizer above Music's lists, in pixels (dragged by its edge). */
+  vizHeight: number;
 };
 
-export const MUSIC_DEFAULT: MusicPrefs = { folders: [], stations: [], volume: 0.7, shuffle: false, repeat: "all", duck: true, comment: false, viz: "bars", preset: "", cycle: true, vizBackground: false, vizBackgroundOpacity: 0.85 };
+export const MUSIC_DEFAULT: MusicPrefs = { folders: [], stations: [], volume: 0.7, shuffle: false, repeat: "all", duck: true, comment: false, viz: "bars", preset: "", cycle: true, vizBackground: false, vizBackgroundOpacity: 0.85, vizHeight: 180 };

@@ -7,7 +7,51 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { Readable } from "node:stream";
 
-const AUDIO = /\.(mp3|m4a|aac|flac|ogg|oga|opus|wav|wma|webm|mka|aiff?)$/i;
+/** "/f/Music" (how Git Bash writes F:\Music) → "F:\Music" on Windows. */
+export function fromMsys(p) {
+  const m = /^\/([a-zA-Z])(\/.*)?$/.exec(p);
+  return m && process.platform === "win32" ? `${m[1].toUpperCase()}:${(m[2] || "/").replace(/\//g, "\\")}` : p;
+}
+
+/**
+ * Folders inside a folder, for picking music folders from the desktop page (names only, no files). With no
+ * path: the drives (Windows) or the usual places (Mac, Linux).
+ */
+export async function listFolders(where) {
+  const home = process.env.USERPROFILE || process.env.HOME || "/";
+  if (!where) {
+    // each place is checked at the same time, and a disconnected network drive gets 1.5 s before it's left out
+    const isDir = (p) =>
+      Promise.race([fs.promises.stat(p).then((s) => s.isDirectory(), () => false), new Promise((ok) => setTimeout(() => ok(false), 1500))]);
+    const candidates = [[path.join(home, "Music"), "Music (yours)"], [home, "Home"]];
+    if (process.platform === "win32") for (const l of "CDEFGHIJKLMNOPQRSTUVWXYZ") candidates.push([`${l}:\\`, `${l}:`]);
+    else candidates.push(["/Volumes", "Volumes"], ["/media", "media"], ["/mnt", "mnt"], ["/", "/"]);
+    const ok = await Promise.all(candidates.map(([p]) => isDir(p)));
+    return { path: "", parent: null, folders: candidates.filter((_, i) => ok[i]).map(([p, name]) => ({ path: p, name })), audio: 0 };
+  }
+  const dir = path.resolve(fromMsys(String(where)));
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const folders = [];
+  let audio = 0;
+  for (const e of entries) {
+    if (e.name.startsWith(".") || e.name === "$RECYCLE.BIN" || e.name === "System Volume Information") continue;
+    let isDir = e.isDirectory();
+    if (e.isSymbolicLink()) {
+      try {
+        isDir = fs.statSync(path.join(dir, e.name)).isDirectory();
+      } catch {
+        isDir = false;
+      }
+    }
+    if (isDir) folders.push({ path: path.join(dir, e.name), name: e.name });
+    else if (AUDIO.test(e.name)) audio++;
+  }
+  folders.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
+  const up = path.dirname(dir);
+  return { path: dir, parent: up === dir ? "" : up, folders, audio };
+}
+
+const AUDIO = /\.(mp3|m4a|m4b|aac|flac|ogg|oga|opus|wav|wma|webm|mka|aiff?|caf|alac)$/i;
 const MIME = { mp3: "audio/mpeg", m4a: "audio/mp4", aac: "audio/aac", flac: "audio/flac", ogg: "audio/ogg", oga: "audio/ogg", opus: "audio/ogg", wav: "audio/wav", webm: "audio/webm", mka: "audio/x-matroska", aif: "audio/aiff", aiff: "audio/aiff", wma: "audio/x-ms-wma" };
 const MAX_FILES = 50_000;
 
@@ -26,19 +70,45 @@ export function createMusic(dataDir) {
   };
   const idOf = (p) => createHash("sha1").update(p).digest("hex").slice(0, 16);
 
-  function walk(dir, out, depth = 0) {
-    if (depth > 14 || out.length >= MAX_FILES) return out;
+  // folders read in the last scan, and ones that couldn't be opened
+  let walked = 0;
+  let unreadable = [];
+
+  /** Every audio file under `dir`, following folder junctions and links (Windows libraries, OneDrive, moved Music folders). */
+  function walk(dir, out, depth = 0, seen = new Set()) {
+    if (depth > 24 || out.length >= MAX_FILES) return out;
+    let real = dir;
+    try {
+      real = fs.realpathSync(dir);
+    } catch {
+      /* use it as given */
+    }
+    if (seen.has(real)) return out; // a link back up the tree
+    seen.add(real);
     let entries = [];
     try {
       entries = fs.readdirSync(dir, { withFileTypes: true });
+      walked++;
     } catch {
+      unreadable.push(dir);
       return out;
     }
     for (const e of entries) {
-      if (e.name.startsWith(".")) continue;
+      if (e.name.startsWith(".") || e.name === "$RECYCLE.BIN" || e.name === "System Volume Information") continue;
       const full = path.join(dir, e.name);
-      if (e.isDirectory()) walk(full, out, depth + 1);
-      else if (AUDIO.test(e.name)) out.push(full);
+      let isDir = e.isDirectory();
+      let isFile = e.isFile();
+      if (e.isSymbolicLink() || (!isDir && !isFile)) {
+        try {
+          const st = fs.statSync(full);
+          isDir = st.isDirectory();
+          isFile = st.isFile();
+        } catch {
+          continue;
+        }
+      }
+      if (isDir) walk(full, out, depth + 1, seen);
+      else if (isFile && AUDIO.test(e.name)) out.push(full);
       if (out.length >= MAX_FILES) break;
     }
     return out;
@@ -47,7 +117,9 @@ export function createMusic(dataDir) {
   /** Read every folder again; only new or changed files are opened. */
   async function scan(folders) {
     const { parseFile } = await import("music-metadata");
-    const list = [...new Set([ownDir, ...folders.map((f) => path.resolve(String(f)))])];
+    walked = 0;
+    unreadable = [];
+    const list = [...new Set([ownDir, ...folders.map((f) => path.resolve(fromMsys(String(f).trim().replace(/^["']|["']$/g, ""))))])];
     index.folders = list.filter((f) => f !== ownDir);
     const seen = new Set();
     let read = 0;
@@ -91,7 +163,7 @@ export function createMusic(dataDir) {
     }
     for (const id of Object.keys(index.tracks)) if (!seen.has(id)) delete index.tracks[id];
     save();
-    return { tracks: Object.keys(index.tracks).length, read, failed, folders: index.folders };
+    return { tracks: Object.keys(index.tracks).length, read, failed, folders: index.folders, walked, unreadable: unreadable.slice(0, 5) };
   }
 
   const list = () => ({ folders: index.folders, own: ownDir, tracks: Object.values(index.tracks).map(({ path: _p, mtime: _m, ...t }) => t) });

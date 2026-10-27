@@ -175,7 +175,7 @@ export async function scan(folders = prefs().folders) {
   useMusic.setState({ scanning: "Reading your music…" });
   try {
     const r = await fetch("/api/music/scan", { method: "POST", body: JSON.stringify({ folders }) });
-    const j = (await r.json()) as { tracks: number; read: number; failed: number };
+    const j = (await r.json()) as { tracks: number; read: number; failed: number; walked?: number; unreadable?: string[] };
     await loadLibrary();
     return j;
   } finally {

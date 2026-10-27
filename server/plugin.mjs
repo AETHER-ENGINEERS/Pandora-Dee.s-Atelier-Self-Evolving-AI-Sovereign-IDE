@@ -9,7 +9,7 @@ import { classicRelayScript, helperScript, webxdcScript } from "./inject.mjs";
 import { sshOp } from "./ssh.mjs";
 import { inbound } from "./inbound.mjs";
 import { relay } from "./relay.mjs";
-import { createMusic } from "./music.mjs";
+import { createMusic, listFolders } from "./music.mjs";
 import { createAvatars } from "./avatars.mjs";
 import { createCreative } from "./creative.mjs";
 import { checkUpdates, download } from "./upstreams.mjs";
@@ -201,6 +201,14 @@ export function deskServer() {
     if (parts[0] === "vault" && parts[1] === "raw" && m === "GET") {
       const file = vaultFile(parts.slice(2).map(decodeURIComponent).join("/"));
       return serveFile(res, file);
+    }
+    // folders on this computer, for picking music folders (names only)
+    if (parts[0] === "folders" && m === "GET") {
+      try {
+        return send(res, 200, await listFolders(url.searchParams.get("path") || ""));
+      } catch (e) {
+        return send(res, 400, { error: e instanceof Error ? e.message.replace(/^\w+: /, "") : String(e) });
+      }
     }
     if (parts[0] === "music") {
       const M = music();

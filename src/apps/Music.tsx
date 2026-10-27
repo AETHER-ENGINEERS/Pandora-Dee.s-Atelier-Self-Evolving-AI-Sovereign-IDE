@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Disc3, FolderPlus, Globe2, ListMusic, Maximize2, Mic2, Pause, Play, Radio, Repeat, Repeat1, Search, Shuffle, SkipBack, Sparkles, SkipForward, Star, Trash2, Upload, Users, Volume2 } from "lucide-react";
+import { ChevronUp, Disc3, Folder, FolderOpen, FolderPlus, Globe2, ListMusic, Maximize2, Mic2, Pause, Play, Radio, Repeat, Repeat1, Search, Shuffle, SkipBack, Sparkles, SkipForward, Star, Trash2, Upload, Users, Volume2 } from "lucide-react";
 import { desk, useDesk } from "../lib/store.ts";
 import {
   addFiles,
@@ -112,9 +112,37 @@ export function MusicApp() {
         {side}
         <section className="music-main">
           {prefs.viz !== "off" && view !== "make" ? (
-            <div className="music-viz" ref={vizBox} onDoubleClick={() => void vizBox.current?.requestFullscreen?.()}>
-              <Visualizer big />
-            </div>
+            <>
+              <div className="music-viz" ref={vizBox} style={{ height: prefs.vizHeight }} onDoubleClick={() => void vizBox.current?.requestFullscreen?.()}>
+                <Visualizer big />
+              </div>
+              <div
+                className="music-split"
+                role="separator"
+                aria-orientation="horizontal"
+                aria-label="Visualizer height: drag, or use the arrow keys"
+                aria-valuenow={prefs.vizHeight}
+                tabIndex={0}
+                data-tip="Drag to resize · double-click to fold away or back"
+                onPointerDown={(e) => {
+                  const start = e.clientY;
+                  const from = prefs.vizHeight;
+                  const box = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  const move = (ev: PointerEvent) => setPrefs({ vizHeight: Math.round(Math.max(40, Math.min(box.height - 90, from + ev.clientY - start))) });
+                  const up = () => (window.removeEventListener("pointermove", move), window.removeEventListener("pointerup", up));
+                  window.addEventListener("pointermove", move);
+                  window.addEventListener("pointerup", up);
+                }}
+                onDoubleClick={() => setPrefs({ vizHeight: prefs.vizHeight > 60 ? 40 : 180 })}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                    e.preventDefault();
+                    setPrefs({ vizHeight: Math.max(40, prefs.vizHeight + (e.key === "ArrowDown" ? 20 : -20)) });
+                  }
+                }}
+              />
+            </>
           ) : null}
           {m.scanning ? <div className="note small" style={{ margin: 8 }}>{m.scanning}</div> : null}
           {m.error ? <div className="note small bad" style={{ margin: 8 }}>{m.error}</div> : null}
@@ -425,9 +453,17 @@ function Folders({ onFiles }: { onFiles: () => void }) {
   const own = useMusic((s) => s.own);
   const scanning = useMusic((s) => s.scanning);
   const [path, setPath] = useState("");
+  const [browse, setBrowse] = useState(false);
+  const addFolder = (f: string) => {
+    const folders = [...new Set([...prefs.folders, f])];
+    desk().set({ music: { ...desk().music, folders } });
+    void rescan(folders);
+  };
   const rescan = async (folders: string[]) => {
     const r = await scan(folders);
-    desk().say(`${r.tracks} songs in your library${r.failed ? ` (${r.failed} files couldn't be read)` : ""}.`);
+    desk().say(
+      `${r.tracks} songs in your library, from ${r.walked ?? "?"} folders${r.failed ? ` (${r.failed} files couldn't be read)` : ""}.${r.unreadable?.length ? ` Couldn't open: ${r.unreadable.join(", ")}` : ""}`,
+    );
   };
   return (
     <div style={{ padding: 10 }}>
@@ -470,10 +506,14 @@ function Folders({ onFiles }: { onFiles: () => void }) {
         }}
       >
         <input className="input mono grow" value={path} placeholder="D:\Music  or  /home/you/Music" onChange={(e) => setPath(e.target.value)} aria-label="Folder to add" />
+        <button className="btn" type="button" onClick={() => setBrowse(true)}>
+          <FolderOpen size={14} /> Browse…
+        </button>
         <button className="btn primary" type="submit" disabled={Boolean(scanning)}>
           <FolderPlus size={14} /> Add folder
         </button>
       </form>
+      {browse ? <FolderPicker onPick={(f) => (setBrowse(false), addFolder(f))} onClose={() => setBrowse(false)} /> : null}
       <div className="row" style={{ marginTop: 8, gap: 6 }}>
         <button className="btn" onClick={onFiles}>
           <Upload size={14} /> Add files…
@@ -481,6 +521,57 @@ function Folders({ onFiles }: { onFiles: () => void }) {
         <button className="btn" disabled={Boolean(scanning)} onClick={() => void rescan(prefs.folders)}>
           Read the folders again
         </button>
+      </div>
+    </div>
+  );
+}
+
+type Place = { path: string; name: string };
+
+/** Picking a folder on the computer running the desktop (a page can't see real folder paths on its own). */
+function FolderPicker({ onPick, onClose }: { onPick: (path: string) => void; onClose: () => void }) {
+  const [at, setAt] = useState<{ path: string; parent: string | null; folders: Place[]; audio: number } | null>(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(true);
+  const go = (p: string) => {
+    setError("");
+    setBusy(true);
+    fetch(`/api/folders?path=${encodeURIComponent(p)}`)
+      .then(async (r) => {
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || `Couldn't open ${p}.`);
+        setAt(j);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : String(e)))
+      .finally(() => setBusy(false));
+  };
+  useEffect(() => go(""), []);
+  return (
+    <div className="scrim" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="dialog folder-picker" role="dialog" aria-modal="true" aria-label="Choose a music folder">
+        <h2>Choose a music folder</h2>
+        <div className="row" style={{ gap: 6 }}>
+          <button className="icon-btn" disabled={at?.parent == null} onClick={() => at?.parent != null && go(at.parent)} aria-label="Up one folder" data-tip="Up one folder">
+            <ChevronUp size={15} />
+          </button>
+          <span className="mono small grow ellipsis" title={at?.path}>{at?.path || "This computer"}</span>
+        </div>
+        {error ? <div className="small danger-text">{error}</div> : null}
+        <div className="folder-list">
+          {at?.folders.map((f) => (
+            <button key={f.path} className="item" onClick={() => go(f.path)} onDoubleClick={() => onPick(f.path)} title={f.path}>
+              <Folder size={14} className="faint" /> {f.name}
+            </button>
+          ))}
+          {busy ? <div className="empty small faint">Looking…</div> : at && !at.folders.length ? <div className="empty small faint">No folders inside.</div> : null}
+        </div>
+        <div className="small muted">{at?.path ? `${at.audio} audio file${at.audio === 1 ? "" : "s"} right here; folders inside are read too.` : "Pick a drive or place, then the folder your music is in."}</div>
+        <div className="actions">
+          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn primary" disabled={!at?.path} onClick={() => at?.path && onPick(at.path)}>
+            Use this folder
+          </button>
+        </div>
       </div>
     </div>
   );
