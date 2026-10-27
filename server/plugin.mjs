@@ -471,6 +471,15 @@ export function deskServer() {
     try {
       // the Mac's engines in one line: curl -sL <this address>/mac | bash (scripts from this project, nothing else)
       const MAC = { "/mac": "mac-setup.sh", "/mac/mlx-music-bridge.py": "mlx-music-bridge.py", "/mac/mac-autostart.sh": "mac-autostart.sh" };
+      // the Mac setup sends its output here, so problems can be read on this computer (kept in the data folder)
+      if (url.pathname === "/mac/report" && req.method === "POST") {
+        const body = await readBody(req, 4_000_000);
+        const dir = path.join(dataDir, "mac-reports");
+        fs.mkdirSync(dir, { recursive: true });
+        const name = `${new Date().toISOString().replace(/[:.]/g, "-")}-${String(url.searchParams.get("name") || "report").replace(/[^\w-]+/g, "_").slice(0, 40)}.txt`;
+        fs.writeFileSync(path.join(dir, name), body);
+        return send(res, 200, `Sent to the desktop (${name}).\n`, "text/plain; charset=utf-8");
+      }
       if (MAC[url.pathname] && req.method === "GET") {
         // Unix line endings whatever this computer's copy has (bash on the Mac stops at a stray \r)
         let text = fs.readFileSync(path.join(root, "scripts", MAC[url.pathname]), "utf8").replace(/\r\n/g, "\n");
