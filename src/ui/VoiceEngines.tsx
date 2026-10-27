@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { desk, useDesk } from "../lib/store.ts";
 import { outbound } from "../lib/outbound.ts";
+import { withMacAddress } from "../lib/mac.ts";
 import { scopeOf } from "../lib/model.ts";
 import { allowed, blockedBecause } from "../lib/privacy.ts";
 import { defaultSpeechModel, engineUrl, isOpenAI, OPENAI_VOICES, type VoiceEngine } from "../lib/voiceEngines.ts";
@@ -114,7 +115,7 @@ export function VoiceEnginesEditor() {
       ))}
       <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
         {PRESETS.map((p) => (
-          <button key={p.label} className="btn small" onClick={() => save([...engines, { id: newId(), name: p.name, url: p.url, keyName: p.keyName, model: p.model, enabled: true }])}>
+          <button key={p.label} className="btn small" onClick={() => void withMacAddress(p.url).then((url) => save([...desk().voices.engines, { id: newId(), name: p.name, url, keyName: p.keyName, model: p.model, enabled: true }]))}>
             <Plus size={13} /> {p.label}
           </button>
         ))}

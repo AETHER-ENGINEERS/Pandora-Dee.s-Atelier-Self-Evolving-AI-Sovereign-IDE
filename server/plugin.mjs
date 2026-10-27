@@ -207,6 +207,14 @@ export function deskServer() {
       return serveFile(res, file);
     }
     // folders on this computer, for picking music folders (names only)
+    // the Mac that last ran the setup (curl …/mac | bash), for filling in engine addresses
+    if (parts[0] === "mac" && m === "GET") {
+      try {
+        return send(res, 200, JSON.parse(fs.readFileSync(path.join(dataDir, "mac.json"), "utf8")));
+      } catch {
+        return send(res, 200, {});
+      }
+    }
     // the Browser's key for /browse (only the desktop page can ask for it)
     if (parts[0] === "browse" && parts[1] === "key" && m === "GET") return send(res, 200, { key: browser.key });
     if (parts[0] === "folders" && m === "GET") {
@@ -478,6 +486,9 @@ export function deskServer() {
         fs.mkdirSync(dir, { recursive: true });
         const name = `${new Date().toISOString().replace(/[:.]/g, "-")}-${String(url.searchParams.get("name") || "report").replace(/[^\w-]+/g, "_").slice(0, 40)}.txt`;
         fs.writeFileSync(path.join(dir, name), body);
+        // where the Mac is, so its engines can be added without typing the address
+        const from = String(req.socket.remoteAddress || "").replace(/^::ffff:/, "");
+        if (from && !/^(127\.|::1$)/.test(from)) fs.writeFileSync(path.join(dataDir, "mac.json"), JSON.stringify({ address: from, at: Date.now(), audioPort: 15666, musicPort: 11235 }));
         return send(res, 200, `Sent to the desktop (${name}).\n`, "text/plain; charset=utf-8");
       }
       if (MAC[url.pathname] && req.method === "GET") {

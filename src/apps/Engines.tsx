@@ -3,6 +3,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { desk, useDesk } from "../lib/store.ts";
 import { comfyInfo, engineAllowed, newEngineId } from "../lib/media.ts";
 import { outbound } from "../lib/outbound.ts";
+import { withMacAddress } from "../lib/mac.ts";
 import type { ImageEngine, ImageKind, SongEngine, SongKind } from "../lib/mediaPrefs.ts";
 
 /** Setting up the servers that make pictures or songs (usually on another computer on your network). */
@@ -27,7 +28,8 @@ export function EnginesDialog({ type, onClose }: { type: "images" | "songs"; onC
   const [test, setTest] = useState<Record<string, string>>({});
   const save = (next: Any[]) => desk().set({ media: { ...desk().media, [type]: next } });
   const edit = (id: string, p: Partial<Any>) => save(list.map((e) => (e.id === id ? ({ ...e, ...p } as Any) : e)));
-  const add = (k: (typeof kinds)[number]) => save([...list, { id: newEngineId(), name: k.label, kind: k.kind, url: k.url, enabled: true } as Any]);
+  // the Mac's real address when the desktop knows it (from its setup), instead of macbook.local
+  const add = (k: (typeof kinds)[number]) => void withMacAddress(k.url).then((url) => save([...desk().media[type], { id: newEngineId(), name: k.label, kind: k.kind, url, enabled: true } as Any]));
 
   const check = async (e: Any) => {
     setTest((t) => ({ ...t, [e.id]: "Checking…" }));

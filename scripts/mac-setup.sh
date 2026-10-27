@@ -91,6 +91,13 @@ main() {
       echo "misaki couldn't be installed from ready-made packages for this Python. Songs are unaffected."
     fi
   fi
+  # MLX Audio's server imports webrtcvad, which still needs pkg_resources: setuptools 81 and later dropped it
+  # (installing other things can bring in a newer one), so keep a version that has it
+  if [ -n "$AUDIO_PY" ] && ! "$AUDIO_PY" -c "import webrtcvad" 2>/dev/null; then
+    echo "Repairing webrtcvad for MLX Audio's server (it needs setuptools before 81)…"
+    "$AUDIO_PY" -m pip install --only-binary=:all: "setuptools<81" || true
+    "$AUDIO_PY" -c "import webrtcvad" 2>/dev/null && echo "Repaired." || echo "webrtcvad still won't load; the report will show why."
+  fi
 
   # the music model: one you've downloaded (MiniMax Music 3 mxfp8 if it's there)
   MODELS=$(ls "${HF_HOME:-$HOME/.cache/huggingface}/hub" 2>/dev/null | sed -n 's/^models--//p' | sed 's/--/\//' | grep -iE "music|ace-?step|yue" || true)
