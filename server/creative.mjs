@@ -273,7 +273,8 @@ export function createCreative(dataDir) {
       fs.writeFileSync(file, bytes);
       job.state = "installer";
       if (win && /\.msi$/i.test(file)) spawn("msiexec", ["/i", file], { detached: true, stdio: "ignore" }).unref();
-      else if (win) spawn(file, [], { detached: true, stdio: "ignore" }).unref();
+      // through Explorer, as if double-clicked: started straight from the server it could open hidden, with no taskbar button
+      else if (win) spawn("explorer.exe", [file], { detached: true, stdio: "ignore" }).unref();
       else spawn("open", [file], { detached: true, stdio: "ignore" }).unref();
       return;
     }
