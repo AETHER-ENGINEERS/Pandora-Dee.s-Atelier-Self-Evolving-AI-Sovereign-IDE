@@ -2,12 +2,13 @@ import { useState } from "react";
 import { create } from "zustand";
 import { Music4, Pause, Play, Settings2, Sparkles, Square, Wand2, X } from "lucide-react";
 import { desk, useDesk } from "../lib/store.ts";
-import { keepSong, makeSong, writeSong, type SongAsk } from "../lib/media.ts";
+import { fetchKept, keepSong, keptSongs, makeSong, resumeSong, uid, writeSong, type MadeAudio, type SongAsk } from "../lib/media.ts";
 import { current, playList, toggle, useMusic, type Track } from "../lib/music.ts";
-import type { MadeSong, SongEngine } from "../lib/mediaPrefs.ts";
+import type { MadeSong, PendingSong, SongEngine } from "../lib/mediaPrefs.ts";
 import { CharacterPicker } from "./Files.tsx";
 import { EnginesDialog } from "./Engines.tsx";
 import { openMenu } from "../ui/ContextMenu.tsx";
+import { openSongInfo } from "../ui/SongInfo.tsx";
 
 /**
  * Making songs, the Suno/Udio way: describe it and a character writes the words, or write the title, style and
@@ -23,23 +24,54 @@ const dropJob = (id: string) => useJobs.setState((s) => ({ jobs: s.jobs.filter((
 const STYLES = ["pop", "rock", "indie", "lo-fi", "hip hop", "R&B", "jazz", "funk", "synthwave", "EDM", "house", "ambient", "orchestral", "folk", "country", "metal", "punk", "reggae", "latin", "J-pop", "piano ballad", "acoustic", "female vocals", "male vocals", "duet", "upbeat", "melancholic", "dreamy"];
 const SECTIONS = ["[Intro]", "[Verse]", "[Pre-Chorus]", "[Chorus]", "[Bridge]", "[Solo]", "[Outro]"];
 
-/** Make a song in the background (from here, or from a character's make_song tool); it shows in the list while it works. */
-export function startSong(engine: SongEngine, ask: SongAsk, done?: (s: MadeSong | null, error?: string) => void) {
-  const job: Job = { id: crypto.randomUUID(), title: ask.title || "Untitled", status: "Starting…", ctl: new AbortController() };
-  useJobs.setState((s) => ({ jobs: [job, ...s.jobs] }));
+const pendingOf = () => desk().media.pending ?? [];
+const setPending = (list: PendingSong[]) => desk().set({ media: { ...desk().media, pending: list } });
+
+/** Run one song job: make (or pick up) the audio, put it in the library, and keep the list of pending songs right. */
+function run(engine: SongEngine, ask: SongAsk, job: Job, getAudio: (progress: (s: string) => void, signal: AbortSignal) => Promise<MadeAudio>, done?: (s: MadeSong | null, error?: string) => void) {
+  useJobs.setState((s) => ({ jobs: [job, ...s.jobs.filter((j) => j.id !== job.id)] }));
   void (async () => {
     try {
-      const made = await makeSong(engine, ask, (status) => setJob(job.id, { status }), job.ctl.signal);
+      const made = await getAudio((status) => setJob(job.id, { status }), job.ctl.signal);
       setJob(job.id, { status: "Adding it to the library…" });
       const song = await keepSong(ask, made, engine);
+      setPending(pendingOf().filter((p) => p.id !== job.id));
       dropJob(job.id);
       done?.(song);
     } catch (e) {
       const error = job.ctl.signal.aborted ? "Stopped. (The engine may finish the job anyway.)" : e instanceof Error ? e.message : String(e);
+      // given up here (stopped, or the engine failed): the bridge still keeps any song it finishes
+      setPending(pendingOf().filter((p) => p.id !== job.id));
       setJob(job.id, { error });
       done?.(null, error);
     }
   })();
+}
+
+/** Make a song in the background (from here, or from a character's make_song tool); it shows in the list while it works. */
+export function startSong(engine: SongEngine, ask: SongAsk, done?: (s: MadeSong | null, error?: string) => void) {
+  const job: Job = { id: uid(), title: ask.title || "Untitled", status: "Starting…", ctl: new AbortController() };
+  run(engine, ask, job, (progress, signal) =>
+    makeSong(engine, ask, progress, signal, (ref, seed) =>
+      // the engine took it as a job: remember it, so a reload or a closed tab doesn't lose the song
+      setPending([...pendingOf(), { id: job.id, ref, seed, engineId: engine.id, ask: { title: ask.title, style: ask.style, lyrics: ask.lyrics, seconds: ask.seconds, instrumental: ask.instrumental }, at: Date.now() }]),
+    ), done);
+}
+
+let resumed = false;
+/** After the desktop opens again: pick up the songs engines were still making. */
+export function resumeSongs() {
+  if (resumed) return;
+  resumed = true;
+  for (const p of pendingOf()) {
+    const engine = desk().media.songs.find((e) => e.id === p.engineId);
+    if (!engine) {
+      setPending(pendingOf().filter((x) => x.id !== p.id));
+      continue;
+    }
+    const job: Job = { id: p.id, title: p.ask.title || "Untitled", status: "Picking up where it left off…", ctl: new AbortController() };
+    run(engine, p.ask, job, (progress, signal) => resumeSong(engine, p.ref, p.seed, progress, signal));
+  }
 }
 
 type Draft = { title: string; style: string; lyrics: string; instrumental: boolean; seconds: number; seed: string };
@@ -223,6 +255,7 @@ function SongList({ made, jobs, onRemix }: { made: MadeSong[]; jobs: Job[]; onRe
             { label: "Play", run: () => play(s) },
             { label: "Remix (load into Custom)", run: () => onRemix(s) },
             { label: "Copy the lyrics", run: () => void navigator.clipboard?.writeText(s.lyrics), disabled: !s.lyrics },
+            { label: "Properties…", run: () => openSongInfo({ track: t, made: s }) },
             { sep: true },
             { label: "Remove from this list", run: () => forget(s.id), hint: "The file stays in your library" },
           ])}>
@@ -240,6 +273,59 @@ function SongList({ made, jobs, onRemix }: { made: MadeSong[]; jobs: Job[]; onRe
           </div>
         );
       })}
+      <KeptOnEngines made={made} />
     </div>
+  );
+}
+
+/** Songs the MLX Audio bridge kept on the Mac: every song it made, even one the desktop never got (a reload, a lost connection). */
+function KeptOnEngines({ made }: { made: MadeSong[] }) {
+  const engines = useDesk((s) => s.media.songs).filter((e) => e.enabled && e.kind === "mlx-serve");
+  const [open, setOpen] = useState(false);
+  const [lists, setLists] = useState<Record<string, { name: string; size: number; made: number; about: string }[] | string>>({});
+  const [busy, setBusy] = useState("");
+  const load = () =>
+    engines.forEach((e) =>
+      keptSongs(e).then(
+        (l) => setLists((x) => ({ ...x, [e.id]: l })),
+        (err) => setLists((x) => ({ ...x, [e.id]: /404/.test(String(err)) ? "This engine doesn't keep songs (the newest mlx-music-bridge.py does)." : String(err instanceof Error ? err.message : err) })),
+      ),
+    );
+  if (!engines.length) return null;
+  const have = (name: string) => made.some((m) => name.endsWith(m.title));
+  return (
+    <details className="kept" open={open} onToggle={(e) => (setOpen(e.currentTarget.open), e.currentTarget.open && load())}>
+      <summary className="small muted">Songs kept on the engine (every song it made, even ones the desktop missed)</summary>
+      {engines.map((e) => {
+        const l = lists[e.id];
+        return (
+          <div key={e.id} className="kept-engine">
+            <div className="small faint">{e.name}</div>
+            {l === undefined ? <div className="small faint">Asking…</div> : typeof l === "string" ? <div className="small faint">{l}</div> : !l.length ? <div className="small faint">None yet.</div> : null}
+            {Array.isArray(l)
+              ? l.map((k) => (
+                  <div key={k.name} className="kept-song">
+                    <span className="grow ellipsis" title={k.about}>{k.name}</span>
+                    <span className="small faint">{(k.size / 1048576).toFixed(1)} MB</span>
+                    <button
+                      className="btn small"
+                      disabled={busy === k.name}
+                      onClick={() => {
+                        setBusy(k.name);
+                        fetchKept(e, k.name, k.about).then(
+                          (s) => (setBusy(""), desk().say(`“${s.title}” is in your library.`)),
+                          (err) => (setBusy(""), desk().say(err instanceof Error ? err.message : String(err))),
+                        );
+                      }}
+                    >
+                      {busy === k.name ? "Adding…" : have(k.name) ? "Add again" : "Add to library"}
+                    </button>
+                  </div>
+                ))
+              : null}
+          </div>
+        );
+      })}
+    </details>
   );
 }

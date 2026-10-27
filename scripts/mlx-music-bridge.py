@@ -9,6 +9,14 @@ does, so the desktop's "mlx-serve" song engine works with it unchanged:
     POST /v1/audio/music-generations   {"model", "prompt", "lyrics", "duration_seconds", "seed", "steps"}  -> WAV
     GET  /v1/models                    the music models found in the Hugging Face cache
 
+and, so a long song can't be lost to a connection that gave up waiting (a three-minute song can take a quarter
+of an hour), as a job:
+
+    POST /v1/audio/music-generations   {..., "async": true}  -> 202 {"id"}
+    GET  /v1/jobs/<id>                 {"state": "queued" | "working" | "done" | "error", "elapsed", "error"}
+    GET  /v1/jobs/<id>/audio           the WAV, once done
+    GET  /v1/songs                     the songs kept in the keep folder; GET /v1/songs/<name>.wav (or .txt)
+
 Run it in the same Python that has mlx-audio installed:
 
     python mlx-music-bridge.py                       # all addresses, port 11235
@@ -109,8 +117,8 @@ def make_song(req):
     result = next(model.generate(**kwargs))
     print(f"Made a {seconds} s song in {time.time() - t:.0f} s: {style[:60]!r}", flush=True)
     wav = to_wav(result.audio, getattr(result, "sample_rate", 44100))
-    keep(wav, req, style, lyrics, seconds, kwargs.get("seed"), loaded["name"])
-    return wav
+    kept = keep(wav, req, style, lyrics, seconds, kwargs.get("seed"), loaded["name"])
+    return wav, kept
 
 
 def keep(wav, req, style, lyrics, seconds, seed, model):
@@ -123,10 +131,40 @@ def keep(wav, req, style, lyrics, seconds, seed, model):
         title = str(req.get("title") or "").strip() or (style.split(",")[0] if style else "song")
         name = time.strftime("%Y-%m-%d %H.%M.%S ") + re.sub(r"[^\w .,'-]+", " ", title)[:60].strip()
         (folder / f"{name}.wav").write_bytes(wav)
-        (folder / f"{name}.txt").write_text(f"Style: {style}\nLength asked: {seconds} s\nSeed: {seed}\nModel: {model}\n\n{lyrics}\n", encoding="utf-8")
+        (folder / f"{name}.txt").write_text(f"Title: {title}\nStyle: {style}\nLength asked: {seconds} s\nSeed: {seed}\nModel: {model}\n\n{lyrics}\n", encoding="utf-8")
         print(f"Kept a copy: {folder / (name + '.wav')}", flush=True)
+        return name
     except Exception as e:
         print(f"Couldn't keep a copy of the song: {e}", flush=True)
+        return None
+
+
+# songs being made as jobs (the newest few are remembered, with their audio until it's fetched or replaced)
+jobs = {}
+jobs_lock = threading.Lock()
+
+
+def run_job(job_id, req):
+    with jobs_lock:
+        jobs[job_id]["state"] = "queued"
+    with lock:  # one song at a time
+        with jobs_lock:
+            jobs[job_id].update(state="working", started=time.time())
+        try:
+            wav, kept = make_song(req)
+            with jobs_lock:
+                jobs[job_id].update(state="done", wav=wav, kept=kept, finished=time.time())
+        except Exception as e:
+            print(f"Couldn't make the song: {e}", flush=True)
+            with jobs_lock:
+                jobs[job_id].update(state="error", error=f"{type(e).__name__}: {e}", finished=time.time())
+    with jobs_lock:  # remember the last 12
+        for old in sorted(jobs, key=lambda k: jobs[k]["created"])[:-12]:
+            del jobs[old]
+
+
+def kept_folder():
+    return Path(args.keep).expanduser() if args.keep else None
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -156,8 +194,44 @@ class Handler(BaseHTTPRequestHandler):
             now = int(time.time())
             return self._json(200, {"object": "list", "data": [{"id": n, "object": "model", "created": now, "owned_by": n.split("/")[0], "capabilities": ["music"]} for n in cached_models()]})
         if path in ("/", "/health"):
-            return self._json(200, {"ok": True, "service": "Pandora Dee music bridge (MLX Audio)", "loaded": loaded["name"]})
+            return self._json(200, {"ok": True, "service": "Pandora Dee music bridge (MLX Audio)", "loaded": loaded["name"], "features": ["jobs", "songs"]})
+        m = re.fullmatch(r"/v1/jobs/([\w-]+)(/audio)?", path)
+        if m:
+            with jobs_lock:
+                job = dict(jobs.get(m.group(1)) or {})
+            if not job:
+                return self._json(404, {"error": "No such job (the bridge may have restarted; the song may be in /v1/songs)."})
+            if m.group(2):
+                if job.get("state") != "done":
+                    return self._json(409, {"error": f"Not ready ({job.get('state')})."})
+                return self._send(200, "audio/wav", job["wav"])
+            start = job.get("started") or job["created"]
+            return self._json(200, {"id": m.group(1), "state": job["state"], "elapsed": round((job.get("finished") or time.time()) - start), "error": job.get("error"), "kept": job.get("kept")})
+        if path == "/v1/songs":
+            folder = kept_folder()
+            items = []
+            if folder and folder.is_dir():
+                for f in sorted(folder.glob("*.wav"), key=lambda x: x.stat().st_mtime, reverse=True):
+                    items.append({"name": f.stem, "size": f.stat().st_size, "made": int(f.stat().st_mtime), "about": (f.with_suffix(".txt").read_text(encoding="utf-8")[:2000] if f.with_suffix(".txt").exists() else "")})
+            return self._json(200, {"object": "list", "data": items})
+        m = re.fullmatch(r"/v1/songs/(.+)\.(wav|txt)", path)
+        if m:
+            from urllib.parse import unquote
+            folder = kept_folder()
+            name = unquote(m.group(1))
+            f = (folder / f"{name}.{m.group(2)}") if folder else None
+            # only files in the keep folder itself
+            if not f or f.resolve().parent != folder.resolve() or not f.is_file():
+                return self._json(404, {"error": "No such song."})
+            return self._send(200, "audio/wav" if m.group(2) == "wav" else "text/plain; charset=utf-8", f.read_bytes())
         self._json(404, {"error": "Not found."})
+
+    def _send(self, code, kind, body):
+        self.send_response(code)
+        self.send_header("Content-Type", kind)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def do_POST(self):
         if not self._allowed():
@@ -169,20 +243,22 @@ class Handler(BaseHTTPRequestHandler):
             req = json.loads(self.rfile.read(min(n, 1_000_000)) or b"{}")
         except Exception:
             return self._json(400, {"error": "The request wasn't JSON."})
+        if req.get("async"):
+            job_id = f"{int(time.time())}-{os.urandom(3).hex()}"
+            with jobs_lock:
+                jobs[job_id] = {"state": "queued", "created": time.time(), "title": str(req.get("title") or "")}
+            threading.Thread(target=run_job, args=(job_id, req), daemon=True).start()
+            return self._json(202, {"id": job_id, "state": "queued"})
         if not lock.acquire(timeout=1800):
             return self._json(503, {"error": "Still busy with another song."})
         try:
-            wav = make_song(req)
+            wav, _ = make_song(req)
         except Exception as e:  # say what went wrong instead of dropping the connection
             print(f"Couldn't make the song: {e}", flush=True)
             return self._json(500, {"error": f"{type(e).__name__}: {e}"})
         finally:
             lock.release()
-        self.send_response(200)
-        self.send_header("Content-Type", "audio/wav")
-        self.send_header("Content-Length", str(len(wav)))
-        self.end_headers()
-        self.wfile.write(wav)
+        self._send(200, "audio/wav", wav)
 
     def log_message(self, fmt, *a):
         print(f"{self.address_string()} {fmt % a}", flush=True)

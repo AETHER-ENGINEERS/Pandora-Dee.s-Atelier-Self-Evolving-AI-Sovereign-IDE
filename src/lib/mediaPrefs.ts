@@ -49,6 +49,17 @@ export type MadeSong = {
   at: number;
 };
 
+/** A song an engine is still making: kept with the settings so the wait survives a page reload. */
+export type PendingSong = {
+  id: string;
+  /** The engine's own job ("bridge:<id>" or "ace:<id>"). */
+  ref: string;
+  engineId: string;
+  seed: number;
+  ask: { title: string; style: string; lyrics: string; seconds: number; instrumental?: boolean };
+  at: number;
+};
+
 export type MediaPrefs = {
   images: ImageEngine[];
   songs: SongEngine[];
@@ -56,6 +67,8 @@ export type MediaPrefs = {
   pictureFolder: string;
   /** Songs made here, newest first (the audio itself is in the music library). */
   made: MadeSong[];
+  /** Songs still being made by an engine that works in jobs. */
+  pending?: PendingSong[];
   /** Characters may make pictures and songs with a tool (off until switched on). */
   characterTools: boolean;
 };

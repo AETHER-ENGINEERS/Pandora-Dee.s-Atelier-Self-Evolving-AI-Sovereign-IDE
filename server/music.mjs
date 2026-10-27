@@ -261,5 +261,28 @@ export function createMusic(dataDir) {
     return path.basename(target);
   }
 
-  return { scan, list, serve, cover, radio, upload, folders: () => index.folders };
+  /** Everything about one song for its Properties: where the file is, and how it's encoded. */
+  async function info(id) {
+    const t = index.tracks[id];
+    if (!t) return null;
+    let st = null;
+    try {
+      st = fs.statSync(t.path);
+    } catch {
+      /* gone since the last scan */
+    }
+    let format = {};
+    try {
+      const { parseFile } = await import("music-metadata");
+      const m = await parseFile(t.path, { duration: true, skipCovers: true });
+      const f = m.format;
+      format = { container: f.container, codec: f.codec, sampleRate: f.sampleRate, channels: f.numberOfChannels, bitsPerSample: f.bitsPerSample, lossless: f.lossless, bitrate: f.bitrate ? Math.round(f.bitrate) : undefined, duration: f.duration };
+    } catch {
+      /* not readable now */
+    }
+    const { mtime: _m, ...rest } = t;
+    return { ...rest, ...format, size: st?.size ?? t.size, modified: st?.mtimeMs ?? t.mtime, exists: Boolean(st), own: path.dirname(t.path) === ownDir || t.path.startsWith(ownDir + path.sep) };
+  }
+
+  return { scan, list, serve, cover, radio, upload, info, folders: () => index.folders };
 }

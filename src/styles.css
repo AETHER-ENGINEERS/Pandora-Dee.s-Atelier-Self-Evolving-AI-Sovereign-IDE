@@ -843,3 +843,14 @@ p { line-height: 1.55; margin: 0 0 10px; }
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .voice-engines .engine .row { display: flex; gap: 6px; align-items: center; }
+
+/* ---------- song properties, kept songs ---------- */
+.dialog.song-info { width: min(560px, 94vw); max-height: 88vh; overflow: auto; }
+.props { display: grid; gap: 4px; margin: 8px 0; }
+.props > div { display: grid; grid-template-columns: 110px 1fr; gap: 10px; }
+.props dt { color: var(--muted); }
+.props dd { margin: 0; overflow-wrap: anywhere; }
+.kept { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
+.kept summary { cursor: pointer; }
+.kept-engine { margin: 6px 0; display: flex; flex-direction: column; gap: 4px; }
+.kept-song { display: flex; gap: 8px; align-items: center; padding: 4px 6px; border-radius: 6px; background: rgba(255,255,255,.03); }

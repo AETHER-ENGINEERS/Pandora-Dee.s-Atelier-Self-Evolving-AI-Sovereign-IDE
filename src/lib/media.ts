@@ -24,6 +24,8 @@ const sleep = (ms: number, signal?: AbortSignal) =>
     signal?.addEventListener("abort", () => (clearTimeout(t), no(new DOMException("Stopped", "AbortError"))), { once: true });
   });
 const randomSeed = () => Math.floor(Math.random() * 2 ** 31);
+/** A unique id (crypto.randomUUID only exists on https pages, and the desktop is often opened over http). */
+export const uid = () => (typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
 
 /** Whether the privacy settings let the desktop reach this engine, and why not if they don't. */
 export function engineAllowed(url: string): string {
@@ -72,7 +74,7 @@ type Workflow = Record<string, { class_type: string; inputs: Record<string, unkn
 
 /** Queue a workflow and wait for its files (pictures or audio). */
 async function runComfy(e: Engine, workflow: Workflow, want: "images" | "audio", progress: Progress, signal?: AbortSignal): Promise<Blob[]> {
-  const client_id = crypto.randomUUID();
+  const client_id = uid();
   const q = await json<{ prompt_id?: string; error?: { message?: string }; node_errors?: Record<string, { errors?: { message: string; details?: string }[] }> }>(e, "/prompt", { body: { prompt: workflow, client_id }, signal });
   if (!q.prompt_id) {
     const nodeErr = Object.values(q.node_errors ?? {}).flatMap((n) => n.errors ?? []).map((x) => `${x.message}${x.details ? ` (${x.details})` : ""}`)[0];
@@ -200,22 +202,34 @@ export async function savePictures(pics: Blob[], prompt: string): Promise<string
 
 // ---------- songs ----------
 
-/** Make one song; returns the audio. */
-export async function makeSong(e: SongEngine, a: SongAsk, progress: Progress, signal?: AbortSignal): Promise<{ audio: Blob; ext: string; seed: number }> {
+/** A made song's audio, and the seed it was made with. */
+export type MadeAudio = { audio: Blob; ext: string; seed: number };
+
+/**
+ * Make one song; returns the audio. When the engine works in jobs (ACE-Step, and the MLX Audio bridge), `onJob`
+ * hears the job's reference as soon as there is one, so the wait can be picked up again after the page reloads
+ * (resumeSong).
+ */
+export async function makeSong(e: SongEngine, a: SongAsk, progress: Progress, signal?: AbortSignal, onJob?: (ref: string, seed: number) => void): Promise<MadeAudio> {
   const seed = a.seed ?? randomSeed();
   const lyrics = a.instrumental || !a.lyrics.trim() ? "[Instrumental]" : a.lyrics;
   const seconds = Math.max(10, Math.min(600, Math.round(a.seconds)));
   if (e.kind === "mlx-serve") {
+    const body = { ...(e.model ? { model: e.model } : {}), prompt: a.style, lyrics, duration_seconds: seconds, seed, ...(a.title ? { title: a.title } : {}) };
+    if (await bridgeJobs(e)) {
+      // the MLX Audio bridge: a job, so a long song survives a reload or a dropped connection
+      progress("Queued…");
+      const j = await json<{ id?: string }>(e, "/v1/audio/music-generations", { body: { ...body, async: true }, signal });
+      if (!j.id) throw new Error(`${e.name} didn't give a job id.`);
+      onJob?.(`bridge:${j.id}`, seed);
+      return { ...(await waitBridge(e, j.id, progress, signal)), seed };
+    }
     // mlx-serve (MLX Core on a Mac): one request, the song comes back as a WAV when it's done
     progress("Making it… (the engine answers when the song is done)");
     const started = Date.now();
     const tick = setInterval(() => progress(`Making it… ${Math.round((Date.now() - started) / 1000)} s`), 1000);
     try {
-      const r = await call(e, "/v1/audio/music-generations", {
-        body: { ...(e.model ? { model: e.model } : {}), prompt: a.style, lyrics, duration_seconds: seconds, seed, ...(a.title ? { title: a.title } : {}) },
-        timeout: 1800,
-        signal,
-      });
+      const r = await call(e, "/v1/audio/music-generations", { body, timeout: 3600, signal });
       const type = r.headers.get("content-type") || "";
       if (!r.ok) throw new Error(`${e.name} answered ${r.status}: ${(await r.text()).slice(0, 300)}`);
       if (/json/i.test(type)) {
@@ -241,26 +255,8 @@ export async function makeSong(e: SongEngine, a: SongAsk, progress: Progress, si
     });
     const id = made.data?.task_id;
     if (!id) throw new Error("ACE-Step didn't give a task id.");
-    const started = Date.now();
-    for (;;) {
-      await sleep(2500, signal);
-      const q = await json<{ data?: { task_id: string; status: number; result?: string }[] }>(e, "/query_result", { body: { task_id_list: [id] }, signal });
-      const t = q.data?.find((x) => x.task_id === id);
-      if (t?.status === 2) throw new Error("ACE-Step couldn't make the song.");
-      if (t?.status === 1) {
-        let files: { file?: string }[] = [];
-        try {
-          files = JSON.parse(t.result || "[]") as { file?: string }[];
-        } catch {
-          /* below */
-        }
-        const file = files.find((f) => f.file)?.file;
-        if (!file) throw new Error("ACE-Step finished without a file.");
-        progress("Fetching the song…");
-        return { audio: await blob(e, file.startsWith("/") ? file : `/${file}`, signal), ext: "mp3", seed };
-      }
-      progress(`Making it… ${Math.round((Date.now() - started) / 1000)} s`);
-    }
+    onJob?.(`ace:${id}`, seed);
+    return { ...(await waitAce(e, id, progress, signal)), seed };
   }
   // YuE2 through ComfyUI: the official text-to-music workflow with the song's words, style, length and seed
   const wf = structuredClone(yue2Workflow) as Workflow;
@@ -273,6 +269,89 @@ export async function makeSong(e: SongEngine, a: SongAsk, progress: Progress, si
   return { audio, ext: "flac", seed };
 }
 
+/** Pick up the wait for a song an engine is still making (after the page reloaded). */
+export async function resumeSong(e: SongEngine, ref: string, seed: number, progress: Progress, signal?: AbortSignal): Promise<MadeAudio> {
+  const [kind, id] = [ref.slice(0, ref.indexOf(":")), ref.slice(ref.indexOf(":") + 1)];
+  if (kind === "bridge") return { ...(await waitBridge(e, id, progress, signal)), seed };
+  if (kind === "ace") return { ...(await waitAce(e, id, progress, signal)), seed };
+  throw new Error("That song's engine can't be picked up again.");
+}
+
+// whether an mlx-serve engine is the MLX Audio bridge with jobs (asked once per address)
+const jobsAt = new Map<string, Promise<boolean>>();
+function bridgeJobs(e: SongEngine): Promise<boolean> {
+  const key = trim(e.url);
+  if (!jobsAt.has(key))
+    jobsAt.set(
+      key,
+      json<{ features?: string[] }>(e, "/health", { timeout: 15 }).then(
+        (h) => Array.isArray(h.features) && h.features.includes("jobs"),
+        () => false,
+      ),
+    );
+  return jobsAt.get(key)!;
+}
+
+async function waitBridge(e: SongEngine, id: string, progress: Progress, signal?: AbortSignal): Promise<{ audio: Blob; ext: string }> {
+  for (;;) {
+    await sleep(3000, signal);
+    let s: { state?: string; elapsed?: number; error?: string };
+    try {
+      s = await json(e, `/v1/jobs/${encodeURIComponent(id)}`, { timeout: 30, signal });
+    } catch (err) {
+      if (signal?.aborted) throw err;
+      if (/answered 404/.test(String(err))) throw new Error(`${e.name} no longer has this job (it may have restarted). If it finished, it's in the songs the engine kept.`);
+      progress("Waiting for the engine to answer…");
+      continue; // the Mac asleep, or the network gone for a moment: keep waiting
+    }
+    if (s.state === "error") throw new Error(`${e.name} couldn't make the song: ${s.error ?? "unknown reason"}`);
+    if (s.state === "done") {
+      progress("Fetching the song…");
+      return { audio: await blob(e, `/v1/jobs/${encodeURIComponent(id)}/audio`, signal), ext: "wav" };
+    }
+    const t = s.elapsed ?? 0;
+    progress(s.state === "queued" ? "Waiting its turn…" : `Making it… ${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`);
+  }
+}
+
+async function waitAce(e: SongEngine, id: string, progress: Progress, signal?: AbortSignal): Promise<{ audio: Blob; ext: string }> {
+  const started = Date.now();
+  for (;;) {
+    await sleep(2500, signal);
+    const q = await json<{ data?: { task_id: string; status: number; result?: string }[] }>(e, "/query_result", { body: { task_id_list: [id] }, signal });
+    const t = q.data?.find((x) => x.task_id === id);
+    if (t?.status === 2) throw new Error("ACE-Step couldn't make the song.");
+    if (t?.status === 1) {
+      let files: { file?: string }[] = [];
+      try {
+        files = JSON.parse(t.result || "[]") as { file?: string }[];
+      } catch {
+        /* below */
+      }
+      const file = files.find((f) => f.file)?.file;
+      if (!file) throw new Error("ACE-Step finished without a file.");
+      progress("Fetching the song…");
+      return { audio: await blob(e, file.startsWith("/") ? file : `/${file}`, signal), ext: "mp3" };
+    }
+    progress(`Making it… ${Math.round((Date.now() - started) / 1000)} s`);
+  }
+}
+
+/** Songs the MLX Audio bridge kept (every song it made), newest first. */
+export async function keptSongs(e: SongEngine): Promise<{ name: string; size: number; made: number; about: string }[]> {
+  const j = await json<{ data?: { name: string; size: number; made: number; about: string }[] }>(e, "/v1/songs", { timeout: 30 });
+  return j.data ?? [];
+}
+
+/** Bring a song the bridge kept into the music library (and the list of made songs). */
+export async function fetchKept(e: SongEngine, name: string, about: string): Promise<MadeSong> {
+  const audio = await blob(e, `/v1/songs/${encodeURIComponent(name)}.wav`);
+  const line = (k: string) => new RegExp(`^${k}: (.*)$`, "m").exec(about)?.[1]?.trim() ?? "";
+  const lyrics = about.split(/\n\n/).slice(1).join("\n\n").trim();
+  const title = line("Title") || name.replace(/^\d{4}-\d\d-\d\d \d\d\.\d\d\.\d\d /, "");
+  return keepSong({ title, style: line("Style"), lyrics: lyrics === "[instrumental]" ? "" : lyrics, seconds: Number(line("Length asked").replace(/\D/g, "")) || 0, instrumental: lyrics === "[instrumental]" }, { audio, ext: "wav", seed: Number(line("Seed")) || 0 }, e);
+}
+
 /** Put a made song into the music library and the list of made songs. */
 export async function keepSong(a: SongAsk, made: { audio: Blob; ext: string; seed: number }, engine: SongEngine): Promise<MadeSong> {
   const name = `${(a.title || "Untitled").replace(/[\\/:*?"<>|]+/g, " ").trim().slice(0, 80) || "Untitled"}.${made.ext}`;
@@ -280,7 +359,7 @@ export async function keepSong(a: SongAsk, made: { audio: Blob; ext: string; see
   const j = (await r.json().catch(() => ({}))) as { name?: string; error?: string };
   if (!r.ok) throw new Error(j.error || "Couldn't add the song to the music library.");
   await scan();
-  const song: MadeSong = { id: crypto.randomUUID(), title: a.title || "Untitled", style: a.style, lyrics: a.instrumental ? "" : a.lyrics, seconds: a.seconds, seed: made.seed, engine: engine.name, file: j.name || name, at: Date.now() };
+  const song: MadeSong = { id: uid(), title: a.title || "Untitled", style: a.style, lyrics: a.instrumental ? "" : a.lyrics, seconds: a.seconds, seed: made.seed, engine: engine.name, file: j.name || name, at: Date.now() };
   const m = desk().media;
   desk().set({ media: { ...m, made: [song, ...m.made].slice(0, 500) } });
   return song;
