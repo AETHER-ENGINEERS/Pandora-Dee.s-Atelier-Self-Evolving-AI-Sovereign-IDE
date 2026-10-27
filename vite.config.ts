@@ -9,7 +9,7 @@ import { deskServer } from "./server/plugin.mjs";
 // Other devices (phones, the Mac): PDD_LAN=1, or "lan": true in pdd.config.json (this computer's own settings,
 // not in the repository), listens on every network address (0.0.0.0) instead. Anyone on the network who opens
 // the address then has the whole desktop (files, terminal), so use it on a network you trust.
-let local: { lan?: boolean } = {};
+let local: { lan?: boolean; allowedHosts?: string[] } = {};
 try {
   local = JSON.parse(fs.readFileSync(new URL("./pdd.config.json", import.meta.url), "utf8"));
 } catch {
@@ -17,10 +17,13 @@ try {
 }
 if (local.lan && !process.env.PDD_LAN) process.env.PDD_LAN = "1";
 const lan = process.env.PDD_LAN === "1";
+// Names other devices may use for this computer when it's shared (Vite refuses unknown names, against DNS
+// rebinding): Tailscale (*.ts.net), local network names, and any listed in pdd.config.json's "allowedHosts".
+const allowedHosts = lan ? [".ts.net", ".local", ".lan", ".home", ".internal", ...(Array.isArray(local.allowedHosts) ? local.allowedHosts : [])] : undefined;
 
 export default defineConfig({
   plugins: [react(), deskServer()],
   // Bound to 127.0.0.1 unless shared: browsers reach it as "localhost" too, and the two names are two origins.
-  server: { port: 15693, strictPort: true, host: lan ? "0.0.0.0" : "127.0.0.1" },
-  preview: { port: 15693, strictPort: true, host: lan ? "0.0.0.0" : "127.0.0.1" },
+  server: { port: 15693, strictPort: true, host: lan ? "0.0.0.0" : "127.0.0.1", allowedHosts },
+  preview: { port: 15693, strictPort: true, host: lan ? "0.0.0.0" : "127.0.0.1", allowedHosts },
 });
