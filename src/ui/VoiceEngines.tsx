@@ -3,6 +3,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { desk, useDesk } from "../lib/store.ts";
 import { outbound } from "../lib/outbound.ts";
 import { withMacAddress } from "../lib/mac.ts";
+import { AddressField, askAddress } from "./AddressField.tsx";
 import { scopeOf } from "../lib/model.ts";
 import { allowed, blockedBecause } from "../lib/privacy.ts";
 import { defaultSpeechModel, engineUrl, isOpenAI, OPENAI_VOICES, type VoiceEngine } from "../lib/voiceEngines.ts";
@@ -101,11 +102,17 @@ export function VoiceEnginesEditor() {
             </button>
           </div>
           <div className="row">
-            <input className="input grow mono" value={e.url} onChange={(ev) => edit(e.id, { url: ev.target.value.trim() })} aria-label="Address" placeholder="http://macbook.local:15666" />
-            <input className="input mono" style={{ width: 170 }} value={e.keyName ?? ""} onChange={(ev) => edit(e.id, { keyName: ev.target.value.trim() || undefined })} aria-label="Key name in Keys" placeholder="Key name (if any)" />
+            <AddressField value={e.url} onChange={(url) => edit(e.id, { url })} />
+            <label className="mini-field" style={{ width: 170 }}>
+              <span>Key name (in Keys)</span>
+              <input className="input mono" value={e.keyName ?? ""} onChange={(ev) => edit(e.id, { keyName: ev.target.value.trim() || undefined })} aria-label="Key name in Keys" placeholder="Key name (if any)" />
+            </label>
           </div>
           <div className="row">
-            <input className="input grow mono" value={e.model ?? ""} onChange={(ev) => edit(e.id, { model: ev.target.value.trim() || undefined })} aria-label="Speaking model" placeholder={`Speaking model (blank: ${defaultSpeechModel(e.url)})`} />
+            <label className="mini-field grow">
+              <span>Model</span>
+              <input className="input mono" value={e.model ?? ""} onChange={(ev) => edit(e.id, { model: ev.target.value.trim() || undefined })} aria-label="Speaking model" placeholder={`Speaking model (blank: ${defaultSpeechModel(e.url)})`} />
+            </label>
             <button className="btn small" onClick={() => void check(e)}>
               Test
             </button>
@@ -115,7 +122,12 @@ export function VoiceEnginesEditor() {
       ))}
       <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
         {PRESETS.map((p) => (
-          <button key={p.label} className="btn small" onClick={() => void withMacAddress(p.url).then((url) => save([...desk().voices.engines, { id: newId(), name: p.name, url, keyName: p.keyName, model: p.model, enabled: true }]))}>
+          <button key={p.label} className="btn small" onClick={() =>
+              void withMacAddress(p.url).then((guess) => {
+                const url = askAddress(p.name, guess);
+                if (url) save([...desk().voices.engines, { id: newId(), name: p.name, url, keyName: p.keyName, model: p.model, enabled: true }]);
+              })
+            }>
             <Plus size={13} /> {p.label}
           </button>
         ))}

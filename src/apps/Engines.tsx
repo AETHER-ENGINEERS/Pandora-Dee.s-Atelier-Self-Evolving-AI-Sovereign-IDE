@@ -4,6 +4,7 @@ import { desk, useDesk } from "../lib/store.ts";
 import { comfyInfo, engineAllowed, newEngineId } from "../lib/media.ts";
 import { outbound } from "../lib/outbound.ts";
 import { withMacAddress } from "../lib/mac.ts";
+import { AddressField, askAddress } from "../ui/AddressField.tsx";
 import type { ImageEngine, ImageKind, SongEngine, SongKind } from "../lib/mediaPrefs.ts";
 
 /** Setting up the servers that make pictures or songs (usually on another computer on your network). */
@@ -29,7 +30,11 @@ export function EnginesDialog({ type, onClose }: { type: "images" | "songs"; onC
   const save = (next: Any[]) => desk().set({ media: { ...desk().media, [type]: next } });
   const edit = (id: string, p: Partial<Any>) => save(list.map((e) => (e.id === id ? ({ ...e, ...p } as Any) : e)));
   // the Mac's real address when the desktop knows it (from its setup), instead of macbook.local
-  const add = (k: (typeof kinds)[number]) => void withMacAddress(k.url).then((url) => save([...desk().media[type], { id: newEngineId(), name: k.label, kind: k.kind, url, enabled: true } as Any]));
+  const add = (k: (typeof kinds)[number]) =>
+    void withMacAddress(k.url).then((guess) => {
+      const url = askAddress(k.label, guess);
+      if (url) save([...desk().media[type], { id: newEngineId(), name: k.label, kind: k.kind, url, enabled: true } as Any]);
+    });
 
   const check = async (e: Any) => {
     setTest((t) => ({ ...t, [e.id]: "Checking…" }));
@@ -84,12 +89,18 @@ export function EnginesDialog({ type, onClose }: { type: "images" | "songs"; onC
                 </button>
               </div>
               <div className="row">
-                <input className="input grow mono" value={e.url} onChange={(ev) => edit(e.id, { url: ev.target.value })} aria-label="Address" placeholder={k?.url} />
-                <input className="input mono" style={{ width: 160 }} value={e.keyName ?? ""} onChange={(ev) => edit(e.id, { keyName: ev.target.value.trim() || undefined })} aria-label="Key name in Keys" placeholder="Key name (if any)" />
+                <AddressField value={e.url} onChange={(url) => edit(e.id, { url })} />
+                <label className="mini-field" style={{ width: 160 }}>
+                  <span>Key name (in Keys)</span>
+                  <input className="input mono" value={e.keyName ?? ""} onChange={(ev) => edit(e.id, { keyName: ev.target.value.trim() || undefined })} aria-label="Key name in Keys" placeholder="Key name (if any)" />
+                </label>
               </div>
               {e.kind !== "yue2-comfyui" ? (
                 <div className="row">
-                  <input className="input grow mono" value={e.model ?? ""} onChange={(ev) => edit(e.id, { model: ev.target.value.trim() || undefined })} aria-label="Model" placeholder={e.kind === "comfyui" ? "Checkpoint (blank: its first)" : e.kind === "openai" ? "Model (blank: gpt-image-1)" : e.kind === "acestep" ? "Model (blank: its default)" : e.kind === "mlx-serve" ? "Music model, e.g. MiniMax-Music3-MLX-Serve-8bit" : "Model (blank: the one loaded)"} />
+                  <label className="mini-field grow">
+                    <span>Model</span>
+                    <input className="input mono" value={e.model ?? ""} onChange={(ev) => edit(e.id, { model: ev.target.value.trim() || undefined })} aria-label="Model" placeholder={e.kind === "comfyui" ? "Checkpoint (blank: its first)" : e.kind === "openai" ? "Model (blank: gpt-image-1)" : e.kind === "acestep" ? "Model (blank: its default)" : e.kind === "mlx-serve" ? "Music model, e.g. MiniMax-Music3-MLX-Serve-8bit" : "Model (blank: the one loaded)"} />
+                  </label>
                   {"steps" in e || e.kind === "comfyui" || e.kind === "a1111" ? (
                     <input className="input" type="number" min={1} max={150} style={{ width: 90 }} value={(e as ImageEngine).steps ?? 20} onChange={(ev) => edit(e.id, { steps: Number(ev.target.value) || 20 } as Partial<ImageEngine>)} aria-label="Steps" data-tip="Steps" />
                   ) : null}

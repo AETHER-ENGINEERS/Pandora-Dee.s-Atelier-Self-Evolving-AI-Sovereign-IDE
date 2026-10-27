@@ -1,4 +1,5 @@
 import { EngineVoicePicker } from "../ui/VoiceEngines.tsx";
+import { openSettings } from "../ui/Desktop.tsx";
 import { Num } from "../ui/Num.tsx";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Download, FolderOpen, LogIn, LogOut, Plus, Trash2, Upload } from "lucide-react";
@@ -585,6 +586,12 @@ function CharVoice({ c }: { c: Character }) {
           ))}
         </select>
       </Own>
+      <p className="small faint" style={{ margin: "-4px 0 6px" }}>
+        Voice engines and their addresses are set in Settings → Voice.{" "}
+        <button type="button" className="btn small" onClick={() => openSettings("voice")}>
+          Open
+        </button>
+      </p>
       {own.engine ? (
         <Own label="Engine voice" own={Boolean(own.engineVoice)} shared="the model's default" onReset={() => unset("engineVoice")}>
           <EngineVoicePicker engineId={own.engine} value={own.engineVoice ?? ""} onChange={(engineVoice) => set({ engineVoice })} />
