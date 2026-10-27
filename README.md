@@ -1,4 +1,4 @@
-# Pandora Dee Desktop — 3.2.0
+# Pandora Dee Desktop — 3.6.0
 
 A desktop you share with Pandora Dee, Jade and their friends. It brings together the original Pandora Dee page, Jade Vault, and the atelier "desk" builds into one app you can test.
 
