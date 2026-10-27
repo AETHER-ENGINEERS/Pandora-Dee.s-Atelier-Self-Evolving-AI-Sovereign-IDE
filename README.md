@@ -1,8 +1,8 @@
-# Pandora Dee Desktop — 3.2.0 test build
+# Pandora Dee Desktop — 3.2.0
 
 A desktop you share with Pandora Dee, Jade and their friends. It brings together the original Pandora Dee page, Jade Vault, and the atelier "desk" builds into one app you can test.
 
-**Status:** test build. Not a release, not on GitHub.
+**Status:** test build.
 
 ## Start it
 
@@ -74,7 +74,7 @@ On Discord and Vector, only you (the locksmith: the id you set) get the tools; e
 - **Accounts:** optional. The first account holds the keys. No password (the picture opens it) or a password (salted hash only), with "Always remember".
 - **Adult shelf:** the desktop starts in family mode. Adult characters stay hidden until unlocked with the passcode, and it locks again with the desktop.
 
-Everything is stored in this browser on this computer. **Settings → Backup and reset** saves or restores the whole desktop (without keys, passwords or the passcode), and can back up on a schedule to your own server (Jade Vault's `jade-backup-server.py`), encrypted on this computer first.
+Everything is stored in your browser on your computer. **Settings → Backup and reset** saves or restores the whole desktop (without keys, passwords or the passcode), and can back up on a schedule to your own server (Jade Vault's `jade-backup-server.py`), encrypted on your computer first.
 
 ## For developers
 
