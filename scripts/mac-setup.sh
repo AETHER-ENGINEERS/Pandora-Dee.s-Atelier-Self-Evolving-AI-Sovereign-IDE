@@ -31,7 +31,9 @@ send_report() {
     echo "===== this Mac"
     sw_vers 2>/dev/null
     uname -m
-    [ -n "$PY" ] && { echo "Python: $PY"; "$PY" --version 2>&1; "$PY" -m pip list 2>/dev/null | grep -iE "mlx|misaki|spacy|numpy|thinc|blis|cython" ; }
+    for p in "$PY" "$AUDIO_PY"; do
+      [ -n "$p" ] && { echo "Python: $p ($("$p" --version 2>&1))"; "$p" -m pip list 2>/dev/null | grep -iE "mlx|misaki|spacy|numpy|uvicorn|fastapi|webrtc" ; }
+    done
   } >> "$LOG" 2>&1
   if curl -fsS -m 30 -X POST --data-binary @"$LOG" "$BASE/mac/report?name=${MODE:-setup}" >/dev/null; then
     echo "(Everything above was sent to the desktop, so it can be read there.)"
@@ -41,12 +43,19 @@ send_report() {
 }
 
 main() {
-  # the Python that has MLX Audio: the active environment first, then the usual places
+  # Pythons that have MLX Audio: the active environment first, then the usual places. A Mac can have more than
+  # one (one for the songs, another with MLX Audio's server parts), so each engine gets one that can run it.
   PY=""
+  AUDIO_PY=""
+  FIRST=""
   for c in "${VIRTUAL_ENV:+$VIRTUAL_ENV/bin/python}" "$HOME/mlx-server/.mlx-env/bin/python" "$HOME/.mlx-env/bin/python" "$HOME"/*/.*env*/bin/python "$HOME"/*/*env*/bin/python "$HOME"/.*env*/bin/python "$(command -v python3 2>/dev/null)"; do
     [ -n "$c" ] && [ -x "$c" ] || continue
-    if "$c" -c "import mlx_audio" 2>/dev/null; then PY="$c"; break; fi
+    "$c" -c "import mlx_audio" 2>/dev/null || continue
+    [ -z "$PY" ] && "$c" -c "import mlx_audio.music" 2>/dev/null && PY="$c"
+    [ -z "$AUDIO_PY" ] && "$c" -c "import mlx_audio, uvicorn, fastapi" 2>/dev/null && AUDIO_PY="$c"
+    [ -z "$FIRST" ] && FIRST="$c"
   done
+  [ -z "$PY" ] && PY="$FIRST"
 
   if [ "$MODE" = "report" ]; then
     echo "Sending how things stand to the desktop…"
@@ -61,12 +70,22 @@ main() {
     echo "Couldn't find a Python with MLX Audio installed. If it lives somewhere unusual, enter that environment (source …/bin/activate) and run this line again."
     return 1
   fi
-  echo "Using MLX Audio's Python: $PY ($("$PY" --version 2>&1))"
+  echo "Songs use:  $PY ($("$PY" --version 2>&1))"
+  if [ -z "$AUDIO_PY" ]; then
+    # no environment has MLX Audio's server parts yet: add them where the songs run (ready-made packages only)
+    echo "MLX Audio's server parts aren't installed anywhere; adding them to $PY…"
+    if "$PY" -m pip install --only-binary=:all: uvicorn fastapi python-multipart webrtcvad-wheels && "$PY" -c "import uvicorn, fastapi" 2>/dev/null; then
+      AUDIO_PY="$PY"
+    else
+      echo "Couldn't add them, so MLX Audio's server (voices) isn't started. Songs are unaffected."
+    fi
+  fi
+  [ -n "$AUDIO_PY" ] && echo "Voices use: $AUDIO_PY ($("$AUDIO_PY" --version 2>&1))"
 
-  if [ "$MODE" = "voices" ]; then
-    echo "Installing what Kokoro's voices need (misaki, English)…"
+  if [ "$MODE" = "voices" ] && [ -n "$AUDIO_PY" ]; then
+    echo "Installing what Kokoro's voices need (misaki, English) for $AUDIO_PY…"
     # ready-made packages only, so nothing needs compiling (Cython); if there are none for this Python, say so
-    if "$PY" -m pip install --only-binary=:all: "misaki[en]"; then
+    if "$AUDIO_PY" -m pip install --only-binary=:all: "misaki[en]"; then
       echo "misaki is installed."
     else
       echo "misaki couldn't be installed from ready-made packages for this Python. Songs are unaffected."
@@ -79,7 +98,7 @@ main() {
   [ -z "$MODEL" ] && MODEL=$(printf '%s\n' "$MODELS" | head -1)
   [ -n "$MODEL" ] && echo "Music model: $MODEL"
 
-  PDD_PYTHON="$PY" bash mac-autostart.sh ${MODEL:+--music-model "$MODEL"}
+  PDD_PYTHON="$PY" PDD_AUDIO_PYTHON="$AUDIO_PY" bash mac-autostart.sh ${MODEL:+--music-model "$MODEL"}
   echo
   echo "Done. Check on them any time:  bash ~/pandora-bridge/mac-autostart.sh --status"
 }

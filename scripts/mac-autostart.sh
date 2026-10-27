@@ -123,7 +123,14 @@ agent() {
   fi
 }
 
-agent org.pandoradee.mlx-audio "$PY" -m mlx_audio.server --host 0.0.0.0 --port "$AUDIO_PORT"
+# MLX Audio's server may live in another environment (one with its server parts): PDD_AUDIO_PYTHON
+AUDIO_PY="${PDD_AUDIO_PYTHON-$PY}"
+if [ -n "$AUDIO_PY" ] && "$AUDIO_PY" -c "import mlx_audio, uvicorn" 2>/dev/null; then
+  agent org.pandoradee.mlx-audio "$AUDIO_PY" -m mlx_audio.server --host 0.0.0.0 --port "$AUDIO_PORT"
+else
+  unload org.pandoradee.mlx-audio
+  echo "MLX Audio's server (voices) isn't set up: no Python here has its server parts (uvicorn). Songs are unaffected."
+fi
 
 if [ -f "$BRIDGE" ]; then
   if [ -n "$MUSIC_MODEL" ]; then
