@@ -13,7 +13,7 @@ const IMAGE_KINDS: { kind: ImageKind; label: string; url: string; help: string }
   { kind: "openai", label: "OpenAI-style image API", url: "https://api.openai.com/v1", help: "Any service with /images/generations (OpenAI, LocalAI and others). Needs a key in Keys." },
 ];
 const SONG_KINDS: { kind: SongKind; label: string; url: string; help: string }[] = [
-  { kind: "mlx-serve", label: "mlx-serve (MLX-Serve app)", url: "http://macbook.local:11234", help: "Needs an Apple Silicon Mac with macOS 26.2 or later (on older Macs, use ACE-Step 1.5 instead). On the Mac: the MLX-Serve app, or `mlx-serve serve`; it listens on the network by default. Put the model's name below (an ACE-Step, MiniMax Music 3 or YuE2 build). MiniMax Music 3 and YuE2 need lyrics." },
+  { kind: "mlx-serve", label: "mlx-serve or MLX Audio (Mac)", url: "http://macbook.local:11235", help: "On an Apple Silicon Mac. With MLX Audio: run scripts/mlx-music-bridge.py from this project in MLX Audio's Python (port 11235), and put the model below (e.g. mlx-community/MiniMax-Music3-mxfp8). Or the MLX-Serve app / `mlx-serve serve` (port 11234, macOS 26.2+). MiniMax Music 3 and YuE2 need lyrics." },
   { kind: "acestep", label: "ACE-Step 1.5", url: "http://macbook.local:8001", help: "Start its API on the other computer with: uv run acestep-api --host 0.0.0.0 (runs on Macs, and on 4–8 GB graphics cards)." },
   { kind: "yue2-comfyui", label: "YuE2 (in ComfyUI)", url: "http://pc.local:8188", help: "ComfyUI with the YuE2 nodes and yue2_3b_int8_convrot.safetensors in models/checkpoints. Wants an NVIDIA card with lots of memory. Its songs are for non-commercial use (CC-BY-NC-4.0)." },
 ];
