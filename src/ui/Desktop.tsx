@@ -20,6 +20,7 @@ import {
   Users,
   Video,
   Palette,
+  Download,
   Globe,
 } from "lucide-react";
 import { APPS, desk, useDesk, type AppId } from "../lib/store.ts";
@@ -63,6 +64,7 @@ import { KeysApp } from "../apps/Keys.tsx";
 import { SettingsApp } from "../apps/Settings.tsx";
 import { WelcomeApp } from "../apps/Welcome.tsx";
 import { StudioApp } from "../apps/Studio.tsx";
+import { canPrompt, install, installed } from "../lib/install.ts";
 import { CreateApp } from "../apps/Create.tsx";
 import { BrowserApp } from "../apps/Browser.tsx";
 
@@ -542,6 +544,11 @@ function MenuBar({ onLoad }: { onLoad: () => void }) {
         <button onClick={act(() => desk().openApp("welcome"))}>Getting started</button>
         <button onClick={act(() => openSettings("ai"))}>Connect an AI model</button>
         <button onClick={act(() => openSettings("privacy"))}>Privacy, explained</button>
+        {!installed() ? (
+          <button onClick={act(() => void install().then((m) => m && desk().say(m)))}>
+            <Download size={14} /> Install as an app{canPrompt() ? "" : "…"}
+          </button>
+        ) : null}
       </Menu>
 
       <div className="status">

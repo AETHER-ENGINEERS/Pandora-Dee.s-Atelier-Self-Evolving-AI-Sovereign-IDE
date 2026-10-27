@@ -1,4 +1,4 @@
-# Pandora Dee Desktop — 3.10.0
+# Pandora Dee Desktop — 3.11.0
 
 A desktop you share with Pandora Dee, Jade and their friends. It brings together the original Pandora Dee page, Jade Vault, and the atelier "desk" builds into one app you can test.
 
@@ -19,6 +19,12 @@ npm run dev
 ```
 
 Then open http://localhost:15693.
+
+**On your phone, as an app:** reach the desktop over https and install it (Help → Install as an app, or the
+browser's "Install app"). The easy https is Tailscale: on the computer running the desktop, `tailscale serve --bg 15693`,
+then open `https://<computer>.<tailnet>.ts.net` on the phone (signed into the same Tailscale). Only your own devices can
+reach that address. Don't use Tailscale Funnel for this: it would put the desktop, which has no sign-in, on the
+public internet. Over plain http a phone can only add a shortcut.
 
 **Moving it to another computer** (say from a Windows PC to the Mac): `git clone` the repository there, or copy the folder
 without `node_modules/`, `data/` and `pdd.config.json` (those belong to the first computer), for example

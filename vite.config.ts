@@ -17,9 +17,10 @@ try {
 }
 if (local.lan && !process.env.PDD_LAN) process.env.PDD_LAN = "1";
 const lan = process.env.PDD_LAN === "1";
-// Names other devices may use for this computer when it's shared (Vite refuses unknown names, against DNS
-// rebinding): Tailscale (*.ts.net), local network names, and any listed in pdd.config.json's "allowedHosts".
-const allowedHosts = lan ? [".ts.net", ".local", ".lan", ".home", ".internal", ...(Array.isArray(local.allowedHosts) ? local.allowedHosts : [])] : undefined;
+// Names other devices may use for this computer (Vite refuses unknown names, against DNS rebinding). Tailscale's
+// *.ts.net always (`tailscale serve` hands https requests to localhost under that name, and only your own devices
+// can use it); when shared on the network, local names too, and any listed in pdd.config.json's "allowedHosts".
+const allowedHosts = [".ts.net", ...(lan ? [".local", ".lan", ".home", ".internal"] : []), ...(Array.isArray(local.allowedHosts) ? local.allowedHosts : [])];
 
 export default defineConfig({
   plugins: [react(), deskServer()],

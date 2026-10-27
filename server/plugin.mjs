@@ -99,6 +99,8 @@ export function deskServer() {
   const hostOf = (req) => String(req.headers.host || "").replace(/:\d+$/, "").toLowerCase();
   const isAppHost = (req) => hostOf(req) === "127.0.0.1";
   const isDeskHost = (req) => hostOf(req) === "localhost" || hostOf(req).endsWith(".localhost");
+  // reached through Tailscale (`tailscale serve`, or the tailnet name): one address for the desktop and its apps
+  const viaTailnet = (req) => hostOf(req).endsWith(".ts.net");
   const lan = () => process.env.PDD_LAN === "1";
 
   const send = (res, code, body, type = "application/json") => {
@@ -484,7 +486,7 @@ export function deskServer() {
       }
       // web pages for the Browser, on the apps' address (and in a sandboxed frame there)
       // (when shared on the network there's no separate apps' address; the page's own sandbox policy still holds)
-      if (url.pathname === "/browse" && (isAppHost(req) || lan())) return void (await browser.serve(req, res, url));
+      if (url.pathname === "/browse" && (isAppHost(req) || lan() || viaTailnet(req))) return void (await browser.serve(req, res, url));
       if (url.pathname.startsWith("/run/") || (url.pathname.startsWith("/games/") && isAppHost(req))) {
         if (isDeskHost(req) && !lan()) return send(res, 403, "Apps run on their own address.", "text/plain");
         if (run(req, res, url) !== null) return;

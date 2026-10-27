@@ -18,6 +18,13 @@ export function WorldRadio() {
   const canvas = useRef<HTMLCanvasElement>(null);
   const view = useRef({ x: 0, y: 0, k: 1 }); // pan in pixels, zoom
   const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  // fingers on the map, for pinching to zoom (two at once) and dragging (one)
+  const fingers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ dist: number; mx: number; my: number } | null>(null);
+  const spread = () => {
+    const [a, b] = [...fingers.current.values()];
+    return { dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+  };
   const playing = useMusic((s) => s.queue[s.index]);
   const now = playing?.kind === "radio" ? playing.url : "";
 
@@ -179,12 +186,34 @@ export function WorldRadio() {
       <div className="world-map">
         <canvas
           ref={canvas}
-          aria-label="Map of radio stations: click one to tune in"
+          aria-label="Map of radio stations: click one to tune in; scroll or pinch to zoom, drag to move"
           onPointerDown={(e) => {
+            fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            try {
+              e.currentTarget.setPointerCapture(e.pointerId);
+            } catch {
+              /* a pointer the browser no longer tracks */
+            }
+            if (fingers.current.size === 2) {
+              // a second finger: pinch from here (and it isn't a tap any more)
+              pinch.current = spread();
+              if (drag.current) drag.current.moved = true;
+              return;
+            }
             drag.current = { x: e.clientX, y: e.clientY, moved: false };
-            e.currentTarget.setPointerCapture(e.pointerId);
           }}
           onPointerMove={(e) => {
+            if (fingers.current.has(e.pointerId)) fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            if (pinch.current && fingers.current.size >= 2) {
+              const now = spread();
+              const before = pinch.current;
+              // follow the fingers: move with their middle, zoom with how far apart they are
+              view.current.x += now.mx - before.mx;
+              view.current.y += now.my - before.my;
+              zoomBy(now.dist / before.dist, now.mx, now.my);
+              pinch.current = now;
+              return;
+            }
             const d = drag.current;
             if (d) {
               const dx = e.clientX - d.x;
@@ -201,7 +230,20 @@ export function WorldRadio() {
             }
             setHover(nearest(e.clientX, e.clientY));
           }}
+          onPointerCancel={(e) => {
+            fingers.current.delete(e.pointerId);
+            if (fingers.current.size < 2) pinch.current = null;
+            if (!fingers.current.size) drag.current = null;
+          }}
           onPointerUp={(e) => {
+            fingers.current.delete(e.pointerId);
+            if (pinch.current || fingers.current.size) {
+              // lifting one finger of a pinch: the other carries on dragging, and nothing is tuned
+              pinch.current = null;
+              const [rest] = [...fingers.current.values()];
+              drag.current = rest ? { x: rest.x, y: rest.y, moved: true } : null;
+              return;
+            }
             const d = drag.current;
             drag.current = null;
             if (d && !d.moved) {
@@ -244,7 +286,7 @@ export function WorldRadio() {
             <Star size={13} /> Save
           </button>
         ) : null}
-        <span className="small faint">{stations ? `${stations.length.toLocaleString()} stations · scroll to zoom, drag to move` : ""}</span>
+        <span className="small faint">{stations ? `${stations.length.toLocaleString()} stations · scroll or pinch to zoom, drag to move` : ""}</span>
       </div>
     </div>
   );
