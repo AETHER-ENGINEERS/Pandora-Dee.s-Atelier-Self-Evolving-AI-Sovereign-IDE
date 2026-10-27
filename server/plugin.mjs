@@ -13,6 +13,7 @@ import { createMusic, listFolders } from "./music.mjs";
 import { createAvatars } from "./avatars.mjs";
 import { createCreative } from "./creative.mjs";
 import { createBrowser } from "./browse.mjs";
+import { createVector } from "./vector.mjs";
 import { checkUpdates, download } from "./upstreams.mjs";
 import * as aicordAuth from "./oauth.mjs";
 import { findCurl, findPython, forgetPrograms } from "./programs.mjs";
@@ -74,6 +75,8 @@ export function deskServer() {
   let crt;
   const creative = () => (crt ??= createCreative(() => dataDir));
   const browser = createBrowser();
+  let vec;
+  const vector = () => (vec ??= createVector(() => dataDir));
   const library = () => {
     if (!lib) {
       lib = createLibrary(dataDir);
@@ -207,6 +210,39 @@ export function deskServer() {
       return serveFile(res, file);
     }
     // folders on this computer, for picking music folders (names only)
+    // Vector for the people using the desktop (vector-agent per account; see vector.mjs)
+    if (parts[0] === "vector") {
+      const V = vector();
+      try {
+        if (parts[1] === "status" && m === "GET") return send(res, 200, V.status());
+        if (parts[1] === "file" && m === "POST") {
+          const r = await V.sendFile(req.headers["x-vector-token"], String(url.searchParams.get("to") || ""), decodeURIComponent(String(req.headers["x-filename"] || "file")), await readBody(req, 200_000_000));
+          return send(res, 200, { ok: true, result: r });
+        }
+        if (m === "POST") {
+          const b = JSON.parse((await readBody(req, 2_000_000)).toString("utf8") || "{}");
+          const token = req.headers["x-vector-token"];
+          if (parts[1] === "start") return send(res, 200, await V.start(b.nsec, b.password));
+          if (parts[1] === "stop") return send(res, 200, (V.stop(token), { ok: true }));
+          if (parts[1] === "call") return send(res, 200, { result: await V.call(token, String(b.name), b.args) });
+          if (parts[1] === "attachment") {
+            const bytes = await V.attachment(token, b.attachment ?? {});
+            const ext = String(b.attachment?.extension || "").toLowerCase();
+            return send(res, 200, bytes, MIME[ext] || "application/octet-stream");
+          }
+          if (parts[1] === "open-app") {
+            // a Mini App someone sent: into Games & Apps (it runs on the apps' address like any other)
+            const bytes = await V.attachment(token, b.attachment ?? {});
+            const name = /\.xdc$/i.test(String(b.attachment?.name || "")) ? String(b.attachment.name) : `${String(b.attachment?.name || "app").replace(/\.[^.]*$/, "")}.xdc`;
+            const r = library().importAny(bytes, name);
+            const pkg = r.added[0] ?? library().list().find((p) => r.duplicates && p.name && name.toLowerCase().includes(String(p.name).toLowerCase().slice(0, 8)));
+            return send(res, 200, { ok: true, added: r.added.length, duplicates: r.duplicates, id: pkg?.id ?? null, errors: r.errors });
+          }
+        }
+      } catch (e) {
+        return send(res, e?.status || 400, { error: e instanceof Error ? e.message : String(e) });
+      }
+    }
     // the Mac that last ran the setup (curl …/mac | bash), for filling in engine addresses
     if (parts[0] === "mac" && m === "GET") {
       try {

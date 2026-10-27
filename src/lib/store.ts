@@ -25,6 +25,7 @@ export type AppId =
   | "visualizer"
   | "create"
   | "browser"
+  | "vector"
   | "journal"
   | "terminal"
   | "games"
@@ -42,6 +43,7 @@ export const APPS: { id: AppId; title: string; hint: string }[] = [
   { id: "notes", title: "Notes", hint: "Your notes: links, tags, tasks, graph" },
   { id: "music", title: "Music", hint: "Your music, internet radio and visualizers" },
   { id: "visualizer", title: "Visualizer", hint: "The music's visualizer in its own window" },
+  { id: "vector", title: "Vector", hint: "Your Vector messenger: chats, Communities and Mini Apps" },
   { id: "browser", title: "Browser", hint: "Web pages in tabs, with a reader view" },
   { id: "create", title: "Create", hint: "Pictures and PDFs: a gallery, a painter, and GIMP and other apps to open them in" },
   { id: "files", title: "Files", hint: "Each character's own files" },
@@ -349,6 +351,7 @@ export type DockPrefs = {
   musicAdded?: boolean;
   createAdded?: boolean;
   browserAdded?: boolean;
+  vectorAdded?: boolean;
 };
 
 export const DOCK_DEFAULT: DockPrefs = {
@@ -473,7 +476,11 @@ function withNotes(d: DockPrefs): DockPrefs {
     const at = items.indexOf("create");
     items.splice(at < 0 ? items.length : at + 1, 0, "browser");
   }
-  return { ...d, items, notesAdded: true, musicAdded: true, createAdded: true, browserAdded: true };
+  if (!items.includes("vector") && !d.vectorAdded) {
+    const at = items.indexOf("room");
+    items.splice(at < 0 ? 0 : at + 1, 0, "vector");
+  }
+  return { ...d, items, notesAdded: true, musicAdded: true, createAdded: true, browserAdded: true, vectorAdded: true };
 }
 
 export function defaultWins(): Record<AppId, Win> {
@@ -496,6 +503,7 @@ export function defaultWins(): Record<AppId, Win> {
     visualizer: W(220, 60, Math.min(720, vw - 40), Math.min(440, vh - 10)),
     create: W(100, 30, Math.min(1120, vw - 40), Math.min(720, vh - 10)),
     browser: W(80, 24, Math.min(1180, vw - 40), Math.min(760, vh - 10)),
+    vector: W(140, 40, Math.min(980, vw - 40), Math.min(680, vh - 10)),
     journal: W(180, 90, 640, 520),
     terminal: W(200, 120, 640, 400),
     games: W(160, 40, Math.min(980, vw - 40), Math.min(660, vh - 10)),

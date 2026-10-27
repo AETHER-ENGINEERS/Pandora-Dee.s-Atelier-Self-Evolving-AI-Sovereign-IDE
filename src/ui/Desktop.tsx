@@ -21,6 +21,7 @@ import {
   Video,
   Palette,
   Download,
+  MessageCircleHeart,
   Globe,
 } from "lucide-react";
 import { APPS, desk, useDesk, type AppId } from "../lib/store.ts";
@@ -67,6 +68,7 @@ import { StudioApp } from "../apps/Studio.tsx";
 import { canPrompt, install, installed } from "../lib/install.ts";
 import { CreateApp } from "../apps/Create.tsx";
 import { BrowserApp } from "../apps/Browser.tsx";
+import { VectorApp } from "../apps/Vector.tsx";
 
 export const ICONS: Record<AppId, (size: number) => ReactNode> = {
   room: (s) => <MessagesSquare size={s} />,
@@ -78,6 +80,7 @@ export const ICONS: Record<AppId, (size: number) => ReactNode> = {
   visualizer: (s) => <AudioWaveform size={s} />,
   create: (s) => <Palette size={s} />,
   browser: (s) => <Globe size={s} />,
+  vector: (s) => <MessageCircleHeart size={s} />,
   journal: (s) => <BookOpen size={s} />,
   terminal: (s) => <SquareTerminal size={s} />,
   games: (s) => <Gamepad2 size={s} />,
@@ -99,6 +102,7 @@ const BODIES: Record<AppId, () => ReactNode> = {
   visualizer: () => <VisualizerApp />,
   create: () => <CreateApp />,
   browser: () => <BrowserApp />,
+  vector: () => <VectorApp />,
   journal: () => <JournalApp />,
   terminal: () => <TerminalApp />,
   games: () => <GamesApp />,

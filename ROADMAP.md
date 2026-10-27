@@ -69,7 +69,7 @@ Still to build:
 - **Tauri 2 shell** for Windows, macOS, Linux, Android and iOS. The web build keeps working with
   fewer features. The local server's jobs (library, game state, app origin) move into Rust, with
   each webxdc app on its own custom-protocol origin (stronger isolation than today's shared one).
-- **Vector, built in**, using Vector's own Rust crates (`vector-core`, `vector-sdk`): your account,
+- ✅ (3.14.0, early, through Vector's `vector-agent`) **Vector, built in**, using Vector's own Rust crates (`vector-core`, `vector-sdk`): your account,
   your chats and groups, Mini Apps opened straight from a chat into Games & Apps, and sharing an
   app version (yours or an edited one) back into a chat. Characters keep using the bridges for
   their own Vector accounts.

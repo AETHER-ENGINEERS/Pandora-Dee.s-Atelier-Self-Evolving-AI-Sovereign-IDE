@@ -14,6 +14,12 @@ other's features, switched off until turned on). Their licenses are beside them:
 The desktop itself uses Jade Vault's Rust core (`public/vendor/jade-core/`, `jade_core.wasm` and its glue, from
 Jade Vault 2.20.1, MIT) to turn web pages into Markdown for web_fetch.
 
+## Vector
+
+The Vector app runs **vector-agent** from Vector by JSKitty and Formless Labs
+(https://github.com/VectorPrivacy/Vector, MIT). It isn't included: it's built from Vector's repository on the computer
+running the desktop. Received files are decrypted the way Vector's own vector-core does (AES-256-GCM).
+
 ## Games
 
 The built-in games in `public/games/cleared/` are by **SunkissedButterfly** from websim.ai, adjusted so nothing

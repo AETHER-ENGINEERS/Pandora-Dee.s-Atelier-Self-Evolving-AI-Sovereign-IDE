@@ -859,3 +859,26 @@ p { line-height: 1.55; margin: 0 0 10px; }
 .mini-field > span:first-child { font-size: .78em; color: var(--muted); }
 .warn-text { color: var(--warn); }
 .engine .row { align-items: flex-end; }
+
+/* ---------- Vector ---------- */
+.vector { display: flex; height: 100%; min-height: 0; }
+.vector-side { width: 270px; flex: none; display: flex; flex-direction: column; border-right: 1px solid var(--line); min-height: 0; }
+.vector-list { flex: 1; overflow: auto; padding: 4px; display: flex; flex-direction: column; gap: 2px; }
+.vector-list .item { display: flex; gap: 6px; align-items: center; text-align: left; }
+.vector-community { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; }
+.vector-community > .small { display: flex; gap: 4px; align-items: center; padding: 2px 6px; }
+.vector-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.vector-log { flex: 1; overflow: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.vector-msg { max-width: 78%; padding: 6px 10px; border-radius: 10px; background: rgba(255,255,255,.05); align-self: flex-start; }
+.vector-msg.mine { align-self: flex-end; background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.vector-msg.failed { outline: 1px solid var(--bad); }
+.vector-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.vector-file { display: flex; gap: 6px; align-items: center; margin-top: 4px; padding: 6px 8px; border-radius: 8px; background: rgba(0,0,0,.25); min-width: 220px; }
+.vector-file.app { border: 1px solid var(--accent); }
+.vector-pic { max-width: 320px; max-height: 260px; border-radius: 8px; margin-top: 4px; cursor: pointer; display: block; }
+.vector-signin { max-width: 520px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+@media (max-width: 640px) { .vector-side { width: 42%; } }
+.vector-list .item { background: none; border: 0; color: inherit; padding: 6px 8px; border-radius: 8px; cursor: pointer; font: inherit; width: 100%; }
+.vector-list .item:hover { background: rgba(255,255,255,.05); }
+.vector-list .item.on { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+.vector-list .item:disabled { opacity: .5; cursor: default; }

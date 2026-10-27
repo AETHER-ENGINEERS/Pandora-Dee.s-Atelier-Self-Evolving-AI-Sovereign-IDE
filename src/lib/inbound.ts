@@ -25,7 +25,7 @@ async function handle(job: Job) {
   const s = desk();
   const p = job.params;
   const open = () => ({ id: s.chatId, title: currentChat().title, messages: s.messages.length });
-  if (job.route === "/v1/status") return reply(job.id, 200, { ok: true, busy: isRunning(), ...connection(), session: open(), version: "3.13.0" });
+  if (job.route === "/v1/status") return reply(job.id, 200, { ok: true, busy: isRunning(), ...connection(), session: open(), version: "3.14.0" });
   if (job.route === "/v1/chats") return reply(job.id, 200, { ok: true, chats: chatList().map((c) => ({ id: c.id, title: c.title, updated: c.updated, messages: c.count, current: c.id === s.chatId })) });
   if (job.route === "/v1/history") {
     const id = p.session || s.chatId;
