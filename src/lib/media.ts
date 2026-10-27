@@ -212,7 +212,7 @@ export async function makeSong(e: SongEngine, a: SongAsk, progress: Progress, si
     const tick = setInterval(() => progress(`Making it… ${Math.round((Date.now() - started) / 1000)} s`), 1000);
     try {
       const r = await call(e, "/v1/audio/music-generations", {
-        body: { ...(e.model ? { model: e.model } : {}), prompt: a.style, lyrics, duration_seconds: seconds, seed },
+        body: { ...(e.model ? { model: e.model } : {}), prompt: a.style, lyrics, duration_seconds: seconds, seed, ...(a.title ? { title: a.title } : {}) },
         timeout: 1800,
         signal,
       });

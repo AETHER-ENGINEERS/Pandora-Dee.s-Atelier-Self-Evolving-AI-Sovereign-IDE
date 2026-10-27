@@ -16,7 +16,8 @@ Run it in the same Python that has mlx-audio installed:
 
 Then in the desktop: Music -> Make a song -> engines -> mlx-serve, address http://<the Mac>:11235.
 Only the standard library is used besides mlx-audio (and numpy, which comes with it). One song at a time; the
-model stays loaded between songs. Listening on all addresses lets your other devices reach it (use it on your
+model stays loaded between songs. Every song is also kept here, in songs/ next to this script (--keep to choose
+another folder, --keep "" to keep none), with its words and settings beside it, so none is lost. Listening on all addresses lets your other devices reach it (use it on your
 own network or Tailscale; --key makes requests carry "Authorization: Bearer SECRET").
 """
 
@@ -107,7 +108,25 @@ def make_song(req):
     t = time.time()
     result = next(model.generate(**kwargs))
     print(f"Made a {seconds} s song in {time.time() - t:.0f} s: {style[:60]!r}", flush=True)
-    return to_wav(result.audio, getattr(result, "sample_rate", 44100))
+    wav = to_wav(result.audio, getattr(result, "sample_rate", 44100))
+    keep(wav, req, style, lyrics, seconds, kwargs.get("seed"), loaded["name"])
+    return wav
+
+
+def keep(wav, req, style, lyrics, seconds, seed, model):
+    """A copy of the song (and what made it) in the keep folder, so it survives whatever happens to the desktop."""
+    if not args.keep:
+        return
+    try:
+        folder = Path(args.keep).expanduser()
+        folder.mkdir(parents=True, exist_ok=True)
+        title = str(req.get("title") or "").strip() or (style.split(",")[0] if style else "song")
+        name = time.strftime("%Y-%m-%d %H.%M.%S ") + re.sub(r"[^\w .,'-]+", " ", title)[:60].strip()
+        (folder / f"{name}.wav").write_bytes(wav)
+        (folder / f"{name}.txt").write_text(f"Style: {style}\nLength asked: {seconds} s\nSeed: {seed}\nModel: {model}\n\n{lyrics}\n", encoding="utf-8")
+        print(f"Kept a copy: {folder / (name + '.wav')}", flush=True)
+    except Exception as e:
+        print(f"Couldn't keep a copy of the song: {e}", flush=True)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -178,6 +197,7 @@ def main():
     p.add_argument("--steps", type=int, default=30, help="diffusion steps (default 30)")
     p.add_argument("--key", default="", help="require Authorization: Bearer KEY on every request")
     p.add_argument("--preload", action="store_true", help="load the --model now instead of on the first song")
+    p.add_argument("--keep", default=str(Path(__file__).resolve().parent / "songs"), help='folder that keeps a copy of every song (default: songs/ next to this script; "" keeps none)')
     args = p.parse_args()
     if args.preload and args.model:
         model_for(args.model)
