@@ -75,7 +75,7 @@ if [ "$ACTION" = status ]; then
   exit 0
 fi
 
-PY="$(command -v python3 || command -v python)"
+PY="${PDD_PYTHON:-$(command -v python3 || command -v python)}"
 if ! "$PY" -c "import mlx_audio" 2>/dev/null; then
   echo "This Python ($PY) doesn't have MLX Audio. Enter the environment that does (e.g. source ~/.mlx-env/bin/activate) and run this again."
   exit 1

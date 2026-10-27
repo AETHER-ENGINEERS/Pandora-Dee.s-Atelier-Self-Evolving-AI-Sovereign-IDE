@@ -469,6 +469,14 @@ export function deskServer() {
   async function handle(req, res, next) {
     const url = new URL(req.url || "/", "http://x");
     try {
+      // the Mac's engines in one line: curl -sL <this address>/mac | bash (scripts from this project, nothing else)
+      const MAC = { "/mac": "mac-setup.sh", "/mac/mlx-music-bridge.py": "mlx-music-bridge.py", "/mac/mac-autostart.sh": "mac-autostart.sh" };
+      if (MAC[url.pathname] && req.method === "GET") {
+        // Unix line endings whatever this computer's copy has (bash on the Mac stops at a stray \r)
+        let text = fs.readFileSync(path.join(root, "scripts", MAC[url.pathname]), "utf8").replace(/\r\n/g, "\n");
+        if (url.pathname === "/mac") text = text.replace("__DESKTOP__", `${String(req.headers["x-forwarded-proto"] || "http").split(",")[0]}://${String(req.headers.host || "")}`);
+        return send(res, 200, text, "text/plain; charset=utf-8");
+      }
       // a plain page with no scripts: can this device reach the desktop at all? (for phones that can't open it)
       if (url.pathname === "/hello") {
         const ua = String(req.headers["user-agent"] || "").replace(/</g, "&lt;");
