@@ -108,55 +108,111 @@ export type Index = {
   words: number;
 };
 
+/**
+ * Lookup tables for one set of notes, so a link resolves with hash lookups instead of scanning every note
+ * (the speed-up Jade Vault 2.18.3 made for big vaults). Built once per set of notes.
+ */
+type Lookup = { set: Set<string>; byPath: Map<string, string[]>; byBase: Map<string, string[]>; byKey: Map<string, string[]>; answers: Map<string, string | null> };
+const lookups = new WeakMap<string[], Lookup>();
+// the same set of notes (only their text changed) keeps its tables and the answers already worked out
+let last: { sig: string; l: Lookup } | null = null;
+function lookupOf(notes: string[]): Lookup {
+  let l = lookups.get(notes);
+  if (l) return l;
+  const sig = `${notes.length}\u0000${notes.join("\u0001")}`;
+  if (last?.sig === sig) {
+    lookups.set(notes, last.l);
+    return last.l;
+  }
+  l = { set: new Set(notes), byPath: new Map(), byBase: new Map(), byKey: new Map(), answers: new Map() };
+  const add = (m: Map<string, string[]>, k: string, p: string) => (m.get(k) ?? m.set(k, []).get(k)!).push(p);
+  for (const p of notes) {
+    const lc = p.toLowerCase();
+    // every tail of the path ("a/b/c.md", "b/c.md", "c.md"), for links written with part of the path
+    const parts = lc.split("/");
+    for (let i = 0; i < parts.length; i++) add(l.byPath, parts.slice(i).join("/"), p);
+    add(l.byBase, parts[parts.length - 1], p);
+    const k = nameKey(p);
+    if (k) add(l.byKey, k, p);
+  }
+  lookups.set(notes, l);
+  last = { sig, l };
+  return l;
+}
+
 /** Which note a link means: the exact path, then by name (nearest folder first). */
 export function resolveIn(notes: string[], target: string, from?: string): string | null {
-  let t = String(target ?? "").trim().replace(/\\/g, "/");
+  const l = lookupOf(notes);
+  const dir = from ? parentOf(from) : "";
+  const key = `${dir}\u0000${target}`;
+  const known = l.answers.get(key);
+  if (known !== undefined) return known;
+  const found = resolveFresh(l, String(target ?? ""), dir);
+  l.answers.set(key, found);
+  return found;
+}
+
+function resolveFresh(l: Lookup, target: string, dir: string): string | null {
+  let t = target.trim().replace(/\\/g, "/");
   if (!t) return null;
   if (!isNote(t)) t += ".md";
-  const set = new Set(notes);
-  const dir = from ? parentOf(from) : "";
   const rooted = t.startsWith("/");
   const clean = cleanVaultPath(t);
-  for (const cand of rooted ? [clean] : [dir ? cleanVaultPath(`${dir}/${t}`) : clean, clean]) if (set.has(cand)) return cand;
+  for (const cand of rooted ? [clean] : [dir ? cleanVaultPath(`${dir}/${t}`) : clean, clean]) if (l.set.has(cand)) return cand;
   const lc = clean.toLowerCase();
   const base = lc.split("/").pop()!;
-  let hits = lc.includes("/") ? notes.filter((p) => p.toLowerCase() === lc || p.toLowerCase().endsWith(`/${lc}`)) : [];
-  if (!hits.length) hits = notes.filter((p) => baseOf(p).toLowerCase() === base);
+  let hits = lc.includes("/") ? l.byPath.get(lc) ?? [] : [];
+  if (!hits.length) hits = l.byBase.get(base) ?? [];
   if (!hits.length) {
     const k = nameKey(base);
-    if (k) hits = notes.filter((p) => nameKey(p) === k);
+    if (k) hits = l.byKey.get(k) ?? [];
   }
   if (!hits.length) return null;
-  hits.sort((a, b) => Number(parentOf(b) === dir) - Number(parentOf(a) === dir) || a.length - b.length || a.localeCompare(b));
-  return hits[0];
+  if (hits.length === 1) return hits[0];
+  return [...hits].sort((a, b) => Number(parentOf(b) === dir) - Number(parentOf(a) === dir) || a.length - b.length || a.localeCompare(b))[0];
+}
+
+/** What a note says, parsed once and kept until its text changes (links still resolve fresh every time). */
+type Parsed = { text: string; wiki: string[]; md: string[]; tags: string[]; words: number };
+const parsed = new Map<string, Parsed>();
+function parse(p: string, text: string): Parsed {
+  const old = parsed.get(p);
+  if (old && old.text === text) return old;
+  const body = stripCode(text);
+  const md: string[] = [];
+  for (const m of body.matchAll(MD_LINK_RE)) {
+    if (/^[a-z][a-z0-9+.-]*:/i.test(m[1])) continue;
+    try {
+      md.push(decodeURIComponent(m[1]));
+    } catch {
+      md.push(m[1]);
+    }
+  }
+  const tags = [...body.matchAll(TAG_RE)].map((m) => m[2].replace(/[/-]+$/, "").toLowerCase()).filter(Boolean);
+  const out: Parsed = { text, wiki: [...body.matchAll(WIKI_RE)].map((m) => m[1]), md, tags: [...tags, ...frontmatterTags(text)], words: (text.match(/\S+/g) || []).length };
+  parsed.set(p, out);
+  return out;
 }
 
 export function buildIndex(texts: Record<string, string>): Index {
   const notes = Object.keys(texts).filter(isNote).sort((a, b) => a.localeCompare(b));
   const idx: Index = { notes, out: new Map(), back: new Map(), tags: new Map(), missing: new Map(), words: 0 };
   for (const p of notes) idx.back.set(p, new Set());
+  for (const p of [...parsed.keys()]) if (texts[p] === undefined) parsed.delete(p);
   for (const p of notes) {
-    const text = texts[p] ?? "";
-    const body = stripCode(text);
+    const n = parse(p, texts[p] ?? "");
     const out = new Set<string>();
     const miss = new Set<string>();
-    for (const m of body.matchAll(WIKI_RE)) {
-      const r = resolveIn(notes, m[1], p);
+    for (const w of n.wiki) {
+      const r = resolveIn(notes, w, p);
       if (r) {
         if (r !== p) {
           out.add(r);
           idx.back.get(r)?.add(p);
         }
-      } else miss.add(m[1].trim());
+      } else miss.add(w.trim());
     }
-    for (const m of body.matchAll(MD_LINK_RE)) {
-      if (/^[a-z][a-z0-9+.-]*:/i.test(m[1])) continue;
-      let target = m[1];
-      try {
-        target = decodeURIComponent(m[1]);
-      } catch {
-        /* keep as written */
-      }
+    for (const target of n.md) {
       const r = resolveIn(notes, target, p);
       if (r && r !== p) {
         out.add(r);
@@ -165,17 +221,11 @@ export function buildIndex(texts: Record<string, string>): Index {
     }
     idx.out.set(p, out);
     idx.missing.set(p, miss);
-    for (const m of body.matchAll(TAG_RE)) {
-      const tag = m[2].replace(/[/-]+$/, "").toLowerCase();
-      if (!tag) continue;
+    for (const tag of n.tags) {
       if (!idx.tags.has(tag)) idx.tags.set(tag, new Set());
       idx.tags.get(tag)!.add(p);
     }
-    for (const t of frontmatterTags(text)) {
-      if (!idx.tags.has(t)) idx.tags.set(t, new Set());
-      idx.tags.get(t)!.add(p);
-    }
-    idx.words += (text.match(/\S+/g) || []).length;
+    idx.words += n.words;
   }
   return idx;
 }

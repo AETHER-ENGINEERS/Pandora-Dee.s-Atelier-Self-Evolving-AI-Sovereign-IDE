@@ -15,6 +15,14 @@
   ],
   "jade": [
     {
+      "version": "2.20.1-enhanced",
+      "file": "jade-vault-2.20.1-enhanced.html"
+    },
+    {
+      "version": "2.20.1",
+      "file": "jade-vault-2.20.1.html"
+    },
+    {
       "version": "2.18.2-enhanced",
       "file": "jade-vault-2.18.2-enhanced.html"
     },

@@ -2,6 +2,7 @@
 
 import { desk } from "./store.ts";
 import { outbound } from "./outbound.ts";
+import { pageToMarkdown } from "./jadeCore.ts";
 
 const send = (url: string, init: Parameters<typeof outbound>[1] = {}) => outbound(url, init, desk().net.via);
 
@@ -87,6 +88,29 @@ export async function webSearch(query: string, max = 5): Promise<string> {
 /** A web page as readable text: Ollama's reader with a key, otherwise r.jina.ai. */
 export async function webFetch(url: string): Promise<string> {
   if (!/^https?:\/\//.test(url)) throw new Error("The address must start with http:// or https://");
+  // first: fetch it ourselves (through the desktop relay, so no CORS) and turn it into Markdown here, with
+  // Jade's Rust core, the way Jade Vault 2.20 does on the phone: no third-party reader sees the page
+  try {
+    const r = await send(url, { headers: { Accept: "text/html,application/xhtml+xml,text/plain;q=0.9,application/json;q=0.8,*/*;q=0.5" }, timeout: 30 });
+    if (r.ok) {
+      const ct = r.headers.get("content-type") ?? "";
+      const buf = new Uint8Array(await r.arrayBuffer());
+      let cs = /charset=([\w-]+)/i.exec(ct)?.[1];
+      if (!cs && /html/i.test(ct)) cs = /<meta[^>]+charset=["']?([\w-]+)/i.exec(new TextDecoder("latin1").decode(buf.subarray(0, 4096)))?.[1];
+      let text: string;
+      try {
+        text = new TextDecoder(cs || "utf-8").decode(buf);
+      } catch {
+        text = new TextDecoder().decode(buf);
+      }
+      if (/html|xml/i.test(ct) || /^\s*<(!doctype|html)/i.test(text)) {
+        const md = await pageToMarkdown(text, url);
+        if (md && md.text.trim().length >= 80) return clip(`# ${md.title || url}\n\n${md.text}`);
+      } else if (/^text\/|json|markdown/i.test(ct)) return clip(text);
+    }
+  } catch {
+    /* a reader below */
+  }
   const key = desk().env.OLLAMA_API_KEY ?? "";
   if (key) {
     try {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Disc3, FolderPlus, ListMusic, Maximize2, Mic2, Pause, Play, Radio, Repeat, Repeat1, Search, Shuffle, SkipBack, SkipForward, Star, Trash2, Upload, Users, Volume2 } from "lucide-react";
+import { Disc3, FolderPlus, Globe2, ListMusic, Maximize2, Mic2, Pause, Play, Radio, Repeat, Repeat1, Search, Shuffle, SkipBack, SkipForward, Star, Trash2, Upload, Users, Volume2 } from "lucide-react";
 import { desk, useDesk } from "../lib/store.ts";
 import {
   addFiles,
@@ -26,8 +26,9 @@ import { Num } from "../ui/Num.tsx";
 import { openMenu, type MenuItem } from "../ui/ContextMenu.tsx";
 import { useWidth } from "../ui/hooks.ts";
 import { Visualizer, importPresets, milkdropPresets } from "./Visualizer.tsx";
+import { WorldRadio } from "./WorldRadio.tsx";
 
-type View = "songs" | "albums" | "artists" | "radio" | "find" | "folders";
+type View = "songs" | "albums" | "artists" | "world" | "radio" | "find" | "folders";
 const time = (s: number) => (Number.isFinite(s) && s > 0 ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}` : "–:––");
 const setPrefs = (p: Partial<ReturnType<typeof desk>["music"]>) => desk().set({ music: { ...desk().music, ...p } });
 const asItems = (ts: Track[]): Item[] => ts.map((t) => ({ kind: "track", ...t }));
@@ -80,6 +81,7 @@ export function MusicApp() {
           ["songs", <ListMusic size={15} key="s" />, `Songs (${m.tracks.length})`],
           ["albums", <Disc3 size={15} key="a" />, "Albums"],
           ["artists", <Users size={15} key="r" />, "Artists"],
+          ["world", <Globe2 size={15} key="w" />, "Worldband"],
           ["radio", <Radio size={15} key="ra" />, `Radio (${prefs.stations.length})`],
           ["find", <Search size={15} key="f" />, "Find stations"],
           ["folders", <FolderPlus size={15} key="fo" />, "Folders"],
@@ -207,6 +209,7 @@ export function MusicApp() {
                 ))
               : null}
 
+            {view === "world" ? <WorldRadio /> : null}
             {view === "radio" ? <Stations list={prefs.stations} saved /> : null}
             {view === "find" ? <FindStations /> : null}
             {view === "folders" ? <Folders onFiles={() => files.current?.click()} /> : null}
@@ -262,7 +265,9 @@ export function MusicApp() {
             onClick={(e) =>
               openMenu(e, [
                 { heading: "Visualizer" },
+                { label: "Open in its own window", run: () => desk().openApp("visualizer") },
                 { label: "Full screen", run: () => void vizBox.current?.requestFullscreen?.() },
+                { label: "As the desktop background", checked: prefs.vizBackground, run: () => setPrefs({ vizBackground: !prefs.vizBackground }) },
                 { label: "Milkdrop: a new preset every 25 seconds", checked: prefs.cycle, run: () => setPrefs({ cycle: !prefs.cycle }) },
                 { label: "Milkdrop: choose a preset…", run: () => void choosePreset() },
                 { label: "Import Milkdrop presets (.json)…", run: () => presetFiles.current?.click() },

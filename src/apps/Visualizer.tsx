@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Maximize2, Wallpaper } from "lucide-react";
 import { audioGraph, useMusic } from "../lib/music.ts";
 import { desk, useDesk } from "../lib/store.ts";
 
@@ -190,4 +192,67 @@ export function Visualizer({ big = false }: { big?: boolean }) {
       {mode === "milkdrop" && note ? <div className="viz-note small">{note}</div> : null}
     </div>
   );
+}
+
+/** The visualizer in its own window: resize it, make it full screen, or put it behind everything. */
+export function VisualizerApp() {
+  const m = useDesk((s) => s.music);
+  const box = useRef<HTMLDivElement>(null);
+  const set = (p: Partial<typeof m>) => desk().set({ music: { ...desk().music, ...p } });
+  const playing = useMusic((s) => s.playing);
+  // when the browser won't go full screen (some embedded views refuse), fill the desktop window instead
+  const [filled, setFilled] = useState(false);
+  const full = async () => {
+    if (filled) return setFilled(false);
+    if (!(await toggleFullscreen(box.current))) setFilled(true);
+  };
+  useEffect(() => {
+    if (!filled) return;
+    const key = (e: KeyboardEvent) => e.key === "Escape" && setFilled(false);
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [filled]);
+  const view = (
+    <div className={`viz-window${filled ? " filled" : ""}`} ref={box} onDoubleClick={() => void full()}>
+      {m.viz === "off" ? <div className="empty">The visualizer is off. Pick one below.</div> : <Visualizer big />}
+      {!playing ? <div className="viz-hint small faint">Play something in Music to see it move.</div> : null}
+      <div className="viz-bar">
+        <select className="select" value={m.viz} onChange={(e) => set({ viz: e.target.value as typeof m.viz })} aria-label="Visualizer">
+          <option value="bars">Bars</option>
+          <option value="scope">Scope</option>
+          <option value="milkdrop">Milkdrop</option>
+          <option value="off">Off</option>
+        </select>
+        {m.viz === "milkdrop" ? (
+          <label className="check small" style={{ padding: 0 }}>
+            <input type="checkbox" checked={m.cycle} onChange={(e) => set({ cycle: e.target.checked })} />
+            <span>New preset every 25 s</span>
+          </label>
+        ) : null}
+        <span className="grow" />
+        <button className={`btn small${m.vizBackground ? " primary" : ""}`} onClick={() => set({ vizBackground: !m.vizBackground })} aria-pressed={m.vizBackground}>
+          <Wallpaper size={13} /> {m.vizBackground ? "On the background" : "As the background"}
+        </button>
+        <button className="btn small" onClick={() => void full()} data-tip="Double-click the picture does the same. Esc leaves.">
+          <Maximize2 size={13} /> {filled ? "Leave full screen" : "Full screen"}
+        </button>
+      </div>
+    </div>
+  );
+  // filled sits on top of the whole page, outside the window frame (which would hold it inside)
+  return filled ? (
+    <>
+      <div className="empty small faint">Full screen. Esc leaves.</div>
+      {createPortal(view, document.body)}
+    </>
+  ) : (
+    view
+  );
+}
+
+/** Full screen on or off; false when the browser refused. */
+export async function toggleFullscreen(el: HTMLElement | null): Promise<boolean> {
+  if (document.fullscreenElement) return document.exitFullscreen().then(() => true, () => false);
+  if (!el?.requestFullscreen) return false;
+  return el.requestFullscreen().then(() => true, () => false);
 }

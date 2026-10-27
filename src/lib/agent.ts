@@ -55,6 +55,9 @@ function keyFor(c: Connection) {
   return credential(c, desk().env);
 }
 
+/** Tools that only read, so several asked for together can run at the same time. */
+const PARALLEL = new Set(["web_search", "web_fetch", "notes_search", "note_read", "note_links", "files_list", "file_read", "files_search", "skill", "tool_search", "discord_history"]);
+
 /**
  * Connections that just failed rest for a few minutes: turns go straight to the next one instead of
  * waiting on them every time, and they're tried first again once the rest is over.
@@ -245,12 +248,21 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
         }
         turns.push({ role: "assistant", content: result.text, toolCalls: result.toolCalls });
         if (result.text.trim()) shown += `${result.text.trim()}\n\n`;
-        for (const call of result.toolCalls) {
-          setBusy(me.id, describeCall(call.name, call.args));
-          const out = await runTool(tools, ctx, call.name, call.args);
-          used.push({ name: call.name, ok: out.ok, note: describeCall(call.name, call.args) });
+        // read-only tools asked for together run at the same time (as in Jade Vault 2.20); the rest one by one.
+        // Results are recorded in the order the model asked.
+        const calls = result.toolCalls;
+        for (let i = 0; i < calls.length; ) {
+          let j = i + 1;
+          if (PARALLEL.has(calls[i].name)) while (j < calls.length && PARALLEL.has(calls[j].name)) j++;
+          const group = calls.slice(i, j);
+          setBusy(me.id, group.length > 1 ? `${describeCall(group[0].name, group[0].args)} and ${group.length - 1} more` : describeCall(group[0].name, group[0].args));
+          const outs = await Promise.all(group.map((call) => runTool(tools, ctx, call.name, call.args)));
+          group.forEach((call, k) => {
+            used.push({ name: call.name, ok: outs[k].ok, note: describeCall(call.name, call.args) });
+            turns.push({ role: "tool", content: outs[k].text.slice(0, 12000), callId: call.id, name: call.name });
+          });
           patch({ tools: [...used] });
-          turns.push({ role: "tool", content: out.text.slice(0, 12000), callId: call.id, name: call.name });
+          i = j;
         }
         // tool_search may have loaded more tools for the next step.
         if (ai.tools && result.toolCalls.some((c) => c.name === "tool_search")) tools = toolsFor(ctx);

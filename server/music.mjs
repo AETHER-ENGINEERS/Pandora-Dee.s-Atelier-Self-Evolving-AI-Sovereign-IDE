@@ -163,7 +163,7 @@ export function createMusic(dataDir) {
     const ctrl = new AbortController();
     req.on("close", () => ctrl.abort());
     try {
-      const r = await fetch(u, { headers: { "User-Agent": "PandoraDeeDesktop/3.4", "Icy-MetaData": "0" }, signal: ctrl.signal, redirect: "follow" });
+      const r = await fetch(u, { headers: { "User-Agent": "PandoraDeeDesktop/3.7", "Icy-MetaData": "0" }, signal: ctrl.signal, redirect: "follow" });
       if (!r.ok || !r.body) {
         res.statusCode = 502;
         return res.end(`The station answered ${r.status}`);

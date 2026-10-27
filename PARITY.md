@@ -147,13 +147,18 @@ webxdc apps as peers, rebindable shortcuts, right-click menus, movable dock.
 ## Classic, enhanced builds
 
 Classic also offers each original app with the other one's features added: **Pandora Dee 2.9.9.2-enhanced**
-and **Jade Vault 2.18.2-enhanced** (pick them in Classic's corner switcher or Settings → Classic). Every feature
+and **Jade Vault 2.20.1-enhanced** (pick them in Classic's corner switcher or Settings → Classic; Jade Vault
+2.20.1 as released and the earlier 2.18.2 and 2.18.2-enhanced builds are there too). Every feature
 an enhanced build adds is **off until you turn it on** in that app's Config, so with nothing switched on each
 behaves like the original it is built from. They are built from the upstream sources with patches and a script
 kept outside this repo (`F:\pandora-work\classic-enhanced\`: `build.sh --install`, patches in `patches/`).
 
-**Pandora Dee 2.9.9.2-enhanced** = Pandora Dee 2.9.9.2 + everything Jade Vault 2.18.2 adds, merged from both
-apps' sources and given Pandora's words (/Pandora paths, rituals, leaves):
+**Pandora Dee 2.9.9.2-enhanced** = Pandora Dee 2.9.9.2 + everything Jade Vault 2.20.1 adds, merged from both
+apps' sources and given Pandora's words (/Pandora paths, rituals, leaves). Jade's 2.18.3–2.20.1 improvements
+need no switch and are simply in: the Rust core (WebAssembly that turns web pages into Markdown for web_fetch),
+web_search and web_fetch running together when asked for at once, the tool list staying the same between turns
+when the tool router is on, the faster incremental vault index, and the 2.20.1 fix that keeps one unreadable file
+from breaking every shell command. Switches for the rest:
 
 | Added from Jade Vault | Where to turn it on (Config) |
 | --- | --- |
@@ -175,7 +180,8 @@ Unlike Jade Vault, each tool has its own switch (there the senses switch also to
 others with it). "Ask me before Pandora places a call, sends a text…" stays on: it is the safety check for those
 tools, which are themselves off. Not included: the Jade Docs webxdc app (a separate app, not part of the page).
 
-**Jade Vault 2.18.2-enhanced** = Jade Vault 2.18.2 + Pandora Dee 2.9.9.2's extras, in Jade's words:
+**Jade Vault 2.20.1-enhanced** = Jade Vault 2.20.1 + Pandora Dee 2.9.9.2's extras, in Jade's words (the same
+extras as 2.18.2-enhanced, rebased onto the new code):
 
 | Added from Pandora Dee | Where to turn it on (Config) |
 | --- | --- |

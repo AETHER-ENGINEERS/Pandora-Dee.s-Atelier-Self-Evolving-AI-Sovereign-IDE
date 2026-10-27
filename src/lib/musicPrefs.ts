@@ -16,6 +16,10 @@ export type MusicPrefs = {
   preset: string;
   /** Milkdrop: a new preset every so often. */
   cycle: boolean;
+  /** The visualizer as the desktop's background, behind the windows. */
+  vizBackground: boolean;
+  /** How strongly the background visualizer shows (0..1). */
+  vizBackgroundOpacity: number;
 };
 
-export const MUSIC_DEFAULT: MusicPrefs = { folders: [], stations: [], volume: 0.7, shuffle: false, repeat: "all", duck: true, comment: false, viz: "bars", preset: "", cycle: true };
+export const MUSIC_DEFAULT: MusicPrefs = { folders: [], stations: [], volume: 0.7, shuffle: false, repeat: "all", duck: true, comment: false, viz: "bars", preset: "", cycle: true, vizBackground: false, vizBackgroundOpacity: 0.85 };

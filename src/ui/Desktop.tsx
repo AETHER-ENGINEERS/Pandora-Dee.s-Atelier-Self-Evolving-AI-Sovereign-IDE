@@ -13,6 +13,7 @@ import {
   GripVertical,
   NotebookPen,
   Music2,
+  AudioWaveform,
   Settings as SettingsIcon,
   ShieldAlert,
   SquareTerminal,
@@ -49,6 +50,7 @@ import { CastApp } from "../apps/Cast.tsx";
 import { FilesApp } from "../apps/Files.tsx";
 import { NotesApp } from "../apps/Notes.tsx";
 import { MusicApp } from "../apps/Music.tsx";
+import { Visualizer, VisualizerApp } from "../apps/Visualizer.tsx";
 import "../lib/musicTalk.ts";
 import { JournalApp } from "../apps/Journal.tsx";
 import { TerminalApp } from "../apps/Terminal.tsx";
@@ -67,6 +69,7 @@ export const ICONS: Record<AppId, (size: number) => ReactNode> = {
   files: (s) => <FolderOpen size={s} />,
   notes: (s) => <NotebookPen size={s} />,
   music: (s) => <Music2 size={s} />,
+  visualizer: (s) => <AudioWaveform size={s} />,
   journal: (s) => <BookOpen size={s} />,
   terminal: (s) => <SquareTerminal size={s} />,
   games: (s) => <Gamepad2 size={s} />,
@@ -85,6 +88,7 @@ const BODIES: Record<AppId, () => ReactNode> = {
   files: () => <FilesApp />,
   notes: () => <NotesApp />,
   music: () => <MusicApp />,
+  visualizer: () => <VisualizerApp />,
   journal: () => <JournalApp />,
   terminal: () => <TerminalApp />,
   games: () => <GamesApp />,
@@ -207,6 +211,11 @@ export function Desktop() {
         className={`wallpaper${wallpaper ? "" : " plain"}`}
         style={{ ...(wallpaper ? { backgroundImage: `url("${wallpaper}")` } : {}), ["--dim" as string]: s.hangout ? s.hang.dim : 0.62 }}
       />
+      {s.music.vizBackground && s.music.viz !== "off" && !s.hangout ? (
+        <div className="viz-background" style={{ opacity: s.music.vizBackgroundOpacity }} aria-hidden>
+          <Visualizer big />
+        </div>
+      ) : null}
       {!s.hangout && s.hang.onDesktop ? <Stage /> : null}
       {s.menuBar && !phone && s.bar.autoHide ? <div className={`bar-reveal ${s.bar.edge}`} aria-hidden /> : null}
       {s.menuBar && !phone ? <MenuBar onLoad={() => fileRef.current?.click()} /> : null}

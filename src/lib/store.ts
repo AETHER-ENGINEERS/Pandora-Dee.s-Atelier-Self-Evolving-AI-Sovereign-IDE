@@ -19,6 +19,7 @@ export type AppId =
   | "files"
   | "notes"
   | "music"
+  | "visualizer"
   | "journal"
   | "terminal"
   | "games"
@@ -35,6 +36,7 @@ export const APPS: { id: AppId; title: string; hint: string }[] = [
   { id: "cast", title: "Characters", hint: "Who's here, who's available, and their profiles" },
   { id: "notes", title: "Notes", hint: "Your notes: links, tags, tasks, graph" },
   { id: "music", title: "Music", hint: "Your music, internet radio and visualizers" },
+  { id: "visualizer", title: "Visualizer", hint: "The music's visualizer in its own window" },
   { id: "files", title: "Files", hint: "Each character's own files" },
   { id: "journal", title: "Journal", hint: "Quest journals and memory" },
   { id: "terminal", title: "Terminal", hint: "A shell over a character's files" },
@@ -465,6 +467,7 @@ export function defaultWins(): Record<AppId, Win> {
     files: W(140, 80, 760, 520),
     notes: W(110, 30, Math.min(1080, vw - 40), Math.min(700, vh - 10)),
     music: W(150, 40, Math.min(960, vw - 40), Math.min(620, vh - 10)),
+    visualizer: W(220, 60, Math.min(720, vw - 40), Math.min(440, vh - 10)),
     journal: W(180, 90, 640, 520),
     terminal: W(200, 120, 640, 400),
     games: W(160, 40, Math.min(980, vw - 40), Math.min(660, vh - 10)),

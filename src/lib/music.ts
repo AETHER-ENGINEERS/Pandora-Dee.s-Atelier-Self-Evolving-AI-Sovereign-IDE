@@ -71,6 +71,58 @@ function chain() {
 
 export const audioGraph = () => ({ ctx, analyser, gain, source: gain });
 
+/** A short burst of shortwave static between stations (the worldband dial). */
+export function staticBurst(seconds = 0.7) {
+  chain();
+  if (!ctx || !gain) return;
+  void ctx.resume();
+  const len = Math.floor(ctx.sampleRate * seconds);
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) {
+    const fade = Math.min(1, i / (ctx.sampleRate * 0.05), (len - i) / (ctx.sampleRate * 0.15));
+    // hiss with a slow warble, like tuning across the band
+    d[i] = (Math.random() * 2 - 1) * 0.35 * fade * (0.6 + 0.4 * Math.sin(i / (ctx.sampleRate / 9)));
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const band = ctx.createBiquadFilter();
+  band.type = "bandpass";
+  band.frequency.value = 1800;
+  band.Q.value = 0.7;
+  src.connect(band);
+  band.connect(gain);
+  src.start();
+}
+
+// ---------- worldband: stations on the map ----------
+
+export type GeoStation = Station & { lat: number; lon: number };
+let world: Promise<GeoStation[]> | null = null;
+
+/** Stations with a place on the map (radio-browser.info), the most listened-to first. Fetched once per session. */
+export function worldStations(): Promise<GeoStation[]> {
+  if (!allowed(desk().privacy, "web")) return Promise.reject(new Error(blockedBecause(desk().privacy, "web")));
+  return (world ??= (async () => {
+    const params = new URLSearchParams({ has_geo_info: "true", limit: "5000", hidebroken: "true", order: "clickcount", reverse: "true" });
+    const r = await outbound(`https://de1.api.radio-browser.info/json/stations/search?${params}`, { headers: { "User-Agent": "PandoraDeeDesktop/3.7" }, timeout: 60 }, desk().net.via);
+    if (!r.ok) throw new Error(`The radio directory answered ${r.status}.`);
+    const rows = (await r.json()) as { name: string; url_resolved?: string; url: string; favicon?: string; tags?: string; country?: string; codec?: string; bitrate?: number; homepage?: string; geo_lat?: number; geo_long?: number }[];
+    return rows
+      .filter((x) => Number.isFinite(x.geo_lat) && Number.isFinite(x.geo_long) && Math.abs(x.geo_lat!) <= 90)
+      .map((x) => ({ name: x.name.trim(), url: x.url_resolved || x.url, favicon: x.favicon || undefined, tags: x.tags, country: x.country, codec: x.codec, bitrate: x.bitrate, homepage: x.homepage, lat: x.geo_lat!, lon: x.geo_long! }));
+  })().catch((e) => {
+    world = null;
+    throw e;
+  }));
+}
+
+/** Tune to a station: a moment of static, then the station. */
+export function tune(st: Station) {
+  staticBurst(0.6);
+  window.setTimeout(() => playList([{ kind: "radio", ...st }], 0), 450);
+}
+
 function applyVolume() {
   const v = prefs().volume * (ducked && prefs().duck ? 0.3 : 1);
   if (gain && ctx) gain.gain.setTargetAtTime(v, ctx.currentTime, 0.25);
@@ -139,7 +191,7 @@ export function searchLibrary(q: string, limit = 200): Track[] {
 export async function findStations(q: string, by: "name" | "tag" | "country" = "name"): Promise<Station[]> {
   if (!allowed(desk().privacy, "web")) throw new Error(blockedBecause(desk().privacy, "web"));
   const params = new URLSearchParams({ [by]: q, limit: "40", hidebroken: "true", order: "clickcount", reverse: "true" });
-  const r = await outbound(`https://de1.api.radio-browser.info/json/stations/search?${params}`, { headers: { "User-Agent": "PandoraDeeDesktop/3.4" } }, desk().net.via);
+  const r = await outbound(`https://de1.api.radio-browser.info/json/stations/search?${params}`, { headers: { "User-Agent": "PandoraDeeDesktop/3.7" } }, desk().net.via);
   if (!r.ok) throw new Error(`The radio directory answered ${r.status}.`);
   const rows = (await r.json()) as { name: string; url_resolved?: string; url: string; favicon?: string; tags?: string; country?: string; codec?: string; bitrate?: number; homepage?: string }[];
   return rows.map((x) => ({ name: x.name.trim(), url: x.url_resolved || x.url, favicon: x.favicon || undefined, tags: x.tags, country: x.country, codec: x.codec, bitrate: x.bitrate, homepage: x.homepage }));

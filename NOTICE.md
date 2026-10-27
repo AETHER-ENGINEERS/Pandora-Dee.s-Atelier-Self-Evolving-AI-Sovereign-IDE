@@ -11,6 +11,9 @@ The Classic builds in `public/classic/` are those apps, built from their sources
 other's features, switched off until turned on). Their licenses are beside them:
 `LICENSE-pandora-dee.txt`, `LICENSE-jade-vault.txt` and `THIRD_PARTY_NOTICES.md` (the libraries they bundle).
 
+The desktop itself uses Jade Vault's Rust core (`public/vendor/jade-core/`, `jade_core.wasm` and its glue, from
+Jade Vault 2.20.1, MIT) to turn web pages into Markdown for web_fetch.
+
 ## Games
 
 The built-in games in `public/games/cleared/` are by **SunkissedButterfly** from websim.ai, adjusted so nothing

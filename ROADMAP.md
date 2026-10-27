@@ -49,6 +49,13 @@ Done in 3.4.0:
   character's profile, shown in Hangout, on the desktop and in Presence, with lip-sync; "Full avatar" in the right-click look menu.
   All Live2D avatars share one WebGL renderer (Cubism's shaders can't span contexts), so any number can be on screen.
 
+- ✅ 3.7.0: Jade Vault 2.20's speed-ups in the desktop (web tools and searches run side by side, web pages read by
+  Jade's Rust core, a notes index that rebuilds only what changed: 5,000 notes / 50,000 links in about half a second,
+  a tenth of that after an edit). The visualizer gets its own resizable window, full screen (filling the page where
+  the browser won't), and can be the desktop background. **Worldband** in Music: about 5,000 stations on a world map,
+  zoom and drag, click to tune through a burst of static, a west-to-east dial, and Scan. Classic gains Jade Vault
+  2.20.1 and 2.20.1-enhanced, and Pandora Dee 2.9.9.2-enhanced is rebuilt on Jade's 2.20 code.
+
 Still to build:
 - Tabbed open-source web browser inside the desktop. (moderate)
 - XDC Studio: import assets, and an asset view. (moderate)
@@ -82,8 +89,9 @@ Still to build:
   GIMP, Krita, Inkscape and others installed through the package manager on desktops.
   A **Gallery** that collects pictures from the room, the apps and the editors, and shares any of
   them into the chat for the characters to see.
-- **Classic, enhanced** ✅ (done early): Pandora Dee 2.9.9.2-enhanced and Jade Vault 2.18.2-enhanced are in
-  Classic, each with the other's features, every added feature off until switched on. What each contains is in
+- **Classic, enhanced** ✅ (done early): Pandora Dee 2.9.9.2-enhanced and Jade Vault 2.20.1-enhanced are in
+  Classic (next to Jade Vault 2.20.1 as released), each with the other's features, every added feature off until
+  switched on; Pandora Dee's carries Jade's 2.20 Rust core and speed-ups too. What each contains is in
   PARITY.md ("Classic, enhanced builds"). They build from upstream with `F:\pandora-work\classic-enhanced\build.sh`
   (pinned commits + patches); for a new upstream release, rebase the patches and rerun it. Still to do: the Jade
   Docs webxdc app as an installable app, and the APK pages (`build_index.py`, `twbuild`) for the enhanced builds.

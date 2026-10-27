@@ -728,3 +728,25 @@ p { line-height: 1.55; margin: 0 0 10px; }
 .portrait.full-look .full-avatar { position: absolute; inset: 0; }
 .avatar-editor { display: grid; grid-template-columns: 180px 1fr; gap: 14px; align-items: start; }
 .avatar-editor .preview { height: 240px; border: 1px solid var(--line); border-radius: 10px; background: radial-gradient(circle at 50% 30%, rgba(255,255,255,.06), transparent 70%); overflow: hidden; position: relative; }
+
+/* ---------- the visualizer's own window, and as the background ---------- */
+.viz-window { position: relative; height: 100%; background: #05040a; display: flex; flex-direction: column; }
+.viz-window .visualizer { flex: 1; min-height: 0; }
+.viz-window:fullscreen .viz-bar { opacity: 0; transition: opacity .3s; }
+.viz-window:fullscreen:hover .viz-bar { opacity: 1; }
+.viz-bar { display: flex; gap: 8px; align-items: center; padding: 6px 8px; background: rgba(0,0,0,.55); border-top: 1px solid var(--line); flex-wrap: wrap; }
+.viz-bar .select { width: auto; }
+.viz-hint { position: absolute; top: 10px; left: 0; right: 0; text-align: center; pointer-events: none; }
+.viz-background { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.viz-background .visualizer { width: 100%; height: 100%; }
+
+/* ---------- worldband ---------- */
+.worldband { display: flex; flex-direction: column; height: 100%; min-height: 320px; }
+.world-map { position: relative; flex: 1; min-height: 240px; background: radial-gradient(ellipse at 50% 40%, #0d1424, #05070d 75%); }
+.world-map canvas { width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
+.world-wait { position: absolute; inset: 0; display: grid; place-items: center; }
+.world-tip { position: absolute; left: 10px; top: 10px; display: flex; flex-direction: column; background: rgba(0,0,0,.6); padding: 6px 10px; border-radius: 8px; max-width: 60%; pointer-events: none; }
+.world-tip b, .world-tip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.world-bar { display: flex; gap: 8px; align-items: center; padding: 6px 10px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.world-bar input[type=range] { flex: 1; min-width: 160px; accent-color: var(--accent); }
+.viz-window.filled { position: fixed; inset: 0; z-index: 100000; background: #000; }
