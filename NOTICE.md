@@ -20,6 +20,14 @@ The built-in games in `public/games/cleared/` are by **SunkissedButterfly** from
 leaves the device (see `public/games/catalog.json`). Little Dogs is by one of this project's own users.
 The crunch sound in Cook and Eat ("Human Eating_Crunch - Sound Effect (HD)") is a royalty-free sound effect from YouTube.
 
+## Painting and creative apps
+
+- **miniPaint** 4.14.3 by ViliusL: https://github.com/viliusle/miniPaint (MIT), in `public/vendor/minipaint/` with its
+  licence. Served with a content security policy that keeps it offline (its picture search and web fonts are left out).
+- Not included, installed only when you ask (Create → Apps): **GIMP** (GPL-3.0), **Krita** (GPL-3.0), **Inkscape**
+  (GPL-2.0+), and **Storytold**'s Craft apps https://github.com/storytold (PhotoCraft, PdfCraft, VectorCraft,
+  LightCraft: Apache-2.0; ArtCraft: MIT or Apache-2.0).
+
 ## Webxdc apps by others
 
 Not part of this repository: people bring them into their own library. They're listed so their makers get the

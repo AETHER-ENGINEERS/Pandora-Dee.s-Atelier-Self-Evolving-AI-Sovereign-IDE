@@ -19,6 +19,7 @@ import {
   SquareTerminal,
   Users,
   Video,
+  Palette,
 } from "lucide-react";
 import { APPS, desk, useDesk, type AppId } from "../lib/store.ts";
 import { Window } from "./Window.tsx";
@@ -61,6 +62,7 @@ import { KeysApp } from "../apps/Keys.tsx";
 import { SettingsApp } from "../apps/Settings.tsx";
 import { WelcomeApp } from "../apps/Welcome.tsx";
 import { StudioApp } from "../apps/Studio.tsx";
+import { CreateApp } from "../apps/Create.tsx";
 
 export const ICONS: Record<AppId, (size: number) => ReactNode> = {
   room: (s) => <MessagesSquare size={s} />,
@@ -70,6 +72,7 @@ export const ICONS: Record<AppId, (size: number) => ReactNode> = {
   notes: (s) => <NotebookPen size={s} />,
   music: (s) => <Music2 size={s} />,
   visualizer: (s) => <AudioWaveform size={s} />,
+  create: (s) => <Palette size={s} />,
   journal: (s) => <BookOpen size={s} />,
   terminal: (s) => <SquareTerminal size={s} />,
   games: (s) => <Gamepad2 size={s} />,
@@ -89,6 +92,7 @@ const BODIES: Record<AppId, () => ReactNode> = {
   notes: () => <NotesApp />,
   music: () => <MusicApp />,
   visualizer: () => <VisualizerApp />,
+  create: () => <CreateApp />,
   journal: () => <JournalApp />,
   terminal: () => <TerminalApp />,
   games: () => <GamesApp />,

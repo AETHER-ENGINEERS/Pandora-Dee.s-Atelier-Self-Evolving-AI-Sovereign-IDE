@@ -57,7 +57,7 @@ export async function callback(url) {
   try {
     const r = await fetch(new URL("/api/oauth/token", ORIGIN), {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "PandoraDeeDesktop/3.7" },
+      headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "PandoraDeeDesktop/3.8" },
       body: new URLSearchParams({ grant_type: "authorization_code", client_id: p.clientId, redirect_uri: p.redirectUri, code, code_verifier: p.verifier }),
     });
     const j = await r.json().catch(() => ({}));

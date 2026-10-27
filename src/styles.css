@@ -750,3 +750,24 @@ p { line-height: 1.55; margin: 0 0 10px; }
 .world-bar { display: flex; gap: 8px; align-items: center; padding: 6px 10px; border-top: 1px solid var(--line); flex-wrap: wrap; }
 .world-bar input[type=range] { flex: 1; min-width: 160px; accent-color: var(--accent); }
 .viz-window.filled { position: fixed; inset: 0; z-index: 100000; background: #000; }
+
+/* ---------- Create: gallery, paint, apps ---------- */
+.create { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.create-tabs { display: flex; gap: 4px; padding: 6px 8px 0; border-bottom: 1px solid var(--line); }
+.create-tabs .tab { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid transparent; border-bottom: none; border-radius: 8px 8px 0 0; background: none; color: var(--muted); cursor: pointer; }
+.create-tabs .tab.on { color: var(--text); background: var(--panel-2, rgba(255,255,255,.04)); border-color: var(--line); }
+.create-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.gallery { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.gallery-grid { flex: 1; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; padding: 10px; align-content: start; }
+.gallery-item { display: flex; flex-direction: column; gap: 4px; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.02); cursor: pointer; color: inherit; text-align: left; }
+.gallery-item:hover, .gallery-item:focus-visible { border-color: var(--accent); }
+.gallery-item img { width: 100%; aspect-ratio: 1; object-fit: contain; background: repeating-conic-gradient(rgba(255,255,255,.06) 0 25%, transparent 0 50%) 0 0 / 16px 16px; border-radius: 6px; }
+.gallery-doc { width: 100%; aspect-ratio: 1; display: grid; place-items: center; align-content: center; gap: 4px; color: var(--muted); border-radius: 6px; background: rgba(255,255,255,.03); }
+.gallery-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.paint { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.paint-frame { flex: 1; width: 100%; border: 0; background: #fff; min-height: 320px; }
+.create-apps { overflow: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.create-app { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.create-app .pill { margin-left: 6px; }
+.create-app-actions { display: flex; gap: 6px; align-items: center; }
+.danger-text { color: var(--bad); }

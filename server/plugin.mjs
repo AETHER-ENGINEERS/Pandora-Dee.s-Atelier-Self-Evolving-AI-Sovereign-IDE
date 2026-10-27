@@ -11,6 +11,7 @@ import { inbound } from "./inbound.mjs";
 import { relay } from "./relay.mjs";
 import { createMusic } from "./music.mjs";
 import { createAvatars } from "./avatars.mjs";
+import { createCreative } from "./creative.mjs";
 import { checkUpdates, download } from "./upstreams.mjs";
 import * as aicordAuth from "./oauth.mjs";
 import { findCurl, findPython, forgetPrograms } from "./programs.mjs";
@@ -69,6 +70,8 @@ export function deskServer() {
   let lib;
   let mus;
   const music = () => (mus ??= createMusic(dataDir));
+  let crt;
+  const creative = () => (crt ??= createCreative(() => dataDir));
   const library = () => {
     if (!lib) {
       lib = createLibrary(dataDir);
@@ -164,6 +167,25 @@ export function deskServer() {
       const py = findPython(url.searchParams.get("python") || "");
       const curl = findCurl();
       return send(res, 200, { python: py && { path: py.cmd + (py.args.length ? ` ${py.args.join(" ")}` : ""), version: py.version }, curl: curl && { path: curl.cmd, version: curl.version } });
+    }
+    // creative apps: GIMP, Krita, Inkscape, the Craft apps (install on request, open vault files in them)
+    if (parts[0] === "create") {
+      const C = creative();
+      try {
+        if (parts[1] === "apps" && m === "GET") return send(res, 200, C.list());
+        if (m === "POST") {
+          const b = JSON.parse((await readBody(req, 100_000)).toString("utf8") || "{}");
+          if (parts[1] === "install") return send(res, 200, C.install(String(b.id)));
+          if (parts[1] === "remove") return send(res, 200, (C.remove(String(b.id)), { ok: true }));
+          if (parts[1] === "open") {
+            const file = b.path ? vaultFile(String(b.path)) : "";
+            if (b.path && (!file || !fs.existsSync(file))) return send(res, 400, { error: "That file isn't in the vault." });
+            return send(res, 200, C.open(String(b.id), file || ""));
+          }
+        }
+      } catch (e) {
+        return send(res, 400, { error: e instanceof Error ? e.message : String(e) });
+      }
     }
     if (parts[0] === "avatar") {
       const A = createAvatars(vaultDir);

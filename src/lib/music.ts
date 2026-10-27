@@ -105,7 +105,7 @@ export function worldStations(): Promise<GeoStation[]> {
   if (!allowed(desk().privacy, "web")) return Promise.reject(new Error(blockedBecause(desk().privacy, "web")));
   return (world ??= (async () => {
     const params = new URLSearchParams({ has_geo_info: "true", limit: "5000", hidebroken: "true", order: "clickcount", reverse: "true" });
-    const r = await outbound(`https://de1.api.radio-browser.info/json/stations/search?${params}`, { headers: { "User-Agent": "PandoraDeeDesktop/3.7" }, timeout: 60 }, desk().net.via);
+    const r = await outbound(`https://de1.api.radio-browser.info/json/stations/search?${params}`, { headers: { "User-Agent": "PandoraDeeDesktop/3.8" }, timeout: 60 }, desk().net.via);
     if (!r.ok) throw new Error(`The radio directory answered ${r.status}.`);
     const rows = (await r.json()) as { name: string; url_resolved?: string; url: string; favicon?: string; tags?: string; country?: string; codec?: string; bitrate?: number; homepage?: string; geo_lat?: number; geo_long?: number }[];
     return rows
@@ -191,7 +191,7 @@ export function searchLibrary(q: string, limit = 200): Track[] {
 export async function findStations(q: string, by: "name" | "tag" | "country" = "name"): Promise<Station[]> {
   if (!allowed(desk().privacy, "web")) throw new Error(blockedBecause(desk().privacy, "web"));
   const params = new URLSearchParams({ [by]: q, limit: "40", hidebroken: "true", order: "clickcount", reverse: "true" });
-  const r = await outbound(`https://de1.api.radio-browser.info/json/stations/search?${params}`, { headers: { "User-Agent": "PandoraDeeDesktop/3.7" } }, desk().net.via);
+  const r = await outbound(`https://de1.api.radio-browser.info/json/stations/search?${params}`, { headers: { "User-Agent": "PandoraDeeDesktop/3.8" } }, desk().net.via);
   if (!r.ok) throw new Error(`The radio directory answered ${r.status}.`);
   const rows = (await r.json()) as { name: string; url_resolved?: string; url: string; favicon?: string; tags?: string; country?: string; codec?: string; bitrate?: number; homepage?: string }[];
   return rows.map((x) => ({ name: x.name.trim(), url: x.url_resolved || x.url, favicon: x.favicon || undefined, tags: x.tags, country: x.country, codec: x.codec, bitrate: x.bitrate, homepage: x.homepage }));

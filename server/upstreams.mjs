@@ -2,7 +2,7 @@
 // app's manifest (source_code_url). Only runs when someone asks (the Games & Apps button, or
 // `npm run check-upstreams`). Nothing is downloaded until a newer version is chosen.
 
-const UA = { "User-Agent": "PandoraDeeDesktop/3.7", Accept: "application/json" };
+const UA = { "User-Agent": "PandoraDeeDesktop/3.8", Accept: "application/json" };
 
 /** "https://github.com/th2tran/chess-webxdc" → { host, owner, repo, url } */
 export function repoOf(url) {

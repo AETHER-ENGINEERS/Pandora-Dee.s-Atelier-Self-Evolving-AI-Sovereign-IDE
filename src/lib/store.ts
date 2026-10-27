@@ -20,6 +20,7 @@ export type AppId =
   | "notes"
   | "music"
   | "visualizer"
+  | "create"
   | "journal"
   | "terminal"
   | "games"
@@ -37,6 +38,7 @@ export const APPS: { id: AppId; title: string; hint: string }[] = [
   { id: "notes", title: "Notes", hint: "Your notes: links, tags, tasks, graph" },
   { id: "music", title: "Music", hint: "Your music, internet radio and visualizers" },
   { id: "visualizer", title: "Visualizer", hint: "The music's visualizer in its own window" },
+  { id: "create", title: "Create", hint: "Pictures and PDFs: a gallery, a painter, and GIMP and other apps to open them in" },
   { id: "files", title: "Files", hint: "Each character's own files" },
   { id: "journal", title: "Journal", hint: "Quest journals and memory" },
   { id: "terminal", title: "Terminal", hint: "A shell over a character's files" },
@@ -337,6 +339,7 @@ export type DockPrefs = {
   /** Set once Notes has been offered a place in the dock. */
   notesAdded?: boolean;
   musicAdded?: boolean;
+  createAdded?: boolean;
 };
 
 export const DOCK_DEFAULT: DockPrefs = {
@@ -447,7 +450,11 @@ function withNotes(d: DockPrefs): DockPrefs {
     const at = items.indexOf("notes");
     items.splice(at < 0 ? items.length : at + 1, 0, "music");
   }
-  return { ...d, items, notesAdded: true, musicAdded: true };
+  if (!items.includes("create") && !d.createAdded) {
+    const at = items.indexOf("music");
+    items.splice(at < 0 ? items.length : at + 1, 0, "create");
+  }
+  return { ...d, items, notesAdded: true, musicAdded: true, createAdded: true };
 }
 
 export function defaultWins(): Record<AppId, Win> {
@@ -468,6 +475,7 @@ export function defaultWins(): Record<AppId, Win> {
     notes: W(110, 30, Math.min(1080, vw - 40), Math.min(700, vh - 10)),
     music: W(150, 40, Math.min(960, vw - 40), Math.min(620, vh - 10)),
     visualizer: W(220, 60, Math.min(720, vw - 40), Math.min(440, vh - 10)),
+    create: W(100, 30, Math.min(1120, vw - 40), Math.min(720, vh - 10)),
     journal: W(180, 90, 640, 520),
     terminal: W(200, 120, 640, 400),
     games: W(160, 40, Math.min(980, vw - 40), Math.min(660, vh - 10)),

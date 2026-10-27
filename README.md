@@ -1,4 +1,4 @@
-# Pandora Dee Desktop — 3.7.0
+# Pandora Dee Desktop — 3.8.0
 
 A desktop you share with Pandora Dee, Jade and their friends. It brings together the original Pandora Dee page, Jade Vault, and the atelier "desk" builds into one app you can test.
 
@@ -36,6 +36,7 @@ The characters need a model to talk. **Settings → AI**:
 | **Presence** | One shared, movable, resizable window that shows whoever is talking, like a video call. Anime faces with lip-sync to the computer's own voices. Talking, Chibi or Photo per character. |
 | **Characters** | Profiles, who's in the room (up to 6), invite / step out, a model per character, save a backup, create someone new, load a backup. You can also drag a backup (.json) anywhere onto the desktop. |
 | **Notes** | Your own notes: markdown files in the vault, with `[[links]]` (suggested as you type), backlinks, `#tags`, embeds, math, task boxes you can tick, frontmatter, find and replace, a graph, daily notes and templates. Renaming carries links along; deleting moves to `.trash`. Import from Google Keep, Samsung Notes, Apple Notes, Word, PDF, HTML, text or a zip. When you ask, the characters read, write, edit, search and link notes with you (never for anyone on Discord or Vector). |
+| **Create** | A **Gallery** of the pictures and PDFs in your vault, **Paint** (miniPaint, right in the window and kept offline) that opens and saves them in the vault, and **Apps** to install and open them in: GIMP (found if you already have it), Krita and Inkscape through your package manager, and Storytold's open-source Craft apps (PhotoCraft, PdfCraft, VectorCraft, LightCraft, ArtCraft) from their GitHub releases, checked against each release's SHA-256. Right-click a picture to choose where it opens. |
 | **Music** | Your music folders (read where they are, with tags and covers) and files you add, internet radio from radio-browser.info, a **Worldband** map of about 5,000 stations to tune by clicking, sweeping a dial or scanning, a queue with shuffle and repeat, and visualizers: bars, a scope, or Milkdrop (Butterchurn, with presets you can import), in Music, in their own resizable window, full screen, or as the desktop background. Music lowers itself while a character speaks. Characters can play, pause, skip and queue for you, and (if you turn it on) say something when a new song starts, after listening to it for a few seconds. |
 | **Files** | Each character's own files. SOUL.md (who they are), AGENTS.md (how they carry themselves) and MEMORY.md are read at the start of every conversation, so editing them changes the character. |
 | **Journal** | Each character's quest journal and memory. "Write today's entry" and "Reflect into memory" ask the character to do it in their own voice. |

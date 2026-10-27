@@ -85,7 +85,12 @@ Still to build:
   (Alpine, Arch, Debian, Fedora, Void, a tiny Buildroot), downloaded on first use; on desktops,
   switch to real WSL, Docker or Podman for full speed. Each character's files and the webxdc
   library mount into it, so `git`, `npm` and editors work on them directly.
-- **Media creation**: in-app open-source painting (miniPaint, JS Paint or Kleki style) everywhere;
+- **Media creation** ✅ started early (3.8.0): **Create** has a Gallery of the vault's pictures and PDFs, miniPaint
+  built in (offline), and an installer for GIMP, Krita, Inkscape and Storytold's Craft apps (PhotoCraft, PdfCraft,
+  VectorCraft, LightCraft as checked portable builds; ArtCraft through its installer), with "Open in…" from the
+  Gallery. Next: image generation (OpenAI-style image APIs and ComfyUI workflows) and YuE2 song generation through
+  ComfyUI, a character tool to make and edit pictures, sharing pictures into the chat, and the Craft Launcher.
+  Planned before: in-app open-source painting (miniPaint, JS Paint or Kleki style) everywhere;
   GIMP, Krita, Inkscape and others installed through the package manager on desktops.
   A **Gallery** that collects pictures from the room, the apps and the editors, and shares any of
   them into the chat for the characters to see.
