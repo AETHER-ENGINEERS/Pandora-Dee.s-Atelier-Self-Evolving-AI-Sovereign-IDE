@@ -19,7 +19,7 @@ import { ACTIONS, bindingOf, comboOf, showCombo } from "../ui/shortcuts.ts";
 import { APPS, DOCK_DEFAULT, HANG_DEFAULT, type AppId, type ClassicApp, type DockPrefs } from "../lib/store.ts";
 import { library } from "../lib/xdc.ts";
 import { backupNow, listBackups, restore, testServer, type RemoteBackup } from "../lib/serverBackup.ts";
-import { ICONS } from "../ui/Desktop.tsx";
+import { ICONS } from "../ui/desktopApi.tsx";
 import { exportJsonl, type Filter, type Format } from "../lib/trajectories.ts";
 import { ROUTER_AT } from "../lib/skills.ts";
 import type { ChatPrefs, NotesPrefs } from "../lib/store.ts";

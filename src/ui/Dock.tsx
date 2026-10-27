@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { GripVertical, MonitorPlay, Trees } from "lucide-react";
 import { APPS, desk, useDesk, type AppId, type DockPrefs } from "../lib/store.ts";
-import { ICONS, openSettings } from "./Desktop.tsx";
+import { ICONS, openSettings } from "./desktopApi.tsx";
 import { openMenu, type MenuItem } from "./ContextMenu.tsx";
 
 type Edge = DockPrefs["edge"];

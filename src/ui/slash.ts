@@ -11,7 +11,7 @@ import { memoryLines } from "../lib/tools.ts";
 import { readAll } from "../lib/trajectories.ts";
 import { links } from "../lib/connections.ts";
 import { stopSpeaking } from "../lib/voice.ts";
-import { openSettings } from "./Desktop.tsx";
+import { openSettings } from "./desktopApi.tsx";
 
 export type Command = { name: string; args?: string; help: string };
 

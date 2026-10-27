@@ -36,7 +36,7 @@ import { prepare, sizeOf, vaultUrl } from "../ui/attach.ts";
 import { runSlash, suggest } from "../ui/slash.ts";
 
 import { CharAvatar, Markdown, PersonAvatar, timeOf } from "../ui/common.tsx";
-import { openSettings } from "../ui/Desktop.tsx";
+import { openSettings } from "../ui/desktopApi.tsx";
 
 /** The latest character reply that Retry would replace. */
 function retryTarget(messages: Message[]) {

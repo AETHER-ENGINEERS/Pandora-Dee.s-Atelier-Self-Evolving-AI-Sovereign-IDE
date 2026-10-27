@@ -7,7 +7,7 @@ import type { Character } from "../lib/characters.ts";
 import { letThemTalk, say, stopAll } from "../lib/agent.ts";
 import { maskName, maskText } from "../lib/privacy.ts";
 import { useSpeech } from "./common.tsx";
-import { openSettings } from "./Desktop.tsx";
+import { openSettings } from "./desktopApi.tsx";
 import { VolumeControl } from "./Volume.tsx";
 import { openMenu } from "./ContextMenu.tsx";
 import { MicButton } from "./Mic.tsx";

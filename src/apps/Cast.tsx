@@ -1,5 +1,5 @@
 import { EngineVoicePicker } from "../ui/VoiceEngines.tsx";
-import { openSettings } from "../ui/Desktop.tsx";
+import { openSettings } from "../ui/desktopApi.tsx";
 import { Num } from "../ui/Num.tsx";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Download, FolderOpen, LogIn, LogOut, Plus, Trash2, Upload } from "lucide-react";
@@ -15,7 +15,7 @@ import { download, makeBackup } from "../lib/backup.ts";
 import { shrinkPicture } from "../lib/secure.ts";
 import { MAX_IN_ROOM } from "../lib/room.ts";
 import { CharAvatar, Confirm, Seg } from "../ui/common.tsx";
-import { loadBackupFile } from "../ui/Desktop.tsx";
+import { loadBackupFile } from "../ui/desktopApi.tsx";
 import { useWidth } from "../ui/hooks.ts";
 import { Face } from "./Presence.tsx";
 import { FullAvatar, type AvatarAsset } from "../ui/FullAvatar.tsx";

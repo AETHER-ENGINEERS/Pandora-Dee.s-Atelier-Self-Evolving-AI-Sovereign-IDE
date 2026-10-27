@@ -1,5 +1,5 @@
 import { desk, useDesk } from "../lib/store.ts";
-import { openSettings } from "../ui/Desktop.tsx";
+import { openSettings } from "../ui/desktopApi.tsx";
 
 export function WelcomeApp() {
   const connected = useDesk((s) => s.model.connections.some((c) => c.enabled && c.model));

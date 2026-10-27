@@ -1,33 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import {
-  BookOpen,
-  Code2,
-  Cable,
-  Check,
-  FolderOpen,
-  Gamepad2,
-  HelpCircle,
-  KeyRound,
-  LayoutGrid,
-  MessagesSquare,
-  GripVertical,
-  NotebookPen,
-  Music2,
-  AudioWaveform,
-  Settings as SettingsIcon,
-  ShieldAlert,
-  SquareTerminal,
-  Users,
-  Video,
-  Palette,
-  Download,
-  MessageCircleHeart,
-  Globe,
-} from "lucide-react";
+import { Check, Download, GripVertical, LayoutGrid } from "lucide-react";
 import { APPS, desk, useDesk, type AppId } from "../lib/store.ts";
 import { Window } from "./Window.tsx";
 import { PersonAvatar } from "./common.tsx";
-import { parseBackup, download, makeBackup } from "../lib/backup.ts";
+import { download, makeBackup } from "../lib/backup.ts";
 import { scopeOf } from "../lib/model.ts";
 import { allowed } from "../lib/privacy.ts";
 import { resumeBridges } from "../lib/bridges.ts";
@@ -69,28 +45,8 @@ import { canPrompt, install, installed } from "../lib/install.ts";
 import { CreateApp } from "../apps/Create.tsx";
 import { BrowserApp } from "../apps/Browser.tsx";
 import { VectorApp } from "../apps/Vector.tsx";
+import { ICONS, loadBackupFile, openSettings, useWide } from "./desktopApi.tsx";
 
-export const ICONS: Record<AppId, (size: number) => ReactNode> = {
-  room: (s) => <MessagesSquare size={s} />,
-  presence: (s) => <Video size={s} />,
-  cast: (s) => <Users size={s} />,
-  files: (s) => <FolderOpen size={s} />,
-  notes: (s) => <NotebookPen size={s} />,
-  music: (s) => <Music2 size={s} />,
-  visualizer: (s) => <AudioWaveform size={s} />,
-  create: (s) => <Palette size={s} />,
-  browser: (s) => <Globe size={s} />,
-  vector: (s) => <MessageCircleHeart size={s} />,
-  journal: (s) => <BookOpen size={s} />,
-  terminal: (s) => <SquareTerminal size={s} />,
-  games: (s) => <Gamepad2 size={s} />,
-  connections: (s) => <Cable size={s} />,
-  sentry: (s) => <ShieldAlert size={s} />,
-  keys: (s) => <KeyRound size={s} />,
-  settings: (s) => <SettingsIcon size={s} />,
-  welcome: (s) => <HelpCircle size={s} />,
-  studio: (s) => <Code2 size={s} />,
-};
 
 const BODIES: Record<AppId, () => ReactNode> = {
   room: () => <RoomApp />,
@@ -115,39 +71,6 @@ const BODIES: Record<AppId, () => ReactNode> = {
 };
 
 
-export function useWide() {
-  const [w, setW] = useState(() => window.innerWidth);
-  useEffect(() => {
-    const on = () => setW(window.innerWidth);
-    window.addEventListener("resize", on);
-    return () => window.removeEventListener("resize", on);
-  }, []);
-  return w;
-}
-
-export function openSettings(section?: string) {
-  if (section) sessionStorage.setItem("pdd-settings-section", section);
-  window.dispatchEvent(new CustomEvent("pdd-settings", { detail: section }));
-  desk().openApp("settings");
-}
-
-export function loadBackupFile(file: File) {
-  file
-    .text()
-    .then((raw) => {
-      const s = desk();
-      const parsed = parseBackup(raw, s.allCharacters().map((c) => c.id));
-      if (!parsed.ok) return s.say(parsed.reason);
-      if (parsed.character.shelf === "adult" && !s.adultOpen) {
-        s.addCharacter(parsed.character);
-        return s.say(`${parsed.character.name} was added to the adult shelf. Unlock it in Settings → Adult shelf to see them.`);
-      }
-      s.addCharacter(parsed.character);
-      const err = s.join(parsed.character.id);
-      s.say(err ? `${parsed.note} ${err}` : parsed.note);
-    })
-    .catch(() => desk().say("Couldn't read that file."));
-}
 
 export function Desktop() {
   const s = useDesk();
