@@ -100,10 +100,89 @@ export function VectorApp() {
         <BuiltIn />
       </div>
     );
-  return <VectorHome onClient={() => go("client")} />;
+  if (mode === "host") return <VectorHosted onBack={() => go("home")} />;
+  return <VectorHome onClient={() => go("client")} onHost={() => go("host")} />;
 }
 
-function VectorHome({ onClient }: { onClient: () => void }) {
+type HostStatus = { built: boolean; build: { version: string; commit: string } | null; running: boolean; connected: boolean; log: string[] };
+
+/** Vector's own interface in this window, on Vector built in host mode (server/vectorHost.mjs). */
+function VectorHosted({ onBack }: { onBack: () => void }) {
+  const [st, setSt] = useState<HostStatus | null>(null);
+  const [error, setError] = useState("");
+  const load = useCallback(
+    () =>
+      void fetch("/api/vector-host/status")
+        .then((r) => r.json())
+        .then(setSt, () => undefined),
+    [],
+  );
+  useEffect(load, [load]);
+  // start it when the window opens (once: if it stops, Try again starts it), and look again until its bridge talks
+  const [tries, setTries] = useState(0);
+  const started = useRef(-1);
+  useEffect(() => {
+    if (!st?.built || st.running || started.current === tries) return;
+    started.current = tries;
+    setError("");
+    void fetch("/api/vector-host/start", { method: "POST", body: "{}" }).then(async (r) => {
+      if (!r.ok) setError(((await r.json().catch(() => ({}))) as { error?: string }).error || `It answered ${r.status}.`);
+      load();
+    });
+  }, [st?.built, st?.running, tries, load]);
+  useEffect(() => {
+    if (st?.connected) return;
+    const t = window.setInterval(load, 1000);
+    return () => window.clearInterval(t);
+  }, [st?.connected, load]);
+  const back = (
+    <button className="btn small vector-back" onClick={onBack}>
+      ← Vector's app, phones and more
+    </button>
+  );
+  if (!st) return <div className="vector-home muted">…</div>;
+  if (!st.built)
+    return (
+      <div className="vector-home">
+        {back}
+        <h3>Vector's app isn't built here yet</h3>
+        <p className="small muted">
+          This shows Vector's own app in the window: the same interface and engine, built from Vector's source in host mode (with its own
+          data folder, next to any Vector you already have). Building it takes Rust and, on Windows, Microsoft's C++ build tools:
+        </p>
+        <pre className="small">node vector-host/build.mjs --vector &lt;a checkout of github.com/VectorPrivacy/Vector&gt; --out &lt;data folder&gt;/vector-host/app</pre>
+        <p className="small muted">See the README's Vector section for the options (portable MSVC, where the build goes).</p>
+      </div>
+    );
+  if (!st.connected)
+    return (
+      <div className="vector-home">
+        {back}
+        <p className="muted">
+          {error ? <span className="danger-text">{error}</span> : st.running ? "Starting Vector…" : "Vector stopped."}
+        </p>
+        {!st.running && started.current === tries ? (
+          <button className="btn" onClick={() => setTries((n) => n + 1)}>
+            Try again
+          </button>
+        ) : null}
+        {st.log.length ? <pre className="small faint">{st.log.slice(-8).join("\n")}</pre> : null}
+      </div>
+    );
+  return (
+    <div className="vector-wrap">
+      <div className="row" style={{ gap: 8, alignItems: "center" }}>
+        {back}
+        <span className="small faint" style={{ marginTop: 6 }}>
+          Vector {st.build?.version}
+        </span>
+      </div>
+      <iframe className="vector-frame" src="/vector-app/index.html" title="Vector" allow="clipboard-read; clipboard-write; microphone; camera" />
+    </div>
+  );
+}
+
+function VectorHome({ onClient, onHost }: { onClient: () => void; onHost: () => void }) {
   const [app, setApp] = useState<AppInfo | null>(null);
   const [note, setNote] = useState("");
   const load = useCallback(
@@ -186,8 +265,14 @@ function VectorHome({ onClient }: { onClient: () => void }) {
         <section className="vector-card">
           <h3>Inside the desktop</h3>
           <p className="small muted">
-            A built-in client in this window: chats, Communities, files, and Mini Apps opened straight into Games & Apps. It runs Vector's
-            vector-agent on the computer with the desktop, and signs in with a key.
+            Vector's own app in this window, and on the phones that open the desktop: built from Vector's source with its own data folder, so
+            it runs next to any Vector you already have.
+          </p>
+          <button className="btn primary" onClick={onHost}>
+            Open Vector here
+          </button>
+          <p className="small muted">
+            Or a lighter built-in client: chats, Communities, files, and Mini Apps opened straight into Games & Apps, on Vector's vector-agent.
           </p>
           <button className="btn" onClick={onClient}>
             Use the built-in client

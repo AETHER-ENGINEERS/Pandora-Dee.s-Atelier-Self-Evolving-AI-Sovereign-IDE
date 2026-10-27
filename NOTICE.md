@@ -17,7 +17,8 @@ Jade Vault 2.20.1, MIT) to turn web pages into Markdown for web_fetch.
 ## Vector
 
 The Vector app installs and opens **Vector** by JSKitty and Formless Labs (https://github.com/VectorPrivacy/Vector, MIT)
-from its GitHub releases; its optional built-in client runs Vector's **vector-agent**. Neither is included: the app comes from Vector's releases when you ask, and vector-agent is built from Vector's repository on the computer
+from its GitHub releases, and can build it from its source with a small host mode added (`vector-host/`, the
+desktop's own code) to show it inside the desktop; its optional built-in client runs Vector's **vector-agent**. Neither is included: the app comes from Vector's releases when you ask, and vector-agent is built from Vector's repository on the computer
 running the desktop. Received files are decrypted the way Vector's own vector-core does (AES-256-GCM).
 
 The phone QR code is drawn with **qrcode-generator** by Kazuhiko Arase (https://github.com/kazuhikoarase/qrcode-generator, MIT).

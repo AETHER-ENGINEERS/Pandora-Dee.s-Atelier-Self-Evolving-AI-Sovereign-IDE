@@ -14,6 +14,7 @@ import { createAvatars } from "./avatars.mjs";
 import { createCreative } from "./creative.mjs";
 import { createBrowser } from "./browse.mjs";
 import { createVector } from "./vector.mjs";
+import { createVectorHost } from "./vectorHost.mjs";
 import { checkUpdates, download } from "./upstreams.mjs";
 import * as aicordAuth from "./oauth.mjs";
 import { findCurl, findPython, forgetPrograms } from "./programs.mjs";
@@ -42,6 +43,10 @@ const MIME = {
   mp3: "audio/mpeg",
   ogg: "audio/ogg",
   wav: "audio/wav",
+  opus: "audio/ogg",
+  m4a: "audio/mp4",
+  flac: "audio/flac",
+  aac: "audio/aac",
   mp4: "video/mp4",
   webm: "video/webm",
   ttf: "font/ttf",
@@ -77,6 +82,8 @@ export function deskServer() {
   const browser = createBrowser();
   let vec;
   const vector = () => (vec ??= createVector(() => dataDir));
+  let vh;
+  const vectorHost = () => (vh ??= createVectorHost(() => dataDir));
   const library = () => {
     if (!lib) {
       lib = createLibrary(dataDir);
@@ -127,6 +134,28 @@ export function deskServer() {
       req.on("end", () => resolve(Buffer.concat(chunks)));
       req.on("error", reject);
     });
+
+  /** A file in pieces when asked (Range), so audio and video can seek. */
+  function serveRange(req, res, file) {
+    if (!file || !fs.existsSync(file) || !fs.statSync(file).isFile()) return send(res, 404, "Not found", "text/plain");
+    const size = fs.statSync(file).size;
+    res.setHeader("Content-Type", MIME[path.extname(file).slice(1).toLowerCase()] || "application/octet-stream");
+    res.setHeader("Accept-Ranges", "bytes");
+    res.setHeader("Cache-Control", "no-cache");
+    const r = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range || ""));
+    if (r && size) {
+      const start = r[1] ? Number(r[1]) : Math.max(0, size - Number(r[2]));
+      const end = r[1] && r[2] ? Math.min(Number(r[2]), size - 1) : size - 1;
+      if (start > end || start >= size) return (res.statusCode = 416), res.setHeader("Content-Range", `bytes */${size}`), void res.end();
+      res.statusCode = 206;
+      res.setHeader("Content-Range", `bytes ${start}-${end}/${size}`);
+      res.setHeader("Content-Length", end - start + 1);
+      return void fs.createReadStream(file, { start, end }).pipe(res);
+    }
+    res.statusCode = 200;
+    res.setHeader("Content-Length", size);
+    fs.createReadStream(file).pipe(res);
+  }
 
   function serveFile(res, file, inject) {
     if (!file || !fs.existsSync(file) || !fs.statSync(file).isFile()) return send(res, 404, "Not found", "text/plain");
@@ -237,6 +266,34 @@ export function deskServer() {
             const r = library().importAny(bytes, name);
             const pkg = r.added[0] ?? library().list().find((p) => r.duplicates && p.name && name.toLowerCase().includes(String(p.name).toLowerCase().slice(0, 8)));
             return send(res, 200, { ok: true, added: r.added.length, duplicates: r.duplicates, id: pkg?.id ?? null, errors: r.errors });
+          }
+        }
+      } catch (e) {
+        return send(res, e?.status || 400, { error: e instanceof Error ? e.message : String(e) });
+      }
+    }
+    // Vector's own app inside the desktop (Vector built in host mode; see vectorHost.mjs)
+    if (parts[0] === "vector-host") {
+      const H = vectorHost();
+      try {
+        if (parts[1] === "status" && m === "GET") return send(res, 200, H.status());
+        if (parts[1] === "events" && m === "GET") return void H.connect(req, res);
+        if (parts[1] === "asset" && m === "GET") return serveRange(req, res, H.assetPath(url.searchParams.get("p")));
+        if (parts[1] === "upload" && m === "POST") return send(res, 200, { path: H.upload(decodeURIComponent(String(req.headers["x-filename"] || "file")), await readBody(req, 500_000_000)) });
+        if (m === "POST") {
+          const b = JSON.parse((await readBody(req, 300_000_000)).toString("utf8") || "{}");
+          if (parts[1] === "start") return send(res, 200, H.start(req.socket.localPort));
+          if (parts[1] === "stop") return send(res, 200, H.stop());
+          if (parts[1] === "sub") return send(res, 200, (H.subscribe(String(b.client), String(b.event)), {}));
+          if (parts[1] === "emit") return send(res, 200, (H.emit(b.event, b.payload), {}));
+          if (parts[1] === "invoke") {
+            try {
+              return send(res, 200, { ok: (await H.invoke(String(b.cmd), b.args ?? {})) ?? null });
+            } catch (e) {
+              // Vector's own errors go back as Vector gave them (often plain strings its interface shows)
+              if (e?.fromVector) return send(res, 400, { error: e.value });
+              throw e;
+            }
           }
         }
       } catch (e) {
@@ -538,6 +595,17 @@ export function deskServer() {
         const ua = String(req.headers["user-agent"] || "").replace(/</g, "&lt;");
         const from = String(req.socket.remoteAddress || "").replace(/^::ffff:/, "");
         return send(res, 200, `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><body style="font:17px system-ui;padding:24px;background:#0b0912;color:#eee"><h2>This device reaches Pandora Dee Desktop.</h2><p>If the desktop itself doesn't open here, it's the browser: update it, or try another.</p><p style="opacity:.7;font-size:14px">From ${from}<br>${ua}</p><p><a style="color:#b48cff" href="/">Open the desktop</a></p></body>`, "text/html; charset=utf-8");
+      }
+      // the hidden Vector host's bridge (this computer only, with its run's token; see vectorHost.mjs)
+      if (url.pathname === "/vh-bridge/next" || url.pathname === "/vh-bridge/reply") return void (await vectorHost().bridge(req, res, url, readBody));
+      // Vector's own interface, for its window in the desktop (on the desktop's address: it uses the API)
+      if (url.pathname.startsWith("/vector-app/") && (!isAppHost(req) || lan())) {
+        const rel = decodeURIComponent(url.pathname.slice("/vector-app/".length));
+        if (rel === "__pda/shim.js") return send(res, 200, fs.readFileSync(path.join(root, "vector-host", "shim.js"), "utf8"), "text/javascript; charset=utf-8");
+        const f = vectorHost().uiFile(rel);
+        if (!f) return send(res, 404, "Vector's interface isn't built here yet.", "text/plain");
+        if (f.file) return serveFile(res, f.file);
+        return send(res, 200, f.text, MIME[f.ext]);
       }
       if (url.pathname.startsWith("/api/")) {
         if (isAppHost(req) && !lan()) return send(res, 403, { error: "Not available to apps." });
