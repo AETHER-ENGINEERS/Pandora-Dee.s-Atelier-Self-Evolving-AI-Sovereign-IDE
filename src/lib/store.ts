@@ -10,6 +10,7 @@ import type { Sealed } from "./secure.ts";
 import { pythonFrom, type Via } from "./outbound.ts";
 import { MUSIC_DEFAULT, type MusicPrefs } from "./musicPrefs.ts";
 import { MEDIA_DEFAULT, type MediaPrefs } from "./mediaPrefs.ts";
+import { BROWSER_DEFAULT, type BrowserPrefs } from "./browserPrefs.ts";
 import type { AvatarAsset } from "../ui/FullAvatar.tsx";
 import { CLOCK_DEFAULT, type ClockPrefs } from "./clock.ts";
 
@@ -22,6 +23,7 @@ export type AppId =
   | "music"
   | "visualizer"
   | "create"
+  | "browser"
   | "journal"
   | "terminal"
   | "games"
@@ -39,6 +41,7 @@ export const APPS: { id: AppId; title: string; hint: string }[] = [
   { id: "notes", title: "Notes", hint: "Your notes: links, tags, tasks, graph" },
   { id: "music", title: "Music", hint: "Your music, internet radio and visualizers" },
   { id: "visualizer", title: "Visualizer", hint: "The music's visualizer in its own window" },
+  { id: "browser", title: "Browser", hint: "Web pages in tabs, with a reader view" },
   { id: "create", title: "Create", hint: "Pictures and PDFs: a gallery, a painter, and GIMP and other apps to open them in" },
   { id: "files", title: "Files", hint: "Each character's own files" },
   { id: "journal", title: "Journal", hint: "Quest journals and memory" },
@@ -303,6 +306,8 @@ export type HangPrefs = {
   customScene: string;
   /** How many recent lines float above the chat bar. */
   lines: number;
+  /** The chat in hangout mode: the conversation and the typing bar, only the bar, or neither (right-click the scene). */
+  chat: "full" | "bar" | "off";
   /** Keep the controls on screen instead of hiding them when idle. */
   pinControls: boolean;
   /** How dark the scene is, 0 (bright) to 0.8. */
@@ -319,6 +324,7 @@ export const HANG_DEFAULT: HangPrefs = {
   scene: "focus",
   customScene: "",
   lines: 4,
+  chat: "full",
   pinControls: false,
   dim: 0.15,
 };
@@ -341,6 +347,7 @@ export type DockPrefs = {
   notesAdded?: boolean;
   musicAdded?: boolean;
   createAdded?: boolean;
+  browserAdded?: boolean;
 };
 
 export const DOCK_DEFAULT: DockPrefs = {
@@ -410,6 +417,8 @@ export type State = {
   music: MusicPrefs;
   /** Engines for making pictures and songs, and the songs made. */
   media: MediaPrefs;
+  /** The Browser's tabs, bookmarks and start page. */
+  browser: BrowserPrefs;
   /** Shortcut bindings the person changed, by action id. */
   keys: Record<string, string>;
   touch: { edgeSwipe: boolean; doubleTapScene: boolean; longPress: boolean };
@@ -457,7 +466,11 @@ function withNotes(d: DockPrefs): DockPrefs {
     const at = items.indexOf("music");
     items.splice(at < 0 ? items.length : at + 1, 0, "create");
   }
-  return { ...d, items, notesAdded: true, musicAdded: true, createAdded: true };
+  if (!items.includes("browser") && !d.browserAdded) {
+    const at = items.indexOf("create");
+    items.splice(at < 0 ? items.length : at + 1, 0, "browser");
+  }
+  return { ...d, items, notesAdded: true, musicAdded: true, createAdded: true, browserAdded: true };
 }
 
 export function defaultWins(): Record<AppId, Win> {
@@ -479,6 +492,7 @@ export function defaultWins(): Record<AppId, Win> {
     music: W(150, 40, Math.min(960, vw - 40), Math.min(620, vh - 10)),
     visualizer: W(220, 60, Math.min(720, vw - 40), Math.min(440, vh - 10)),
     create: W(100, 30, Math.min(1120, vw - 40), Math.min(720, vh - 10)),
+    browser: W(80, 24, Math.min(1180, vw - 40), Math.min(760, vh - 10)),
     journal: W(180, 90, 640, 520),
     terminal: W(200, 120, 640, 400),
     games: W(160, 40, Math.min(980, vw - 40), Math.min(660, vh - 10)),
@@ -587,6 +601,7 @@ const INITIAL: State = {
   notes: NOTES_DEFAULT,
   music: MUSIC_DEFAULT,
   media: MEDIA_DEFAULT,
+  browser: BROWSER_DEFAULT,
   keys: {},
   touch: { edgeSwipe: true, doubleTapScene: true, longPress: true },
   spots: {},
@@ -827,6 +842,7 @@ export const useDesk = create<Store>()(
           notes: { ...NOTES_DEFAULT, ...(p.notes ?? {}) },
           music: { ...MUSIC_DEFAULT, ...(p.music ?? {}) },
           media: { ...MEDIA_DEFAULT, ...(p.media ?? {}) },
+          browser: { ...BROWSER_DEFAULT, ...(p.browser ?? {}) },
           flood: { ...FLOOD_DEFAULT, ...(p.flood ?? {}) },
         };
       },

@@ -269,10 +269,11 @@ function Apps({ apps, refresh }: { apps: AppInfo[]; refresh: () => void }) {
   return (
     <div className="create-apps">
       <div className="note small">
-        Pictures and PDFs from the Gallery open in these. GIMP is the one to start with. Craft apps by Storytold come
-        from their GitHub releases and are checked against the release's SHA-256 before anything runs; they're new
-        and change quickly. GIMP, Krita and Inkscape install through your system's package manager, in a window
-        where you answer its questions.
+        Pictures and PDFs from the Gallery open in these. GIMP is the one to start with; for PDFs, PdfCraft, Okular,
+        LibreOffice, Xournal++ or SumatraPDF. Craft apps by Storytold come from their GitHub releases and are checked
+        against the release's SHA-256 before anything runs; they're new and change quickly. The others install through
+        your system's package manager, in a window where you answer its questions. (If winget says it “failed when
+        opening source(s)”, run <code>winget source reset --force</code> in an administrator terminal.)
         <button className="icon-btn" style={{ float: "right" }} data-tip="Look again" aria-label="Refresh" onClick={refresh}>
           <RefreshCw size={14} />
         </button>

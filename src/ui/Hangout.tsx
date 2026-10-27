@@ -62,6 +62,15 @@ export function Stage({ interactive = true }: { interactive?: boolean }) {
           { label: "Put everyone back in their spots", run: () => desk().set({ spots: {} }) },
           { label: "Let them wander", checked: desk().hang.wander, run: () => desk().set({ hang: { ...desk().hang, wander: !desk().hang.wander } }) },
           { label: "Speech bubbles", checked: desk().hang.bubbles, run: () => desk().set({ hang: { ...desk().hang, bubbles: !desk().hang.bubbles } }) },
+          ...(desk().hangout
+            ? [
+                { sep: true as const },
+                { heading: "Chat" },
+                { label: "Conversation and typing bar", checked: desk().hang.chat === "full", run: () => desk().set({ hang: { ...desk().hang, chat: "full" as const } }) },
+                { label: "Only the typing bar", checked: desk().hang.chat === "bar", run: () => desk().set({ hang: { ...desk().hang, chat: "bar" as const } }) },
+                { label: "No chat (Enter still opens the bar)", checked: desk().hang.chat === "off", run: () => desk().set({ hang: { ...desk().hang, chat: "off" as const } }) },
+              ]
+            : []),
           { sep: true },
           { label: "Scene and hangout settings…", run: () => (desk().set({ hangout: false }), openSettings("hangout")) },
         ])
@@ -225,7 +234,17 @@ export function HangoutMode() {
   const inputRef = useRef<HTMLInputElement>(null);
   const timer = useRef(0);
   const busy = Object.keys(s.busy).length > 0;
-  const recent = s.messages.filter((m) => !m.pass && m.kind !== "notice").slice(-s.hang.lines);
+  const chat = s.hang.chat ?? "full";
+  // the conversation panel shows whole replies (the characters' too) and scrolls; the old floating lines were clipped
+  const recent = s.messages.filter((m) => !m.pass && m.kind !== "notice").slice(-Math.max(s.hang.lines, 30));
+  const [opened, setOpened] = useState(false); // the bar shown for a moment while the chat is off
+  const log = useRef<HTMLDivElement>(null);
+  const lastId = recent[recent.length - 1]?.id;
+  const lastText = recent[recent.length - 1]?.text;
+  useEffect(() => {
+    const el = log.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [lastId, lastText]);
   const showControls = awake || s.hang.pinControls;
 
   const poke = () => {
@@ -239,12 +258,13 @@ export function HangoutMode() {
       const typing = document.activeElement === inputRef.current;
       if (e.key === "Escape") {
         if (typing && draft) return setDraft("");
-        if (typing) return inputRef.current?.blur();
+        if (typing) return inputRef.current?.blur(), setOpened(false);
         desk().set({ hangout: false });
       } else if (!typing && (e.key === "Enter" || e.key === "/")) {
         e.preventDefault();
         poke();
-        inputRef.current?.focus();
+        setOpened(true);
+        setTimeout(() => inputRef.current?.focus(), 0);
       } else if (!typing && /^[1-6]$/.test(e.key)) {
         const c = desk().roomCharacters()[Number(e.key) - 1];
         if (c) desk().setFocus(c.id);
@@ -303,20 +323,23 @@ export function HangoutMode() {
         </button>
       </div>
       <div className="hang-bottom">
-        {recent.length ? (
-          <div className="hang-lines" aria-live="polite">
+        {chat === "full" && recent.length ? (
+          <div className="hang-lines" aria-live="polite" ref={log}>
             {recent.map((m) => {
               const c = m.kind === "character" ? s.character(m.who) : undefined;
               const bridge = m.source !== "desk";
+              const text = c ? m.text : maskText(s.privacy, m.text, bridge);
               return (
-                <div key={m.id} className="hang-line">
-                  <b style={{ color: c?.accent }}>{c ? c.short : maskName(s.privacy, m.name, bridge)}</b> {(c ? m.text : maskText(s.privacy, m.text, bridge)).slice(0, 240)}
+                <div key={m.id} className={`hang-line${c ? " from-character" : ""}`}>
+                  <b style={{ color: c?.accent }}>{c ? c.short : maskName(s.privacy, m.name, bridge)}</b> {text || (s.busy[m.who] ? "…" : "")}
                 </div>
               );
             })}
           </div>
         ) : null}
         <form
+          hidden={chat === "off" && !opened}
+          onBlur={(e) => chat === "off" && !draft && !e.currentTarget.contains(e.relatedTarget as Node) && setOpened(false)}
           className="hang-chat"
           onSubmit={(e) => {
             e.preventDefault();

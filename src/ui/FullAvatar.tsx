@@ -140,8 +140,9 @@ async function startVrm(host: HTMLDivElement, a: AvatarAsset, charId: string) {
   const bone = (n: string) => vrm.humanoid?.getNormalizedBoneNode(n as never);
   const lArm = bone("leftUpperArm");
   const rArm = bone("rightUpperArm");
-  if (lArm) lArm.rotation.z = 1.2;
-  if (rArm) rArm.rotation.z = -1.2;
+  // (normalized bones share one set of axes for VRM 0 and 1: negative z lowers the left arm)
+  if (lArm) lArm.rotation.z = -1.2;
+  if (rArm) rArm.rotation.z = 1.2;
   // frame the whole figure
   const box = new THREE.Box3().setFromObject(vrm.scene);
   const height = box.max.y - box.min.y || 1.6;

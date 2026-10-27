@@ -57,7 +57,7 @@ Done in 3.4.0:
   2.20.1 and 2.20.1-enhanced, and Pandora Dee 2.9.9.2-enhanced is rebuilt on Jade's 2.20 code.
 
 Still to build:
-- Tabbed open-source web browser inside the desktop. (moderate)
+- ✅ Tabbed browser (3.10.0): pages through the desktop into a sandboxed frame, Reader, bookmarks, search. (moderate)
 - XDC Studio: import assets, and an asset view. (moderate)
 - Voice: download free (FOSS) voice models (Piper, Kokoro) or add your own. (low)
 - Creating a character: more fields and help. (low)

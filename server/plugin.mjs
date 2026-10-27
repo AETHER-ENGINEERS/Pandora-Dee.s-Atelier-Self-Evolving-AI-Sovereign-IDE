@@ -12,6 +12,7 @@ import { relay } from "./relay.mjs";
 import { createMusic, listFolders } from "./music.mjs";
 import { createAvatars } from "./avatars.mjs";
 import { createCreative } from "./creative.mjs";
+import { createBrowser } from "./browse.mjs";
 import { checkUpdates, download } from "./upstreams.mjs";
 import * as aicordAuth from "./oauth.mjs";
 import { findCurl, findPython, forgetPrograms } from "./programs.mjs";
@@ -72,6 +73,7 @@ export function deskServer() {
   const music = () => (mus ??= createMusic(dataDir));
   let crt;
   const creative = () => (crt ??= createCreative(() => dataDir));
+  const browser = createBrowser();
   const library = () => {
     if (!lib) {
       lib = createLibrary(dataDir);
@@ -203,6 +205,8 @@ export function deskServer() {
       return serveFile(res, file);
     }
     // folders on this computer, for picking music folders (names only)
+    // the Browser's key for /browse (only the desktop page can ask for it)
+    if (parts[0] === "browse" && parts[1] === "key" && m === "GET") return send(res, 200, { key: browser.key });
     if (parts[0] === "folders" && m === "GET") {
       try {
         return send(res, 200, await listFolders(url.searchParams.get("path") || ""));
@@ -472,6 +476,9 @@ export function deskServer() {
         const file = path.resolve(publicDir, url.pathname.slice(1));
         if (file.startsWith(path.join(publicDir, "classic")) && fs.existsSync(file)) return serveFile(res, file, classicRelayScript());
       }
+      // web pages for the Browser, on the apps' address (and in a sandboxed frame there)
+      // (when shared on the network there's no separate apps' address; the page's own sandbox policy still holds)
+      if (url.pathname === "/browse" && (isAppHost(req) || lan())) return void (await browser.serve(req, res, url));
       if (url.pathname.startsWith("/run/") || (url.pathname.startsWith("/games/") && isAppHost(req))) {
         if (isDeskHost(req) && !lan()) return send(res, 403, "Apps run on their own address.", "text/plain");
         if (run(req, res, url) !== null) return;

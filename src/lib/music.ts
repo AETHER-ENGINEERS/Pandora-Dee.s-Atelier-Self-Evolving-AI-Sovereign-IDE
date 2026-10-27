@@ -107,7 +107,7 @@ async function directory(path: string, timeout: number): Promise<Response> {
   const errors: string[] = [];
   for (const m of [lastGood, ...MIRRORS.filter((x) => x !== lastGood)]) {
     try {
-      const r = await outbound(`https://${m}.api.radio-browser.info${path}`, { headers: { "User-Agent": "PandoraDeeDesktop/3.9" }, timeout }, desk().net.via);
+      const r = await outbound(`https://${m}.api.radio-browser.info${path}`, { headers: { "User-Agent": "PandoraDeeDesktop/3.10" }, timeout }, desk().net.via);
       if (r.ok) {
         lastGood = m;
         return r;
@@ -262,17 +262,32 @@ async function start(i: number) {
   for (const fn of listeners) fn(it);
 }
 
-/** Play these (a list, an album, a station), starting at `at`. */
-export function playList(items: Item[], at = 0) {
+/** Play these (a list, an album, a station), starting at `at`. `inOrder` keeps the order given even when shuffle is on. */
+export function playList(items: Item[], at = 0, inOrder = false) {
   let list = items;
   let first = at;
-  if (prefs().shuffle && items.length > 1) {
+  if (prefs().shuffle && !inOrder && items.length > 1) {
     const pick = items[at];
     list = [pick, ...items.filter((_, i) => i !== at).sort(() => Math.random() - 0.5)];
     first = 0;
   }
   useMusic.setState({ queue: list });
   void start(first);
+}
+
+/** A copy in random order. */
+export function shuffled<T>(xs: T[]): T[] {
+  const a = [...xs];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/** An artist's songs album by album (oldest first), each album in track order. */
+export function albumOrder(ts: Track[]): Track[] {
+  return [...ts].sort((a, b) => (a.year || 9999) - (b.year || 9999) || (a.album || "~").localeCompare(b.album || "~") || a.track - b.track || a.title.localeCompare(b.title));
 }
 
 export function enqueue(items: Item[]) {

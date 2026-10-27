@@ -21,6 +21,8 @@ import {
   type Item,
   type Station,
   type Track,
+  shuffled,
+  albumOrder,
 } from "../lib/music.ts";
 import { Num } from "../ui/Num.tsx";
 import { openMenu, type MenuItem } from "../ui/ContextMenu.tsx";
@@ -156,6 +158,19 @@ export function MusicApp() {
                   All albums
                 </button>
               ) : null}
+              <span className="grow" />
+              <button
+                className="btn small"
+                disabled={!songs.length}
+                data-tip={view === "albums" && !album ? "Albums in a random order, each played through" : view === "artists" ? "Artists in a random order, each one's albums in order" : "Every song, in a random order"}
+                onClick={() => {
+                  if (view === "albums" && !album) playList(asItems(shuffled(albums).flatMap((a) => a.tracks)), 0, true);
+                  else if (view === "artists") playList(asItems(shuffled(artists).flatMap(([, ts]) => albumOrder(ts))), 0, true);
+                  else playList(asItems(shuffled(album ? albums.find((x) => x.key === album)?.tracks ?? [] : songs)), 0, true);
+                }}
+              >
+                <Shuffle size={13} /> {view === "albums" && !album ? "Shuffle albums" : view === "artists" ? "Shuffle artists" : "Shuffle all"}
+              </button>
             </div>
           ) : null}
 
@@ -229,10 +244,10 @@ export function MusicApp() {
 
             {view === "artists"
               ? artists.map(([name, ts]) => (
-                  <div key={name} className="artist-row" onDoubleClick={() => playList(asItems(ts))}>
+                  <div key={name} className="artist-row" onDoubleClick={() => playList(asItems(albumOrder(ts)), 0, true)}>
                     <Mic2 size={14} className="faint" /> <b>{name}</b> <span className="faint small">{ts.length} songs</span>
                     <span className="grow" />
-                    <button className="btn small" onClick={() => playList(asItems(ts))}>
+                    <button className="btn small" onClick={() => playList(asItems(albumOrder(ts)), 0, true)}>
                       <Play size={12} /> Play
                     </button>
                   </div>

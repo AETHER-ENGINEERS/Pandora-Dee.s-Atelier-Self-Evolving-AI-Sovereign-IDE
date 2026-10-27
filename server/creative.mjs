@@ -38,6 +38,30 @@ export const CATALOG = [
     find: { win: [["Inkscape", /^inkscape\.exe$/i]], bin: ["inkscape"], app: "Inkscape" },
   },
   {
+    id: "sumatra", name: "SumatraPDF", what: "A small, fast PDF reader (also EPUB and comics). Windows only.",
+    license: "GPL-3.0", home: "https://www.sumatrapdfreader.org", opens: ["pdf"], only: "win32",
+    pm: { winget: "SumatraPDF.SumatraPDF" },
+    find: { win: [["SumatraPDF", /^sumatrapdf\.exe$/i]] },
+  },
+  {
+    id: "okular", name: "Okular", what: "Read PDFs and mark them up: highlights, notes, stamps, filling forms, signing.",
+    license: "GPL-2.0+", home: "https://okular.kde.org", opens: ["pdf"],
+    pm: { winget: "KDE.Okular", flatpak: "org.kde.okular" },
+    find: { win: [["Okular", /^okular\.exe$/i]], bin: ["okular"] },
+  },
+  {
+    id: "libreoffice", name: "LibreOffice", what: "Write documents and save them as PDFs; open a PDF in Draw to change its text and pictures.",
+    license: "MPL-2.0", home: "https://www.libreoffice.org", opens: ["pdf"],
+    pm: { winget: "TheDocumentFoundation.LibreOffice", flatpak: "org.libreoffice.LibreOffice", brew: "libreoffice" },
+    find: { win: [["LibreOffice", /^soffice\.exe$/i]], bin: ["soffice", "libreoffice"], app: "LibreOffice" },
+  },
+  {
+    id: "xournalpp", name: "Xournal++", what: "Handwrite and draw on PDFs (pen or mouse), then save them as new PDFs.",
+    license: "GPL-2.0", home: "https://xournalpp.github.io", opens: ["pdf"],
+    pm: { winget: "Xournal++.Xournal++", flatpak: "com.github.xournalpp.xournalpp", brew: "xournal++" },
+    find: { win: [["Xournal++", /^xournalpp\.exe$/i]], bin: ["xournalpp"], app: "Xournal++" },
+  },
+  {
     id: "photocraft", name: "PhotoCraft", what: "Storytold's photo editor, written from scratch in Rust. Early, moving fast.",
     license: "Apache-2.0", home: "https://github.com/storytold/photocraft", opens: ["image"], gh: "storytold/photocraft",
   },
@@ -133,7 +157,7 @@ export function createCreative(dataDir) {
   }
 
   function list() {
-    return CATALOG.map((a) => {
+    return CATALOG.filter((a) => !a.only || a.only === process.platform).map((a) => {
       const at = locate(a);
       const j = jobs.get(a.id);
       return {
