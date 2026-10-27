@@ -463,6 +463,12 @@ export function deskServer() {
   async function handle(req, res, next) {
     const url = new URL(req.url || "/", "http://x");
     try {
+      // a plain page with no scripts: can this device reach the desktop at all? (for phones that can't open it)
+      if (url.pathname === "/hello") {
+        const ua = String(req.headers["user-agent"] || "").replace(/</g, "&lt;");
+        const from = String(req.socket.remoteAddress || "").replace(/^::ffff:/, "");
+        return send(res, 200, `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><body style="font:17px system-ui;padding:24px;background:#0b0912;color:#eee"><h2>This device reaches Pandora Dee Desktop.</h2><p>If the desktop itself doesn't open here, it's the browser: update it, or try another.</p><p style="opacity:.7;font-size:14px">From ${from}<br>${ua}</p><p><a style="color:#b48cff" href="/">Open the desktop</a></p></body>`, "text/html; charset=utf-8");
+      }
       if (url.pathname.startsWith("/api/")) {
         if (isAppHost(req) && !lan()) return send(res, 403, { error: "Not available to apps." });
         if (fromElsewhere(req)) return send(res, 403, { error: "Only the desktop's own page can use this." });

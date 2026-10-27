@@ -11,6 +11,18 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // If the desktop hasn't started after a while (an old browser, a blocked script), say so instead of a blank page.
+      (function () {
+        var errors = [];
+        window.addEventListener("error", function (e) { errors.push((e.message || "error") + (e.filename ? " (" + e.filename.split("/").pop() + ")" : "")); }, true);
+        setTimeout(function () {
+          var root = document.getElementById("root");
+          if (!root || root.childElementCount) return;
+          root.innerHTML = '<div style="font:16px system-ui;color:#ddd;background:#0b0912;min-height:100vh;padding:24px;box-sizing:border-box"><h2 style="margin-top:0">The desktop didn’t start in this browser</h2><p>This browser may be too old for it. Update Chrome or Samsung Internet (Play Store or Galaxy Store), or try another browser.</p><p style="opacity:.75;font-size:13px">' + navigator.userAgent.replace(/</g, "&lt;") + "</p>" + (errors.length ? '<p style="opacity:.75;font-size:13px">' + errors.slice(0, 3).join("<br>").replace(/</g, "&lt;") + "</p>" : "") + "</div>";
+        }, 15000);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
