@@ -1,4 +1,4 @@
-# Pandora Dee Desktop — 3.9.0
+# Pandora Dee Desktop — 3.9.1
 
 A desktop you share with Pandora Dee, Jade and their friends. It brings together the original Pandora Dee page, Jade Vault, and the atelier "desk" builds into one app you can test.
 
@@ -9,14 +9,23 @@ A desktop you share with Pandora Dee, Jade and their friends. It brings together
 You need [Node.js](https://nodejs.org) 20 or newer.
 
 - **Windows:** double-click `Start Pandora Dee.bat`. The first run installs what it needs, then your browser opens at http://localhost:15693.
-- **Mac / Linux / by hand:**
+- **Mac:** double-click `Start Pandora Dee.command` (the first time, right-click it → Open, since it isn't from the App Store;
+  if it won't run, `chmod +x "Start Pandora Dee.command"`). It installs on the first run and opens your browser.
+- **Linux / by hand:**
 
 ```bash
 npm install
 npm run dev
 ```
 
-Then open http://localhost:15693. To reach it from a phone on the same Wi-Fi, run `npm run dev -- --host` and open the address it prints (passwords need localhost or https, so set accounts up from the computer itself).
+Then open http://localhost:15693.
+
+**Moving it to another computer** (say from a Windows PC to the Mac): `git clone` the repository there, or copy the folder
+without `node_modules/`, `data/` and `pdd.config.json` (those belong to the first computer), for example
+`rsync -a --exclude node_modules --exclude data --exclude pdd.config.json pandora-desktop/ mac.local:pandora-desktop/`.
+If `node_modules` does come along, the Mac starter notices it's from another system and reinstalls; a data folder
+saved as a Windows path (F:\…) is ignored on the Mac. Your keys, chats and vault stay on the first computer unless
+you move them with a backup (Settings → Backup). To reach it from a phone on the same Wi-Fi, run `npm run dev -- --host` and open the address it prints (passwords need localhost or https, so set accounts up from the computer itself).
 
 ## Give the characters a mind
 
@@ -37,7 +46,7 @@ The characters need a model to talk. **Settings → AI**:
 | **Characters** | Profiles, who's in the room (up to 6), invite / step out, a model per character, save a backup, create someone new, load a backup. You can also drag a backup (.json) anywhere onto the desktop. |
 | **Notes** | Your own notes: markdown files in the vault, with `[[links]]` (suggested as you type), backlinks, `#tags`, embeds, math, task boxes you can tick, frontmatter, find and replace, a graph, daily notes and templates. Renaming carries links along; deleting moves to `.trash`. Import from Google Keep, Samsung Notes, Apple Notes, Word, PDF, HTML, text or a zip. When you ask, the characters read, write, edit, search and link notes with you (never for anyone on Discord or Vector). |
 | **Create** | **Imagine**: pictures from a picture engine you run (ComfyUI, Draw Things or Automatic1111/Forge, or an OpenAI-style image service), usually on another computer on your network, saved into the vault. A **Gallery** of the pictures and PDFs in your vault, **Paint** (miniPaint, right in the window and kept offline) that opens and saves them in the vault, and **Apps** to install and open them in: GIMP (found if you already have it), Krita and Inkscape through your package manager, and Storytold's open-source Craft apps (PhotoCraft, PdfCraft, VectorCraft, LightCraft, ArtCraft) from their GitHub releases, checked against each release's SHA-256. Right-click a picture to choose where it opens. |
-| **Music** | **Make a song**, the Suno/Udio way: describe it and a character writes the title, style and lyrics, or write them yourself (style chips, section tags), pick the length, and a song engine makes it: ACE-Step 1.5 (good on a Mac) or YuE2 through ComfyUI, with no ComfyUI screens to deal with. Songs land in your library, with Remix and their words kept. Your music folders (read where they are, with tags and covers) and files you add, internet radio from radio-browser.info, a **Worldband** map of about 5,000 stations to tune by clicking, sweeping a dial or scanning, a queue with shuffle and repeat, and visualizers: bars, a scope, or Milkdrop (Butterchurn, with presets you can import), in Music, in their own resizable window, full screen, or as the desktop background. Music lowers itself while a character speaks. Characters can play, pause, skip and queue for you, and (if you turn it on) say something when a new song starts, after listening to it for a few seconds. |
+| **Music** | **Make a song**, the Suno/Udio way: describe it and a character writes the title, style and lyrics, or write them yourself (style chips, section tags), pick the length, and a song engine makes it: mlx-serve / MLX Core on a Mac (MiniMax Music 3, ACE-Step 1.5 XL), ACE-Step 1.5's own API, or YuE2 through ComfyUI. You choose the model; none is shipped, with no ComfyUI screens to deal with. Songs land in your library, with Remix and their words kept. Your music folders (read where they are, with tags and covers) and files you add, internet radio from radio-browser.info, a **Worldband** map of about 5,000 stations to tune by clicking, sweeping a dial or scanning, a queue with shuffle and repeat, and visualizers: bars, a scope, or Milkdrop (Butterchurn, with presets you can import), in Music, in their own resizable window, full screen, or as the desktop background. Music lowers itself while a character speaks. Characters can play, pause, skip and queue for you, and (if you turn it on) say something when a new song starts, after listening to it for a few seconds. |
 | **Files** | Each character's own files. SOUL.md (who they are), AGENTS.md (how they carry themselves) and MEMORY.md are read at the start of every conversation, so editing them changes the character. |
 | **Journal** | Each character's quest journal and memory. "Write today's entry" and "Reflect into memory" ask the character to do it in their own voice. |
 | **Terminal** | A shell over a character's files (`help` lists the commands). `ask` talks to the character privately. |

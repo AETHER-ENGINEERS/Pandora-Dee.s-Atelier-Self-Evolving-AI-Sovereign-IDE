@@ -484,6 +484,11 @@ export function deskServer() {
       } catch {
         saved = "";
       }
+      // a folder saved on another kind of computer (F:\... copied over to a Mac) means nothing here: use the default
+      if (process.platform !== "win32" && /^[a-zA-Z]:[\\/]/.test(saved)) {
+        console.warn(`[pandora] The saved data folder ${saved} is a Windows path; using ./data instead (choose another in Settings).`);
+        saved = "";
+      }
       dataDir = path.resolve(process.env.PDD_DATA || saved || path.join(root, "data"));
       publicDir = config.publicDir || path.join(root, "public");
     },

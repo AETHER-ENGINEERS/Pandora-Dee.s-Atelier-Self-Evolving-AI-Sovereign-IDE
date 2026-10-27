@@ -90,7 +90,7 @@ Still to build:
   VectorCraft, LightCraft as checked portable builds; ArtCraft through its installer), with "Open in…" from the
   Gallery. ✅ 3.9.0: picture engines (ComfyUI with a basic or your own API-format workflow, Draw Things /
   Automatic1111 / Forge, OpenAI-style image APIs) in Create → Imagine; Music → Make a song (Suno-style, Simple and
-  Custom) on ACE-Step 1.5 or YuE2 through ComfyUI; make_picture / make_song tools for characters (off by default).
+  Custom) on mlx-serve / MLX Core (3.9.1), ACE-Step 1.5 or YuE2 through ComfyUI; make_picture / make_song tools for characters (off by default).
   Engines are addresses on your network (the Mac does the work), reached through the relay. Next: editing pictures
   with an engine (img2img, inpainting), covers and extending songs, sharing pictures into the chat, the Craft Launcher.
   Planned before: in-app open-source painting (miniPaint, JS Paint or Kleki style) everywhere;

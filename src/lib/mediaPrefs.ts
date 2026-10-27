@@ -4,7 +4,7 @@
 import type { Via } from "./outbound.ts";
 
 export type ImageKind = "comfyui" | "a1111" | "openai";
-export type SongKind = "acestep" | "yue2-comfyui";
+export type SongKind = "mlx-serve" | "acestep" | "yue2-comfyui";
 
 export type ImageEngine = {
   id: string;
@@ -27,10 +27,10 @@ export type SongEngine = {
   id: string;
   name: string;
   kind: SongKind;
-  /** ACE-Step's API (http://macbook.local:8001) or ComfyUI (http://pc.local:8188) for YuE2. */
+  /** mlx-serve (http://127.0.0.1:11234), ACE-Step's API (http://macbook.local:8001) or ComfyUI (http://pc.local:8188) for YuE2. */
   url: string;
   keyName?: string;
-  /** ACE-Step: which model (blank: its default). */
+  /** mlx-serve: the music model (e.g. MiniMax-Music3-MLX-Serve-8bit); ACE-Step: which model (blank: its default). */
   model?: string;
   via?: Via;
   enabled: boolean;

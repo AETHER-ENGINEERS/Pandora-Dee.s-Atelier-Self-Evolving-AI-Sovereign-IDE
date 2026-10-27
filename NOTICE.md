@@ -26,7 +26,8 @@ The crunch sound in Cook and Eat ("Human Eating_Crunch - Sound Effect (HD)") is 
   licence. Served with a content security policy that keeps it offline (its picture search and web fonts are left out).
 - The YuE2 text-to-music workflow in `src/lib/workflows/` is from Comfy-Org's workflow_templates
   (https://github.com/Comfy-Org/workflow_templates, MIT). YuE2 itself (m-a-p, weights CC-BY-NC-4.0) and ACE-Step 1.5
-  (MIT) are not included; they run on your own engine. Songs made with YuE2 are for non-commercial use.
+  (MIT) are not included; they run on your own engine, as do mlx-serve (https://github.com/ddalcu/mlx-serve) and
+  the music models it serves (MiniMax Music 3 under its own community licence). The desktop ships no models. Songs made with YuE2 are for non-commercial use.
 - Not included, installed only when you ask (Create → Apps): **GIMP** (GPL-3.0), **Krita** (GPL-3.0), **Inkscape**
   (GPL-2.0+), and **Storytold**'s Craft apps https://github.com/storytold (PhotoCraft, PdfCraft, VectorCraft,
   LightCraft: Apache-2.0; ArtCraft: MIT or Apache-2.0).

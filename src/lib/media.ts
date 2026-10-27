@@ -205,6 +205,34 @@ export async function makeSong(e: SongEngine, a: SongAsk, progress: Progress, si
   const seed = a.seed ?? randomSeed();
   const lyrics = a.instrumental || !a.lyrics.trim() ? "[Instrumental]" : a.lyrics;
   const seconds = Math.max(10, Math.min(600, Math.round(a.seconds)));
+  if (e.kind === "mlx-serve") {
+    // mlx-serve (MLX Core on a Mac): one request, the song comes back as a WAV when it's done
+    progress("Making it… (the engine answers when the song is done)");
+    const started = Date.now();
+    const tick = setInterval(() => progress(`Making it… ${Math.round((Date.now() - started) / 1000)} s`), 1000);
+    try {
+      const r = await call(e, "/v1/audio/music-generations", {
+        body: { ...(e.model ? { model: e.model } : {}), prompt: a.style, lyrics, duration_seconds: seconds, seed },
+        timeout: 1800,
+        signal,
+      });
+      const type = r.headers.get("content-type") || "";
+      if (!r.ok) throw new Error(`${e.name} answered ${r.status}: ${(await r.text()).slice(0, 300)}`);
+      if (/json/i.test(type)) {
+        // in case a build answers OpenAI-style with base64 or a link instead of the file itself
+        const j = (await r.json()) as { data?: { b64_json?: string; url?: string }[]; audio?: string };
+        const d = j.data?.[0];
+        if (d?.b64_json || j.audio) return { audio: fromB64(d?.b64_json || j.audio!, "audio/wav"), ext: "wav", seed };
+        if (d?.url) return { audio: await (await outbound(d.url, {}, e.via ?? desk().net.via)).blob(), ext: "wav", seed };
+        throw new Error(`${e.name} answered without a song.`);
+      }
+      const audio = await r.blob();
+      const ext = /mpeg|mp3/i.test(type) ? "mp3" : /flac/i.test(type) ? "flac" : "wav";
+      return { audio, ext, seed };
+    } finally {
+      clearInterval(tick);
+    }
+  }
   if (e.kind === "acestep") {
     progress("Queued…");
     const made = await json<{ data?: { task_id?: string } }>(e, "/release_task", {

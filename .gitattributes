@@ -6,3 +6,5 @@
 *.wav binary
 *.xdc binary
 *.wasm binary
+*.command text eol=lf
+*.sh text eol=lf

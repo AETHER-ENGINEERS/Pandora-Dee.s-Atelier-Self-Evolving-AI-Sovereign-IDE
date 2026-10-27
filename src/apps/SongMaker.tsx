@@ -110,7 +110,7 @@ export function SongMaker() {
         </div>
         {!engines.length ? (
           <div className="note small">
-            Add the server that makes the songs: ACE-Step 1.5 (good on a Mac) or YuE2 in ComfyUI. <button className="btn small" onClick={() => setSetup(true)}>Add one</button>
+            Add the server that makes the songs: mlx-serve / MLX Core or ACE-Step 1.5 (good on a Mac), or YuE2 in ComfyUI. <button className="btn small" onClick={() => setSetup(true)}>Add one</button>
           </div>
         ) : null}
 
@@ -162,7 +162,7 @@ export function SongMaker() {
         </label>
         <div className="row small">
           <span className="muted">Length</span>
-          <input className="grow" type="range" min={30} max={engine?.kind === "acestep" ? 360 : 240} step={10} value={d.seconds} onChange={(e) => set({ seconds: Number(e.target.value) })} aria-label="Length in seconds" />
+          <input className="grow" type="range" min={30} max={engine?.kind === "acestep" || engine?.kind === "mlx-serve" ? 360 : 240} step={10} value={d.seconds} onChange={(e) => set({ seconds: Number(e.target.value) })} aria-label="Length in seconds" />
           <span className="mono">{Math.floor(d.seconds / 60)}:{String(d.seconds % 60).padStart(2, "0")}</span>
         </div>
         <button className="btn primary" disabled={writing || !engine || (mode === "simple" ? !desc.trim() : !d.style.trim())} onClick={() => void go()}>
@@ -170,6 +170,7 @@ export function SongMaker() {
         </button>
         {note ? <div className="small danger-text">{note}</div> : null}
         {engine?.kind === "yue2-comfyui" ? <div className="small faint">YuE2's songs are for non-commercial use (CC-BY-NC-4.0).</div> : null}
+        {engine?.kind === "mlx-serve" && /minimax/i.test(engine.model ?? "") && d.instrumental ? <div className="small faint">MiniMax Music 3 is made for sung lyrics; for an instrumental, an ACE-Step model suits better.</div> : null}
       </div>
       <SongList made={media.made} jobs={jobs} onRemix={(s) => (pickMode("custom"), set({ title: s.title, style: s.style, lyrics: s.lyrics, instrumental: !s.lyrics, seconds: s.seconds, seed: String(s.seed) }))} />
       {setup ? <EnginesDialog type="songs" onClose={() => setSetup(false)} /> : null}

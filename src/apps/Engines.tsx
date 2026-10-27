@@ -13,6 +13,7 @@ const IMAGE_KINDS: { kind: ImageKind; label: string; url: string; help: string }
   { kind: "openai", label: "OpenAI-style image API", url: "https://api.openai.com/v1", help: "Any service with /images/generations (OpenAI, LocalAI and others). Needs a key in Keys." },
 ];
 const SONG_KINDS: { kind: SongKind; label: string; url: string; help: string }[] = [
+  { kind: "mlx-serve", label: "mlx-serve (MLX Core)", url: "http://127.0.0.1:11234", help: "On the Mac: MLX Core.app, or `mlx-serve --serve`. Put the model's name below (MiniMax-Music3-MLX-Serve-8bit, or the ACE-Step 1.5 XL Turbo build). MiniMax Music 3 needs lyrics; its weights have their own community licence." },
   { kind: "acestep", label: "ACE-Step 1.5", url: "http://macbook.local:8001", help: "Start its API on the other computer with: uv run acestep-api --host 0.0.0.0 (runs on Macs, and on 4–8 GB graphics cards)." },
   { kind: "yue2-comfyui", label: "YuE2 (in ComfyUI)", url: "http://pc.local:8188", help: "ComfyUI with the YuE2 nodes and yue2_3b_int8_convrot.safetensors in models/checkpoints. Wants an NVIDIA card with lots of memory. Its songs are for non-commercial use (CC-BY-NC-4.0)." },
 ];
@@ -40,10 +41,15 @@ export function EnginesDialog({ type, onClose }: { type: "images" | "songs"; onC
           ? info.yue2 ? `Ready: YuE2 nodes found${info.checkpoints.some((c) => /yue2/i.test(c)) ? " and the YuE2 checkpoint" : ", but no YuE2 checkpoint in models/checkpoints yet"}.` : "ComfyUI answers, but it has no YuE2 nodes. Update ComfyUI."
           : `Ready: ${info.checkpoints.length} checkpoint${info.checkpoints.length === 1 ? "" : "s"}${info.checkpoints.length ? ` (${info.checkpoints.slice(0, 3).join(", ")}${info.checkpoints.length > 3 ? "…" : ""})` : ""}.`;
       } else {
-        const path = e.kind === "a1111" ? "/sdapi/v1/options" : e.kind === "acestep" ? "/health" : "/models";
+        const path = e.kind === "a1111" ? "/sdapi/v1/options" : e.kind === "acestep" ? "/health" : e.kind === "mlx-serve" ? "/v1/models" : "/models";
         const key = e.keyName ? desk().env[e.keyName] ?? "" : "";
         const r = await outbound(`${e.url.replace(/\/+$/, "")}${path}`, { headers: key ? { Authorization: `Bearer ${key}` } : {}, timeout: 20 }, e.via ?? desk().net.via);
         msg = r.ok ? "Ready: it answers." : `It answered ${r.status}.`;
+        if (r.ok && e.kind === "mlx-serve") {
+          const ids = (((await r.json().catch(() => ({}))) as { data?: { id: string }[] }).data ?? []).map((m) => m.id);
+          const music = ids.filter((id) => /music|ace-?step|song/i.test(id));
+          msg = music.length ? `Ready. Music models: ${music.join(", ")}` : `It answers${ids.length ? ` (${ids.length} models)` : ""}, but lists no music model; download one in MLX Core's Music tab, or type its name.`;
+        }
       }
       setTest((t) => ({ ...t, [e.id]: msg }));
     } catch (err) {
@@ -81,7 +87,7 @@ export function EnginesDialog({ type, onClose }: { type: "images" | "songs"; onC
               </div>
               {e.kind !== "yue2-comfyui" ? (
                 <div className="row">
-                  <input className="input grow mono" value={e.model ?? ""} onChange={(ev) => edit(e.id, { model: ev.target.value.trim() || undefined })} aria-label="Model" placeholder={e.kind === "comfyui" ? "Checkpoint (blank: its first)" : e.kind === "openai" ? "Model (blank: gpt-image-1)" : e.kind === "acestep" ? "Model (blank: its default)" : "Model (blank: the one loaded)"} />
+                  <input className="input grow mono" value={e.model ?? ""} onChange={(ev) => edit(e.id, { model: ev.target.value.trim() || undefined })} aria-label="Model" placeholder={e.kind === "comfyui" ? "Checkpoint (blank: its first)" : e.kind === "openai" ? "Model (blank: gpt-image-1)" : e.kind === "acestep" ? "Model (blank: its default)" : e.kind === "mlx-serve" ? "Music model, e.g. MiniMax-Music3-MLX-Serve-8bit" : "Model (blank: the one loaded)"} />
                   {"steps" in e || e.kind === "comfyui" || e.kind === "a1111" ? (
                     <input className="input" type="number" min={1} max={150} style={{ width: 90 }} value={(e as ImageEngine).steps ?? 20} onChange={(ev) => edit(e.id, { steps: Number(ev.target.value) || 20 } as Partial<ImageEngine>)} aria-label="Steps" data-tip="Steps" />
                   ) : null}
