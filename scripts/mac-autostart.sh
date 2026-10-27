@@ -15,14 +15,23 @@ AUDIO_PORT=15666
 MUSIC_PORT=11235
 MUSIC_MODEL=""
 ACTION=start
+USAGE="Options: --music-model NAME   --audio-port N   --music-port N   --status   --stop"
 while [ $# -gt 0 ]; do
-  case "$1" in
-    --music-model) MUSIC_MODEL="$2"; shift 2 ;;
-    --audio-port) AUDIO_PORT="$2"; shift 2 ;;
-    --music-port) MUSIC_PORT="$2"; shift 2 ;;
+  # forgiving about copy-paste: a long dash (—, –) for "--", "--name=value", and "-- name" with a space
+  arg="$1"
+  case "$arg" in "—"*) arg="--${arg#—}" ;; "–"*) arg="--${arg#–}" ;; esac
+  case "$arg" in
+    --) shift; [ $# -gt 0 ] && set -- "--$1" "${@:2}"; continue ;;
+    --*=*) val="${arg#*=}"; arg="${arg%%=*}"; shift; set -- "$arg" "$val" "$@"; continue ;;
+  esac
+  case "$arg" in
+    --music-model) MUSIC_MODEL="${2:?--music-model needs the model name}"; shift 2 ;;
+    --audio-port) AUDIO_PORT="${2:?--audio-port needs a number}"; shift 2 ;;
+    --music-port) MUSIC_PORT="${2:?--music-port needs a number}"; shift 2 ;;
     --stop) ACTION=stop; shift ;;
     --status) ACTION=status; shift ;;
-    *) echo "Unknown option: $1"; exit 1 ;;
+    */*) MUSIC_MODEL="$arg"; shift ;; # a bare model name like mlx-community/MiniMax-Music3-mxfp8
+    *) echo "Unknown option: $1"; echo "$USAGE"; exit 1 ;;
   esac
 done
 
