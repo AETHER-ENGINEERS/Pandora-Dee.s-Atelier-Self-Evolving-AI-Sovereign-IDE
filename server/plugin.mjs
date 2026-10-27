@@ -126,8 +126,17 @@ export function deskServer() {
     if (inject && (ext === "html" || ext === "htm")) {
       const html = body.toString("utf8");
       const tag = `<script>${inject}</script>`;
-      const at = html.search(/<head[^>]*>/i);
-      body = Buffer.from(at >= 0 ? html.replace(/<head[^>]*>/i, (m) => m + tag) : tag + html, "utf8");
+      // only a <head> before any script is the real one (inlined libraries can contain "<head>" in their code);
+      // otherwise the tag goes first, after a doctype if there is one so the page keeps its rendering mode
+      const head = html.search(/<head[^>]*>/i);
+      const script = html.search(/<script/i);
+      const doctype = html.match(/^\s*<!doctype[^>]*>/i);
+      body = Buffer.from(
+        head >= 0 && (script < 0 || head < script)
+          ? html.slice(0, head) + html.slice(head).replace(/<head[^>]*>/i, (m) => m + tag)
+          : doctype ? doctype[0] + tag + html.slice(doctype[0].length) : tag + html,
+        "utf8",
+      );
     }
     res.statusCode = 200;
     res.setHeader("Content-Type", type);
