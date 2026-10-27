@@ -32,7 +32,18 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 BRIDGE="$HERE/mlx-music-bridge.py"
 ID=$(id -u)
 
-unload() { launchctl bootout "gui/$ID/$1" 2>/dev/null || true; rm -f "$AGENTS/$1.plist"; }
+# launchd has a "gui" domain (your login session at the Mac) and a "user" domain (background, which is what an SSH
+# session like PuTTY can reach): stop, start and look in both
+unload() {
+  launchctl bootout "gui/$ID/$1" 2>/dev/null || true
+  launchctl bootout "user/$ID/$1" 2>/dev/null || true
+  rm -f "$AGENTS/$1.plist"
+}
+where() {
+  if launchctl print "gui/$ID/$1" >/dev/null 2>&1; then echo "gui/$ID"
+  elif launchctl print "user/$ID/$1" >/dev/null 2>&1; then echo "user/$ID"
+  fi
+}
 
 if [ "$ACTION" = stop ]; then
   unload org.pandoradee.mlx-audio
@@ -43,9 +54,10 @@ fi
 
 if [ "$ACTION" = status ]; then
   for name in mlx-audio music-bridge; do
-    if launchctl print "gui/$ID/org.pandoradee.$name" >/dev/null 2>&1; then
-      state=$(launchctl print "gui/$ID/org.pandoradee.$name" | awk '/state =/{print $3; exit}')
-      echo "$name: set up ($state)"
+    dom=$(where "org.pandoradee.$name")
+    if [ -n "$dom" ]; then
+      state=$(launchctl print "$dom/org.pandoradee.$name" | awk '/state =/{print $3; exit}')
+      echo "$name: set up ($state, $dom)"
     else
       echo "$name: not set up"
     fi
@@ -85,9 +97,21 @@ agent() {
     echo '  </dict>'
     echo '</dict></plist>'
   } > "$AGENTS/$label.plist"
+  if ! plutil -lint -s "$AGENTS/$label.plist"; then
+    echo "The settings file for $label came out wrong; nothing was started. ($AGENTS/$label.plist)"
+    exit 1
+  fi
   launchctl bootout "gui/$ID/$label" 2>/dev/null || true
-  launchctl bootstrap "gui/$ID" "$AGENTS/$label.plist"
-  echo "Started $label (log: $log)"
+  launchctl bootout "user/$ID/$label" 2>/dev/null || true
+  # your login session when this runs at the Mac; the background domain when it runs over SSH
+  if launchctl bootstrap "gui/$ID" "$AGENTS/$label.plist" 2>/dev/null; then
+    echo "Started $label (log: $log)"
+  elif launchctl bootstrap "user/$ID" "$AGENTS/$label.plist"; then
+    echo "Started $label in the background domain, since this is an SSH session (log: $log)"
+  else
+    echo "launchd wouldn't start $label. Running this script once in Terminal at the Mac itself usually works."
+    exit 1
+  fi
 }
 
 agent org.pandoradee.mlx-audio "$PY" -m mlx_audio.server --host 0.0.0.0 --port "$AUDIO_PORT"
