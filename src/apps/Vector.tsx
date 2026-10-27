@@ -3,11 +3,13 @@ import { Hash, LogOut, MessageSquarePlus, Package, Paperclip, RefreshCw, Send, U
 import { desk, useDesk } from "../lib/store.ts";
 import { library } from "../lib/xdc.ts";
 import { openMenu } from "../ui/ContextMenu.tsx";
+import qrcode from "qrcode-generator";
 
 /**
- * Vector for the people using the desktop: their own account, their chats and Communities, files, and Mini Apps
- * (webxdc) opened straight into Games & Apps or shared back into a chat. Runs Vector's own vector-agent on the
- * computer with the desktop (see server/vector.mjs). The characters' Vector accounts stay on the bridges.
+ * Vector for the people using the desktop. First and foremost the real thing: Vector's own app, installed and
+ * opened from here (checked against its release's checksum), and on a phone by scanning a code. Then, for those
+ * who want it inside the desktop window, a built-in client on Vector's vector-agent (see server/vector.mjs): chats,
+ * Communities, files, and Mini Apps opened straight into Games & Apps. The characters' accounts stay on the bridges.
  */
 
 type Attachment = { id: string; key: string; nonce: string; extension: string; name: string; url: string; path: string; size: number; downloaded: boolean; webxdc_topic?: string };
@@ -72,7 +74,131 @@ const short = (npub: string) => (npub.length > 20 ? `${npub.slice(0, 10)}…${np
 const isApp = (a: Attachment) => Boolean(a.webxdc_topic) || /^xdc$/i.test(a.extension);
 const isPicture = (a: Attachment) => /^(png|jpe?g|gif|webp|avif)$/i.test(a.extension);
 
+const ANDROID = "https://github.com/VectorPrivacy/Vector/releases/latest/download/Vector-arm64-v8a.apk";
+const RELEASES = "https://github.com/VectorPrivacy/Vector/releases/latest";
+
+type AppInfo = { id: string; installed: boolean; version: string; how: string; where: string; job: { state: string; done: number; total: number; error: string } | null };
+
+/** A QR code as an SVG (black on white, so phones read it in any theme). */
+function Qr({ text, size = 168 }: { text: string; size?: number }) {
+  const svg = useMemo(() => {
+    const q = qrcode(0, "M");
+    q.addData(text);
+    q.make();
+    return q.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+  }, [text]);
+  return <div className="vector-qr" style={{ width: size, height: size }} dangerouslySetInnerHTML={{ __html: svg }} />;
+}
+
 export function VectorApp() {
+  const [mode, setMode] = useState(() => localStorage.getItem("pdd-vector-mode") || "home");
+  const go = (m: string) => (setMode(m), localStorage.setItem("pdd-vector-mode", m));
+  if (mode === "client")
+    return (
+      <div className="vector-wrap">
+        <button className="btn small vector-back" onClick={() => go("home")}>← Vector's app, phones and more</button>
+        <BuiltIn />
+      </div>
+    );
+  return <VectorHome onClient={() => go("client")} />;
+}
+
+function VectorHome({ onClient }: { onClient: () => void }) {
+  const [app, setApp] = useState<AppInfo | null>(null);
+  const [note, setNote] = useState("");
+  const load = useCallback(
+    () =>
+      void fetch("/api/create/apps")
+        .then((r) => r.json())
+        .then((l: AppInfo[]) => setApp(l.find((a) => a.id === "vector") ?? null), () => undefined),
+    [],
+  );
+  useEffect(load, [load]);
+  // while it downloads, or its installer is open, look again every couple of seconds
+  const working = app?.job && !["done", "error"].includes(app.job.state);
+  useEffect(() => {
+    if (!working && !(app?.job?.state === "installer" && !app.installed)) return;
+    const t = window.setInterval(load, working ? 1000 : 4000);
+    return () => window.clearInterval(t);
+  }, [working, app?.job?.state, app?.installed, load]);
+  const post = (path: string) =>
+    fetch(`/api/create/${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: "vector" }) }).then(async (r) => {
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error((j as { error?: string }).error || `It answered ${r.status}.`);
+      load();
+    });
+  const j = app?.job;
+  return (
+    <div className="vector-home">
+      <div className="vector-hero">
+        <h2>Vector</h2>
+        <p className="muted">A private, encrypted messenger. No phone number, no email, no account to create: just a key. Chats, Communities, files and Mini Apps, end-to-end encrypted, with no company in the middle.</p>
+        <a className="small" href="https://vectorapp.io" target="_blank" rel="noopener noreferrer">vectorapp.io</a>
+      </div>
+      <div className="vector-cards">
+        <section className="vector-card">
+          <h3>On this computer</h3>
+          <p className="small muted">Vector's own app, with everything it offers, including signing in from your phone so your key never touches this computer.</p>
+          {app?.installed ? (
+            <button className="btn primary" onClick={() => void post("open").catch((e) => setNote(String(e.message ?? e)))}>
+              Open Vector
+            </button>
+          ) : (
+            <button
+              className="btn primary"
+              disabled={Boolean(working)}
+              onClick={() => {
+                setNote("");
+                void post("install").catch((e) => setNote(String(e.message ?? e)));
+              }}
+            >
+              Install Vector
+            </button>
+          )}
+          <div className="small faint">
+            {j?.state === "downloading"
+              ? `Downloading ${Math.round(j.done / 1048576)} of ${Math.round(j.total / 1048576)} MB…`
+              : j?.state === "checking"
+                ? "Checking it against the release's checksum…"
+                : j?.state === "installer" && !app?.installed
+                  ? "Vector's installer is open in its own window: finish it there, and this updates."
+                  : j?.state === "error"
+                    ? <span className="danger-text">{j.error}</span>
+                    : app?.installed
+                      ? `Installed${app.version ? ` (${app.version})` : ""}.`
+                      : "From Vector's releases on GitHub, checked against the release's checksum before it runs."}
+          </div>
+          {note ? <div className="small danger-text">{note}</div> : null}
+        </section>
+        <section className="vector-card">
+          <h3>On your phone</h3>
+          <div className="row" style={{ gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+            <Qr text={ANDROID} />
+            <div className="small" style={{ flex: 1, minWidth: 160 }}>
+              <p style={{ marginTop: 0 }}>
+                <b>Android:</b> scan this with the phone's camera to get the newest Vector app.
+              </p>
+              <p className="muted">Also on Zapstore, and as an F-Droid build. iPhone: not yet.</p>
+              <a href={RELEASES} target="_blank" rel="noopener noreferrer">All downloads</a>
+            </div>
+          </div>
+        </section>
+        <section className="vector-card">
+          <h3>Inside the desktop</h3>
+          <p className="small muted">
+            A built-in client in this window: chats, Communities, files, and Mini Apps opened straight into Games & Apps. It runs Vector's
+            vector-agent on the computer with the desktop, and signs in with a key.
+          </p>
+          <button className="btn" onClick={onClient}>
+            Use the built-in client
+          </button>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function BuiltIn() {
   const [sess, setSess] = useState(saved);
   const signOut = () => {
     if (sess) void post("stop", {}, sess.token).catch(() => undefined);

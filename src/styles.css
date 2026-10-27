@@ -882,3 +882,15 @@ p { line-height: 1.55; margin: 0 0 10px; }
 .vector-list .item:hover { background: rgba(255,255,255,.05); }
 .vector-list .item.on { background: color-mix(in srgb, var(--accent) 18%, transparent); }
 .vector-list .item:disabled { opacity: .5; cursor: default; }
+
+.vector-home { height: 100%; overflow: auto; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.vector-hero h2 { margin: 0 0 4px; }
+.vector-hero p { margin: 0 0 4px; max-width: 70ch; }
+.vector-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; align-items: start; }
+.vector-card { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.vector-card h3 { margin: 0; }
+.vector-qr { background: #fff; border-radius: 8px; padding: 6px; box-sizing: border-box; flex: none; }
+.vector-qr svg { width: 100%; height: 100%; display: block; }
+.vector-wrap { height: 100%; display: flex; flex-direction: column; min-height: 0; }
+.vector-wrap > .vector, .vector-wrap > .vector-signin { flex: 1; min-height: 0; }
+.vector-back { align-self: flex-start; margin: 6px 8px 0; }

@@ -20,6 +20,14 @@ const UA = { "User-Agent": "PandoraDeeDesktop/3.8" };
  */
 export const CATALOG = [
   {
+    // the Vector messenger itself (the Vector app in the dock offers it; it isn't listed in Create)
+    id: "vector", name: "Vector", what: "The private, encrypted messenger: no phone number or email, just a key. Chats, Communities and Mini Apps.",
+    license: "MIT", home: "https://vectorapp.io", opens: [], gh: "VectorPrivacy/Vector", installer: true, group: "messaging",
+    // its own file names: the Windows setup, the Mac build for this chip, the Linux AppImage (portable)
+    assets: { win: /_x64-setup\.exe$/i, macArm: /_aarch64\.dmg$/i, macX64: /_x64\.dmg$/i, linux: /_amd64\.AppImage$/i },
+    find: { win: [["Vector", /^vector\.exe$/i]], bin: ["vector"], app: "Vector" },
+  },
+  {
     id: "gimp", name: "GIMP", what: "Photo editing and painting, with layers, masks, filters and plug-ins.",
     license: "GPL-3.0", home: "https://www.gimp.org", opens: ["image"], recommended: true,
     pm: { winget: "GIMP.GIMP.3", flatpak: "org.gimp.GIMP", brew: "gimp" },
@@ -161,7 +169,7 @@ export function createCreative(dataDir) {
       const at = locate(a);
       const j = jobs.get(a.id);
       return {
-        id: a.id, name: a.name, what: a.what, license: a.license, home: a.home, opens: a.opens, recommended: Boolean(a.recommended),
+        id: a.id, name: a.name, what: a.what, license: a.license, home: a.home, opens: a.opens, recommended: Boolean(a.recommended), group: a.group ?? "create",
         installed: Boolean(at), version: at?.version || "", how: at?.how || "", where: at?.exe || "",
         source: a.gh ? `github.com/${a.gh}` : win ? (a.pm?.winget ? `winget: ${a.pm.winget}` : "") : mac ? (a.pm?.brew ? `Homebrew: ${a.pm.brew}` : "") : a.pm?.flatpak ? `Flathub: ${a.pm.flatpak}` : "",
         job: j || null,
@@ -177,9 +185,12 @@ export function createCreative(dataDir) {
     const arch = process.arch === "arm64" ? "arm64" : process.arch === "ia32" ? "x86" : win ? "x64" : "x86_64";
     const assets = rel.assets || [];
     const pick = (re) => assets.find((a) => re.test(a.name));
-    const asset = win
-      ? app.installer ? pick(/x64-setup\.exe$/i) || pick(/\.msi$/i) : pick(new RegExp(`windows-${arch}-portable\\.zip$`, "i"))
-      : mac ? pick(/\.dmg$/i) : pick(new RegExp(`linux-${arch}\\.AppImage$`, "i"));
+    const own = app.assets;
+    const asset = own
+      ? pick(win ? own.win : mac ? (process.arch === "arm64" ? own.macArm : own.macX64) : own.linux)
+      : win
+        ? app.installer ? pick(/x64-setup\.exe$/i) || pick(/\.msi$/i) : pick(new RegExp(`windows-${arch}-portable\\.zip$`, "i"))
+        : mac ? pick(/\.dmg$/i) : pick(new RegExp(`linux-${arch}\\.AppImage$`, "i"));
     if (!asset) throw new Error(`${app.name} has no build for this computer in its latest release (${rel.tag_name}).`);
     const sums = pick(/^SHA256SUMS(\.txt)?$/i);
     return { tag: String(rel.tag_name || "").replace(/^[a-z-]*v(?=\d)/i, ""), asset, sums };
@@ -223,7 +234,7 @@ export function createCreative(dataDir) {
     const rel = await release(app);
     const bytes = await downloadChecked(app, rel, job);
     const dir = path.join(root(), app.id);
-    if (app.installer || mac) {
+    if ((app.installer && !(app.assets && !win && !mac)) || mac) {
       // an installer (ArtCraft's, or a .dmg): saved, then opened for the person to go through
       fs.mkdirSync(dir, { recursive: true });
       const file = path.join(dir, rel.asset.name);

@@ -14,7 +14,7 @@ import { openMenu, type MenuItem } from "../ui/ContextMenu.tsx";
 type Kind = "image" | "svg" | "pdf" | "raw";
 type AppInfo = {
   id: string; name: string; what: string; license: string; home: string; opens: Kind[]; recommended: boolean;
-  installed: boolean; version: string; how: string; where: string; source: string;
+  installed: boolean; version: string; how: string; where: string; source: string; group?: string;
   job: { state: string; done: number; total: number; error: string } | null;
 };
 type Pic = { path: string; size: number; mtime: number; kind: Kind };
@@ -278,7 +278,7 @@ function Apps({ apps, refresh }: { apps: AppInfo[]; refresh: () => void }) {
           <RefreshCw size={14} />
         </button>
       </div>
-      {apps.map((a) => (
+      {apps.filter((a) => a.group !== "messaging").map((a) => (
         <div key={a.id} className="create-app">
           <div className="grow">
             <div>
