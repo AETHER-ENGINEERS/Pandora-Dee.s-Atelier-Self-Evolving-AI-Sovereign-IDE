@@ -120,6 +120,28 @@ function onPath(name) {
   return r.status === 0 ? r.stdout.split(/\r?\n/)[0].trim() : "";
 }
 
+/** Windows' own list of installed programs (what Settings → Apps shows), so apps installed anywhere are found. */
+let uninstallCache = { at: 0, list: [] };
+function regValues(key, only) {
+  const r = spawnSync("reg", ["query", key, ...(only ? ["/s", "/v", only] : [])], { encoding: "utf8", windowsHide: true, timeout: 8000, maxBuffer: 16 * 1024 * 1024 });
+  const found = [];
+  let cur = null;
+  for (const line of (r.stdout || "").split(/\r?\n/)) {
+    if (/^HKEY_/.test(line)) found.push((cur = { key: line.trim() }));
+    const m = /^\s+(DisplayName|DisplayIcon|InstallLocation|DisplayVersion)\s+REG_\w+\s+(.*)$/.exec(line);
+    if (cur && m) cur[m[1]] = m[2].trim();
+  }
+  return found;
+}
+/** Just the names (quick); an entry's details are read when its name matches. */
+function installedPrograms() {
+  if (Date.now() - uninstallCache.at < 30000) return uninstallCache.list;
+  const tail = "Microsoft\\Windows\\CurrentVersion\\Uninstall";
+  const roots = ["HKCU\\Software\\" + tail, "HKLM\\Software\\" + tail, "HKLM\\Software\\WOW6432Node\\" + tail];
+  uninstallCache = { at: Date.now(), list: roots.flatMap((k) => regValues(k, "DisplayName")).filter((e) => e.DisplayName) };
+  return uninstallCache.list;
+}
+
 export function wingetPath() {
   const alias = path.join(process.env.LOCALAPPDATA || "", "Microsoft", "WindowsApps", "winget.exe");
   if (fs.existsSync(alias)) return alias; // an app alias: exists, but isn't a normal file
@@ -149,6 +171,16 @@ export function createCreative(dataDir) {
         for (const b of bases) {
           const exe = findIn(path.join(b, folder), re);
           if (exe) return { exe, version: (/(\d+(?:\.\d+)+)/.exec(path.basename(exe)) || [])[1] || "", how: "system" };
+        }
+      // installed somewhere else (another drive, a folder of the person's choosing)
+      for (const [folder, re] of f.win || [])
+        for (const e of installedPrograms()) {
+          const n = e.DisplayName.toLowerCase(), want = folder.toLowerCase();
+          if (n !== want && !n.startsWith(want + " ")) continue;
+          Object.assign(e, regValues(e.key)[0]);
+          const icon = (e.DisplayIcon || "").replace(/^"|"?(,-?\d+)?$/g, "");
+          const exe = icon && re.test(path.basename(icon)) && isFile(icon) ? icon : e.InstallLocation ? findIn(e.InstallLocation.replace(/^"|"$/g, ""), re) : "";
+          if (exe) return { exe, version: e.DisplayVersion || "", how: "system" };
         }
       return null;
     }
