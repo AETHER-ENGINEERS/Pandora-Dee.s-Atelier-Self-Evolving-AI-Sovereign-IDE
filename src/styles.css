@@ -837,3 +837,9 @@ p { line-height: 1.55; margin: 0 0 10px; }
 .browser-frame { flex: 1; width: 100%; border: 0; background: #fff; min-height: 0; }
 .browser-reader { flex: 1; overflow: auto; padding: 18px max(16px, calc((100% - 760px) / 2)); line-height: 1.6; font-size: 1.02em; }
 .browser-reader img { max-width: 100%; height: auto; }
+
+/* ---------- talking instead of typing ---------- */
+.mic-btn.recording { color: #fff; background: color-mix(in srgb, var(--bad) 70%, transparent); box-shadow: 0 0 0 calc(2px + var(--lvl, 0) * 8px) color-mix(in srgb, var(--bad) 35%, transparent); transition: box-shadow .08s; }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.voice-engines .engine .row { display: flex; gap: 6px; align-items: center; }

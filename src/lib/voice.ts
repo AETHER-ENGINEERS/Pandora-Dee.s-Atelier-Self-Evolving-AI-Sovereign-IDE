@@ -1,10 +1,25 @@
-// Speech through the computer's own voices, with a mouth value for lip-sync.
-// Nothing is downloaded and nothing is sent anywhere to be spoken.
+// Speech through the computer's own voices, or through a voice engine you run (MLX Audio on a Mac, and other
+// servers with OpenAI's speech API), with a mouth value for lip-sync. The computer's own voices send nothing
+// anywhere; an engine gets the text it speaks.
 
-/** volume is 0..1 for the voices; appVolume is 0..1 for sound from games and apps. */
-export type VoicePrefs = { on: boolean; voiceName: string; rate: number; pitch: number; volume: number; appVolume: number };
+import { outbound, type Via } from "./outbound.ts";
+import { engineUrl } from "./voiceEngines.ts";
 
-export const VOICE_DEFAULT: VoicePrefs = { on: true, voiceName: "", rate: 1.03, pitch: 1.1, volume: 0.8, appVolume: 0.8 };
+/** A voice engine, resolved for one line: where it is and which model and voice to use. */
+export type Remote = { url: string; key: string; model: string; voice: string; via: Via; name: string };
+
+/**
+ * volume is 0..1 for the voices; appVolume is 0..1 for sound from games and apps. engine is a voice engine's id
+ * ("" = this computer's voices) and engineVoice the voice on it; remote is filled in when a line is spoken.
+ */
+export type VoicePrefs = { on: boolean; voiceName: string; rate: number; pitch: number; volume: number; appVolume: number; engine: string; engineVoice: string; remote?: Remote };
+
+export const VOICE_DEFAULT: VoicePrefs = { on: true, voiceName: "", rate: 1.03, pitch: 1.1, volume: 0.8, appVolume: 0.8, engine: "", engineVoice: "" };
+
+// a problem with a voice engine is said once (the store hooks this up), then the computer's voices take over
+let report: (text: string) => void = () => undefined;
+export const onVoiceProblem = (fn: (text: string) => void) => void (report = fn);
+let lastProblem = "";
 
 export type Speech = { who: string; mouth: number; text: string };
 
@@ -102,7 +117,7 @@ export function voiceList(): { name: string; lang: string }[] {
   }
 }
 
-type Job = { who: string; text: string; pitchShift: number };
+type Job = { who: string; text: string; pitchShift: number; remote?: Remote; audio?: Promise<ArrayBuffer> };
 let queue: Job[] = [];
 let running = false;
 let token = 0;
@@ -111,6 +126,12 @@ export function stopSpeaking() {
   token++;
   queue = [];
   running = false;
+  try {
+    playing?.stop();
+  } catch {
+    /* already stopped */
+  }
+  playing = null;
   try {
     speechSynthesis.cancel();
   } catch {
@@ -122,8 +143,78 @@ export function stopSpeaking() {
 /** Queue a line. Lines from different characters play one after another. */
 export function speak(who: string, text: string, prefs: VoicePrefs, pitchShift = 0) {
   if (!prefs.on || !text.trim()) return;
-  for (const part of chunks(text)) queue.push({ who, text: part, pitchShift });
+  // an engine reads longer pieces at once (fewer pauses); the browser's voices cut off on long ones
+  for (const part of chunks(text, prefs.remote ? 420 : 180)) queue.push({ who, text: part, pitchShift, remote: prefs.remote });
   if (!running) run(prefs, token);
+}
+
+/** Ask the engine for a line's audio (started early for the next line, so there's no gap). */
+function fetchAudio(job: Job, rate: number): Promise<ArrayBuffer> {
+  const r = job.remote!;
+  // Kokoro's voices carry their accent in the name: af_heart is American (a), bf_emma British (b), jf_… Japanese (j)…
+  const lang = /^([a-z])[fm]_/.exec(r.voice)?.[1];
+  const body = { model: r.model, input: job.text, ...(r.voice ? { voice: r.voice } : {}), speed: rate, response_format: "wav", ...(lang ? { lang_code: lang } : {}) };
+  return (job.audio ??= outbound(engineUrl(r.url, "speech"), { method: "POST", headers: { "Content-Type": "application/json", ...(r.key ? { Authorization: `Bearer ${r.key}` } : {}) }, body: JSON.stringify(body), timeout: 180 }, r.via).then(async (res) => {
+    if (!res.ok) throw new Error(`${r.name} answered ${res.status}: ${(await res.text()).replace(/\s+/g, " ").slice(0, 200)}`);
+    return res.arrayBuffer();
+  }));
+}
+
+let ctx: AudioContext | null = null;
+let playing: AudioBufferSourceNode | null = null;
+
+/** Play an engine's line through Web Audio, the mouth following how loud it is. */
+function runRemote(job: Job, prefs: VoicePrefs, mine: number, finish: () => void, fallback: () => void) {
+  const rate = Math.min(1.6, Math.max(0.6, prefs.rate));
+  const next = queue[0];
+  void fetchAudio(job, rate)
+    .then(async (data) => {
+      if (mine !== token) return;
+      if (next?.remote) void fetchAudio(next, rate).catch(() => undefined); // the next line, while this one plays
+      ctx ??= new AudioContext();
+      void ctx.resume();
+      const buf = await ctx.decodeAudioData(data.slice(0));
+      if (mine !== token) return;
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 1024;
+      const gain = ctx.createGain();
+      gain.gain.value = Math.min(1, Math.max(0, prefs.volume ?? 1));
+      src.connect(analyser);
+      analyser.connect(gain);
+      gain.connect(ctx.destination);
+      const samples = new Float32Array(analyser.fftSize);
+      let level = 0;
+      let raf = 0;
+      const tick = () => {
+        if (mine !== token) return;
+        analyser.getFloatTimeDomainData(samples);
+        let sum = 0;
+        for (const v of samples) sum += v * v;
+        const rms = Math.sqrt(sum / samples.length);
+        level = level * 0.55 + Math.min(1, rms * 5.5) * 0.45; // smoothed, so the lips don't flutter
+        publish({ who: job.who, mouth: level, text: job.text });
+        raf = requestAnimationFrame(tick);
+      };
+      src.onended = () => {
+        cancelAnimationFrame(raf);
+        if (playing === src) playing = null;
+        finish();
+      };
+      playing = src;
+      src.start();
+      raf = requestAnimationFrame(tick);
+    })
+    .catch((e) => {
+      if (mine !== token) return;
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg !== lastProblem) {
+        lastProblem = msg;
+        report(`The voice engine didn't speak (${msg}). Using this computer's voices for now.`);
+      }
+      fallback();
+    });
 }
 
 function run(prefs: VoicePrefs, mine: number) {
@@ -155,6 +246,20 @@ function run(prefs: VoicePrefs, mine: number) {
     publish({ who: job.who, mouth: mouthAt(job.text, progress % 1), text: job.text });
     raf = requestAnimationFrame(tick);
   };
+  if (job.remote) {
+    // the engine's audio decides how long it takes; the guess-based mouth isn't used
+    return runRemote(job, prefs, mine, () => {
+      if (settled) return;
+      settled = true;
+      publish({ who: job.who, mouth: 0, text: "" }, true);
+      setTimeout(() => run(prefs, mine), 80);
+    }, () => {
+      // this line (and the rest) through the computer's own voices
+      queue = queue.map((j) => ({ ...j, remote: undefined, audio: undefined }));
+      queue.unshift({ ...job, remote: undefined, audio: undefined });
+      setTimeout(() => run(prefs, mine), 0);
+    });
+  }
   const safety = window.setTimeout(finish, estimate * 2 + 1500);
   raf = requestAnimationFrame(tick);
   try {

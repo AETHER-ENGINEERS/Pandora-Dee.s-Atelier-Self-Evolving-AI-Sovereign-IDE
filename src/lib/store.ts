@@ -6,6 +6,7 @@ import { MODEL_DEFAULT, type ModelPrefs } from "./model.ts";
 import { PRIVACY_DEFAULT, type Privacy } from "./privacy.ts";
 import { MAX_IN_ROOM, type Message, type Source } from "./room.ts";
 import { VOICE_DEFAULT, type VoicePrefs } from "./voice.ts";
+import { VOICE_ENGINES_DEFAULT, type VoiceEnginePrefs } from "./voiceEngines.ts";
 import type { Sealed } from "./secure.ts";
 import { pythonFrom, type Via } from "./outbound.ts";
 import { MUSIC_DEFAULT, type MusicPrefs } from "./musicPrefs.ts";
@@ -270,7 +271,7 @@ export type CharPrefs = {
   /** How much they tend to say. */
   length?: "short" | "normal" | "long";
   /** volume here is relative to the master voice volume, 0..1.5. */
-  voice?: { on?: boolean; voiceName?: string; rate?: number; pitch?: number; volume?: number };
+  voice?: { on?: boolean; voiceName?: string; rate?: number; pitch?: number; volume?: number; engine?: string; engineVoice?: string };
   /** Their full avatar (Live2D, VRM, or an animated picture), kept in the vault. */
   avatar?: AvatarAsset;
 };
@@ -405,6 +406,8 @@ export type State = {
   flood: FloodState;
   wake: Record<Source, Role[]>;
   voice: VoicePrefs;
+  /** Voice engines (speaking and listening) and which one turns your speech into text. */
+  voices: VoiceEnginePrefs;
   sentryLog: string[];
   sensors: { battery: boolean; network: boolean; screen: boolean; tellRoom: boolean };
   hangout: boolean;
@@ -590,6 +593,7 @@ const INITIAL: State = {
   flood: FLOOD_DEFAULT,
   wake: { desk: ["keyholder", "resident", "general"], discord: ["keyholder", "resident", "general"], vector: ["keyholder", "resident", "general"] },
   voice: VOICE_DEFAULT,
+  voices: VOICE_ENGINES_DEFAULT,
   sentryLog: [],
   sensors: { battery: false, network: false, screen: false, tellRoom: false },
   hangout: false,
@@ -828,7 +832,8 @@ export const useDesk = create<Store>()(
             discord: { ...BRIDGE_DEFAULT("discord"), ...(p.bridges?.discord ?? {}) },
             vector: { ...BRIDGE_DEFAULT("vector"), ...(p.bridges?.vector ?? {}) },
           },
-          voice: { ...VOICE_DEFAULT, ...(p.voice ?? {}) },
+          voice: { ...VOICE_DEFAULT, ...(p.voice ?? {}), remote: undefined },
+          voices: { ...VOICE_ENGINES_DEFAULT, ...(p.voices ?? {}), listen: { ...VOICE_ENGINES_DEFAULT.listen, ...(p.voices?.listen ?? {}) } },
           hang: { ...HANG_DEFAULT, ...(p.hang ?? {}) },
           web: { ...current.web, ...(p.web ?? {}) },
           net: { ...current.net, ...(p.net ?? {}) },

@@ -1,3 +1,4 @@
+import { EngineVoicePicker } from "../ui/VoiceEngines.tsx";
 import { Num } from "../ui/Num.tsx";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Download, FolderOpen, LogIn, LogOut, Plus, Trash2, Upload } from "lucide-react";
@@ -569,7 +570,27 @@ function CharVoice({ c }: { c: Character }) {
           {c.short} speaks aloud{!s.voice.on ? " (voice is off for everyone right now: Settings → Voice)" : ""}
         </span>
       </label>
-      <Own label="Voice" own={Boolean(own.voiceName)} shared={s.voice.voiceName || "automatic"} onReset={() => unset("voiceName")}>
+      <Own label="Who speaks" own={own.engine !== undefined} shared={s.voices.engines.find((e) => e.id === s.voice.engine)?.name ?? "this computer's voices"} onReset={() => (unset("engine"), unset("engineVoice"))}>
+        <select
+          className="select"
+          value={own.engine === undefined ? "~" : own.engine}
+          onChange={(e) => (e.target.value === "~" ? (unset("engine"), unset("engineVoice")) : set({ engine: e.target.value, engineVoice: "" }))}
+        >
+          <option value="~">Same as everyone</option>
+          <option value="">This computer's voices</option>
+          {s.voices.engines.map((e) => (
+            <option key={e.id} value={e.id} disabled={!e.enabled}>
+              {e.name}
+            </option>
+          ))}
+        </select>
+      </Own>
+      {own.engine ? (
+        <Own label="Engine voice" own={Boolean(own.engineVoice)} shared="the model's default" onReset={() => unset("engineVoice")}>
+          <EngineVoicePicker engineId={own.engine} value={own.engineVoice ?? ""} onChange={(engineVoice) => set({ engineVoice })} />
+        </Own>
+      ) : null}
+      <Own label={own.engine || (own.engine === undefined && s.voice.engine) ? "This computer's voice (when the engine can't be reached)" : "Voice"} own={Boolean(own.voiceName)} shared={s.voice.voiceName || "automatic"} onReset={() => unset("voiceName")}>
         <select className="select" value={own.voiceName ?? ""} onChange={(e) => (e.target.value ? set({ voiceName: e.target.value }) : unset("voiceName"))}>
           <option value="">Same as everyone</option>
           {voices.map((v) => (

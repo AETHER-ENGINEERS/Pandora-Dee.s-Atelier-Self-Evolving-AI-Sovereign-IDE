@@ -1,3 +1,5 @@
+import { EngineVoicePicker, ListeningSettings, VoiceEnginesEditor } from "../ui/VoiceEngines.tsx";
+import { remoteFor } from "../lib/prefs.ts";
 import { Num } from "../ui/Num.tsx";
 import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Plus, RefreshCw, Trash2 } from "lucide-react";
@@ -345,13 +347,31 @@ function VoiceSection() {
   return (
     <>
       <h2>Voice</h2>
-      <p className="lead small">Replies are read aloud with this computer's own voices, and the faces in Presence move their lips along. Nothing is downloaded or sent anywhere to speak. Each character speaks at a slightly different pitch, and each can have their own voice, speed and pitch in Characters → their profile.</p>
+      <p className="lead small">Replies are read aloud with this computer's own voices, or with a voice engine you run (MLX Audio on a Mac, for instance), and the faces move their lips along. This computer's voices send nothing anywhere; an engine gets the words it speaks. Each character can have their own engine, voice, speed and pitch in Characters → their profile.</p>
       <label className="check">
         <input type="checkbox" checked={v.on} onChange={(e) => set({ on: e.target.checked })} />
         <span>Read replies aloud</span>
       </label>
       <label className="field">
-        <span>Voice</span>
+        <span>Who speaks</span>
+        <select className="select" value={v.engine} onChange={(e) => set({ engine: e.target.value, engineVoice: "" })}>
+          <option value="">This computer's voices</option>
+          {s.voices.engines.map((e) => (
+            <option key={e.id} value={e.id} disabled={!e.enabled}>
+              {e.name}
+              {e.enabled ? "" : " (off)"}
+            </option>
+          ))}
+        </select>
+      </label>
+      {v.engine ? (
+        <label className="field">
+          <span>Engine voice</span>
+          <EngineVoicePicker engineId={v.engine} value={v.engineVoice} onChange={(engineVoice) => set({ engineVoice })} />
+        </label>
+      ) : null}
+      <label className="field">
+        <span>{v.engine ? "This computer's voice (when the engine can't be reached)" : "Voice"}</span>
         <select className="select" value={v.voiceName} onChange={(e) => set({ voiceName: e.target.value })}>
           <option value="">Automatic (prefers a British English voice)</option>
           {voices.map((x) => (
@@ -378,9 +398,18 @@ function VoiceSection() {
         <span>Pitch</span>
         <Num min={0.5} max={1.6} step={0.05} value={v.pitch} onChange={(n) => set({ pitch: n })} />
       </label>
-      <button className="btn" onClick={() => focus && speak(focus.id, focus.greeting, { ...v, on: true }, focus.pitch)}>
+      <button className="btn" onClick={() => focus && speak(focus.id, focus.greeting, { ...v, on: true, remote: remoteFor(v.engine, v.engineVoice) }, focus.pitch)}>
         Hear {focus?.short ?? "a sample"}
       </button>
+      <div className="divider" />
+      <h3>Voice engines</h3>
+      <p className="small muted">
+        Servers that speak and listen, usually on another computer: MLX Audio on a Mac (Kokoro's voices, Whisper for listening), OpenAI, or
+        any server with OpenAI's speech API. One on another computer needs “Models on your network” in Privacy.
+      </p>
+      <VoiceEnginesEditor />
+      <div className="divider" />
+      <ListeningSettings />
     </>
   );
 }

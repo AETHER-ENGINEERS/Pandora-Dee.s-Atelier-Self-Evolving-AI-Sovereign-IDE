@@ -25,6 +25,7 @@ import { editAndResend, letThemTalk, retry, say, stopAll } from "../lib/agent.ts
 import { maskName, maskText } from "../lib/privacy.ts";
 import { addToMemory } from "../lib/tools.ts";
 import { stopSpeaking, speak } from "../lib/voice.ts";
+import { MicButton } from "../ui/Mic.tsx";
 import { voiceFor } from "../lib/prefs.ts";
 import { isImage, type Attachment, type Message } from "../lib/room.ts";
 import { chatList, deleteChat, newChat, renameChat, switchChat, titleFrom } from "../lib/chats.ts";
@@ -491,6 +492,7 @@ export function RoomApp() {
           rows={1}
           aria-label="Message"
         />
+        <MicButton onText={(t) => setDraft((d) => (d.trim() ? `${d.trimEnd()} ${t}` : t))} />
         <button className="btn primary" onClick={() => void send()} disabled={(!draft.trim() && !files.length) || uploading > 0} aria-label="Send">
           <Send size={16} />
         </button>

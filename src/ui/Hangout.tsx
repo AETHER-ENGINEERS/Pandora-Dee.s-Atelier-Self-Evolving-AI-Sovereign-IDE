@@ -10,6 +10,7 @@ import { useSpeech } from "./common.tsx";
 import { openSettings } from "./Desktop.tsx";
 import { VolumeControl } from "./Volume.tsx";
 import { openMenu } from "./ContextMenu.tsx";
+import { MicButton } from "./Mic.tsx";
 import { characterMenu } from "./menus.ts";
 
 const clamp = (n: number, a: number, b: number) => Math.min(b, Math.max(a, n));
@@ -354,6 +355,7 @@ export function HangoutMode() {
             placeholder={`Talk to ${s.character(s.focus)?.short ?? "the room"}… (Enter to type, Esc for the desktop)`}
             aria-label="Message"
           />
+          <MicButton className="btn" onText={(t) => (setDraft((d) => (d.trim() ? `${d.trimEnd()} ${t}` : t)), inputRef.current?.focus())} />
           <button className="btn primary" disabled={!draft.trim()} aria-label="Send">
             <Send size={15} />
           </button>

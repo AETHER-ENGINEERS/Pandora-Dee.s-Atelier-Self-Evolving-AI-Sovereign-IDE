@@ -59,7 +59,7 @@ Done in 3.4.0:
 Still to build:
 - ✅ Tabbed browser (3.10.0): pages through the desktop into a sandboxed frame, Reader, bookmarks, search. (moderate)
 - XDC Studio: import assets, and an asset view. (moderate)
-- Voice: download free (FOSS) voice models (Piper, Kokoro) or add your own. (low)
+- ✅ Voice (3.12.0): voice engines with OpenAI's speech API (MLX Audio on a Mac with Kokoro's voices, OpenAI, Kokoro-FastAPI, Speaches…), a voice per character, lip-sync from the audio itself, and talking instead of typing (the 🎤 button, Whisper through the same engine). (low)
 - Creating a character: more fields and help. (low)
 - A mailer between the accounts on this desktop. (low)
 - A fuller Help menu. (low)
