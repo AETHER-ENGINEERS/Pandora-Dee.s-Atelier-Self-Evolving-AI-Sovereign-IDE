@@ -44,7 +44,7 @@ export async function relay(req, res, job) {
   const method = String(job.method || "GET").toUpperCase();
   const headers = cleanHeaders(job.headers);
   // Some hosts (Cloudflare's browser check) turn away Python's and cURL's default names.
-  if (!Object.keys(headers).some((k) => k.toLowerCase() === "user-agent")) headers["User-Agent"] = "PandoraDeeDesktop/3.8 (+https://github.com/AETHER-ENGINEERS/pandora-dee)";
+  if (!Object.keys(headers).some((k) => k.toLowerCase() === "user-agent")) headers["User-Agent"] = "PandoraDeeDesktop/3.9 (+https://github.com/AETHER-ENGINEERS/pandora-dee)";
   const body = job.bodyB64 ? Buffer.from(job.bodyB64, "base64") : job.body != null && method !== "GET" && method !== "HEAD" ? Buffer.from(String(job.body)) : undefined;
   const timeout = Math.min(600, Math.max(1, Number(job.timeout) || 300));
   const via = job.via === "curl" || job.via === "python" ? job.via : "node";

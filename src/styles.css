@@ -771,3 +771,39 @@ p { line-height: 1.55; margin: 0 0 10px; }
 .create-app .pill { margin-left: 6px; }
 .create-app-actions { display: flex; gap: 6px; align-items: center; }
 .danger-text { color: var(--bad); }
+
+/* ---------- Imagine and engines ---------- */
+.imagine { display: flex; flex: 1; min-height: 0; }
+.imagine-form { width: 320px; flex: none; display: flex; flex-direction: column; gap: 8px; padding: 10px; border-right: 1px solid var(--line); overflow: auto; }
+.imagine-form .row, .engine .row { display: flex; gap: 6px; align-items: center; }
+.imagine-form details, .engine details { display: flex; flex-direction: column; gap: 6px; }
+.imagine-form details > * + *, .engine details > * + * { margin-top: 6px; width: 100%; }
+.imagine-results { flex: 1; overflow: auto; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; align-content: start; }
+.imagine-pic { margin: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+.imagine-pic img { width: 100%; aspect-ratio: 1; object-fit: contain; background: rgba(255,255,255,.03); cursor: zoom-in; }
+.imagine-pic figcaption { display: flex; gap: 6px; align-items: center; padding: 6px; }
+.imagine-pic figcaption .grow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dialog.engines { width: min(720px, 94vw); max-height: 88vh; overflow: auto; }
+.engine { display: flex; flex-direction: column; gap: 6px; padding: 10px; margin: 8px 0; border: 1px solid var(--line); border-radius: 10px; }
+@media (max-width: 640px) { .imagine { flex-direction: column; } .imagine-form { width: auto; border-right: 0; border-bottom: 1px solid var(--line); } }
+
+/* ---------- Make a song ---------- */
+.songmaker { display: flex; height: 100%; min-height: 360px; }
+.songmaker-form { width: 340px; flex: none; display: flex; flex-direction: column; gap: 8px; padding: 10px; border-right: 1px solid var(--line); overflow: auto; }
+.songmaker-form .row { display: flex; gap: 6px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { background: none; border: 0; padding: 5px 12px; color: var(--muted); cursor: pointer; }
+.seg button.on { background: var(--accent); color: #fff; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font-size: .78em; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); background: none; color: var(--muted); cursor: pointer; }
+.chip:hover { color: var(--text); border-color: var(--accent); }
+.songlist { flex: 1; overflow: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.made-song { display: flex; gap: 10px; align-items: flex-start; padding: 8px; border: 1px solid var(--line); border-radius: 10px; }
+.made-song.on { border-color: var(--accent); }
+.made-song.working { opacity: .9; border-style: dashed; }
+.made-art { width: 52px; height: 52px; flex: none; border-radius: 8px; display: grid; place-items: center; color: #fff; border: 0; cursor: pointer; background: rgba(255,255,255,.06); }
+.made-lyrics { white-space: pre-wrap; margin: 6px 0 0; font-family: inherit; max-height: 260px; overflow: auto; }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 680px) { .songmaker { flex-direction: column; } .songmaker-form { width: auto; border-right: 0; border-bottom: 1px solid var(--line); } }
+.songmaker-form > *, .imagine-form > * { flex-shrink: 0; }
+.songmaker-form .row > .select { flex: 1; min-width: 0; }

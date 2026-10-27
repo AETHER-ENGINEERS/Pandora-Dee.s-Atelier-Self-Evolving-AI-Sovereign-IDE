@@ -88,8 +88,11 @@ Still to build:
 - **Media creation** ✅ started early (3.8.0): **Create** has a Gallery of the vault's pictures and PDFs, miniPaint
   built in (offline), and an installer for GIMP, Krita, Inkscape and Storytold's Craft apps (PhotoCraft, PdfCraft,
   VectorCraft, LightCraft as checked portable builds; ArtCraft through its installer), with "Open in…" from the
-  Gallery. Next: image generation (OpenAI-style image APIs and ComfyUI workflows) and YuE2 song generation through
-  ComfyUI, a character tool to make and edit pictures, sharing pictures into the chat, and the Craft Launcher.
+  Gallery. ✅ 3.9.0: picture engines (ComfyUI with a basic or your own API-format workflow, Draw Things /
+  Automatic1111 / Forge, OpenAI-style image APIs) in Create → Imagine; Music → Make a song (Suno-style, Simple and
+  Custom) on ACE-Step 1.5 or YuE2 through ComfyUI; make_picture / make_song tools for characters (off by default).
+  Engines are addresses on your network (the Mac does the work), reached through the relay. Next: editing pictures
+  with an engine (img2img, inpainting), covers and extending songs, sharing pictures into the chat, the Craft Launcher.
   Planned before: in-app open-source painting (miniPaint, JS Paint or Kleki style) everywhere;
   GIMP, Krita, Inkscape and others installed through the package manager on desktops.
   A **Gallery** that collects pictures from the room, the apps and the editors, and shares any of

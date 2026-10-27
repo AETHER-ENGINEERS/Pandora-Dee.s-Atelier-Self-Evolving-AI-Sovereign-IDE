@@ -9,6 +9,7 @@ import { VOICE_DEFAULT, type VoicePrefs } from "./voice.ts";
 import type { Sealed } from "./secure.ts";
 import { pythonFrom, type Via } from "./outbound.ts";
 import { MUSIC_DEFAULT, type MusicPrefs } from "./musicPrefs.ts";
+import { MEDIA_DEFAULT, type MediaPrefs } from "./mediaPrefs.ts";
 import type { AvatarAsset } from "../ui/FullAvatar.tsx";
 import { CLOCK_DEFAULT, type ClockPrefs } from "./clock.ts";
 
@@ -407,6 +408,8 @@ export type State = {
   chat: ChatPrefs;
   notes: NotesPrefs;
   music: MusicPrefs;
+  /** Engines for making pictures and songs, and the songs made. */
+  media: MediaPrefs;
   /** Shortcut bindings the person changed, by action id. */
   keys: Record<string, string>;
   touch: { edgeSwipe: boolean; doubleTapScene: boolean; longPress: boolean };
@@ -583,6 +586,7 @@ const INITIAL: State = {
   chat: CHAT_DEFAULT,
   notes: NOTES_DEFAULT,
   music: MUSIC_DEFAULT,
+  media: MEDIA_DEFAULT,
   keys: {},
   touch: { edgeSwipe: true, doubleTapScene: true, longPress: true },
   spots: {},
@@ -822,6 +826,7 @@ export const useDesk = create<Store>()(
           chat: { ...CHAT_DEFAULT, ...(p.chat ?? {}) },
           notes: { ...NOTES_DEFAULT, ...(p.notes ?? {}) },
           music: { ...MUSIC_DEFAULT, ...(p.music ?? {}) },
+          media: { ...MEDIA_DEFAULT, ...(p.media ?? {}) },
           flood: { ...FLOOD_DEFAULT, ...(p.flood ?? {}) },
         };
       },

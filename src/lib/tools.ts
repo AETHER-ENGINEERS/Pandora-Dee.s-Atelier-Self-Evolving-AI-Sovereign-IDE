@@ -809,6 +809,58 @@ const MUSIC_TOOL: Tool = {
   },
 };
 
+const SIZES: Record<string, [number, number]> = { square: [1024, 1024], portrait: [832, 1216], landscape: [1216, 832], wide: [1344, 768] };
+
+const MAKE_PICTURE: Tool = {
+  name: "make_picture",
+  description:
+    "Make a picture with the desktop's picture engine. Describe it fully (subject, setting, light, style). It's saved in the vault; show it in your reply with the Markdown the result gives you. Only when your locksmith asks, or clearly would like one.",
+  parameters: obj(
+    {
+      prompt: { type: "string", description: "What the picture shows, in detail" },
+      size: { type: "string", description: "square, portrait, landscape or wide (default square)" },
+      leave_out: { type: "string", description: "Things to keep out of it (optional)" },
+    },
+    ["prompt"],
+  ),
+  run: async (_id, a) => {
+    const engine = desk().media.images.find((e) => e.enabled);
+    if (!engine) return "No picture engine is set up (Create → Imagine → engines).";
+    const media = await import("./media.ts");
+    const [w, h] = SIZES[str(a.size).toLowerCase()] ?? SIZES.square;
+    const pics = await media.makePictures(engine, { prompt: str(a.prompt), negative: str(a.leave_out), width: w, height: h, count: 1 }, () => undefined);
+    const [path] = await media.savePictures(pics, str(a.prompt));
+    return `Saved ${path}. To show it: ![${str(a.prompt).slice(0, 60).replace(/[[\]]/g, "")}](/api/vault/raw/${path.split("/").map(encodeURIComponent).join("/")})`;
+  },
+};
+
+const MAKE_SONG: Tool = {
+  name: "make_song",
+  description:
+    "Make a song with the desktop's song engine. Give a title, a style line (genre, mood, instruments, vocals) and lyrics with [Verse] / [Chorus] / [Bridge] tags. It takes a few minutes and runs in the background; it lands in the music library and Music → Make a song. Only when your locksmith asks.",
+  parameters: obj(
+    {
+      title: { type: "string", description: "The song's title" },
+      style: { type: "string", description: "Comma-separated genre, mood, instruments, tempo, vocals" },
+      lyrics: { type: "string", description: "Lyrics with section tags; leave empty for an instrumental" },
+      seconds: { type: "number", description: "Length in seconds (30-240, default 120)" },
+    },
+    ["title", "style"],
+  ),
+  run: async (charId, a) => {
+    const engine = desk().media.songs.find((e) => e.enabled);
+    if (!engine) return "No song engine is set up (Music → Make a song → engines).";
+    const { startSong } = await import("../apps/SongMaker.tsx");
+    const title = str(a.title) || "Untitled";
+    const lyrics = str(a.lyrics);
+    const name = desk().character(charId)?.name ?? charId;
+    startSong(engine, { title, style: str(a.style), lyrics, instrumental: !lyrics.trim(), seconds: Math.max(30, Math.min(240, Number(a.seconds) || 120)) }, (song, error) =>
+      desk().post({ kind: "notice", who: "desk", name: "Desk", text: song ? `${name}'s song “${song.title}” is ready in Music.` : `${name}'s song “${title}” didn't work out: ${error}`, source: "desk", quiet: !song }),
+    );
+    return `Started “${title}” on ${engine.name}. It takes a few minutes; the desk will say when it's ready.`;
+  },
+};
+
 /** Classic's names for the note tools. */
 const NOTE_ALIASES: Record<string, string> = { read: "note_read", write: "note_write", edit: "note_edit", notify_owner: "notify_locksmith" };
 
@@ -830,6 +882,10 @@ export function toolsFor(ctx: TurnCtx): Tool[] {
   if (vector) list.push(VECTOR_TOOL);
   if (discord) list.push(DISCORD_TOOL, DISCORD_HISTORY);
   if (s.sshOn && allowed(s.privacy, "ssh")) list.push(SSH);
+  if (s.media.characterTools) {
+    if (s.media.images.some((e) => e.enabled)) list.push(MAKE_PICTURE);
+    if (s.media.songs.some((e) => e.enabled)) list.push(MAKE_SONG);
+  }
   if (s.backup.url) list.push(BACKUP);
   list.push(...mcpTools(ctx));
   return list;
@@ -857,6 +913,8 @@ export function describeCall(name: string, args: Record<string, unknown>) {
     remember: "remembered",
     memory: "used memory",
     music: "used the music player",
+    make_picture: "made a picture of",
+    make_song: "started a song:",
     note_read: "read the note",
     note_write: "wrote the note",
     note_edit: "edited the note",

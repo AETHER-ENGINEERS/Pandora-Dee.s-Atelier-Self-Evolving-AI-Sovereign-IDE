@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Download, ExternalLink, FilePlus2, FileText, Images, Palette, RefreshCw, Save, Trash2, Wrench } from "lucide-react";
-import { desk } from "../lib/store.ts";
+import { Download, ExternalLink, FilePlus2, FileText, Images, Palette, RefreshCw, Save, Settings2, Sparkles, Square, Trash2, Wrench } from "lucide-react";
+import { desk, useDesk } from "../lib/store.ts";
+import { makePictures, savePictures } from "../lib/media.ts";
+import { EnginesDialog } from "./Engines.tsx";
 import { Confirm } from "../ui/common.tsx";
 import { openMenu, type MenuItem } from "../ui/ContextMenu.tsx";
 
@@ -47,7 +49,7 @@ export async function openIn(id: string, path?: string) {
   }
 }
 
-type Tab = "gallery" | "paint" | "apps";
+type Tab = "gallery" | "imagine" | "paint" | "apps";
 
 export function CreateApp() {
   const [tab, setTab] = useState<Tab>(() => (sessionStorage.getItem("pdd-create-tab") as Tab) || "gallery");
@@ -72,7 +74,7 @@ export function CreateApp() {
   return (
     <div className="create">
       <nav className="create-tabs" role="tablist">
-        {([["gallery", <Images size={15} key="g" />, "Gallery"], ["paint", <Palette size={15} key="p" />, "Paint"], ["apps", <Wrench size={15} key="a" />, "Apps"]] as const).map(([id, icon, label]) => (
+        {([["gallery", <Images size={15} key="g" />, "Gallery"], ["imagine", <Sparkles size={15} key="i" />, "Imagine"], ["paint", <Palette size={15} key="p" />, "Paint"], ["apps", <Wrench size={15} key="a" />, "Apps"]] as const).map(([id, icon, label]) => (
           <button key={id} role="tab" aria-selected={tab === id} className={`tab${tab === id ? " on" : ""}`} onClick={() => go(id)}>
             {icon} {label}
           </button>
@@ -80,6 +82,7 @@ export function CreateApp() {
       </nav>
       <div className="create-body">
         {tab === "gallery" ? <Gallery apps={apps} onPaint={paint} /> : null}
+        {tab === "imagine" ? <Imagine apps={apps} onPaint={paint} /> : null}
         {/* the painter stays loaded while you look elsewhere, so nothing is lost switching tabs */}
         <div style={{ display: tab === "paint" ? "contents" : "none" }}>
           <Paint key={doc.n} path={doc.path} apps={apps} onSaved={(p) => setDoc((d) => ({ ...d, path: p }))} onNew={() => paint(null)} />
@@ -337,6 +340,121 @@ function Apps({ apps, refresh }: { apps: AppInfo[]; refresh: () => void }) {
           onClose={() => setGone(null)}
         />
       ) : null}
+    </div>
+  );
+}
+
+// ---------- Imagine: pictures from a picture engine ----------
+
+const SIZES: [string, number, number][] = [
+  ["Square", 1024, 1024],
+  ["Portrait", 832, 1216],
+  ["Landscape", 1216, 832],
+  ["Wide", 1344, 768],
+  ["Small square", 512, 512],
+];
+type Made = { path: string; prompt: string };
+// what was made this session stays while you switch tabs
+let session: Made[] = [];
+
+function Imagine({ apps, onPaint }: { apps: AppInfo[]; onPaint: (p: string) => void }) {
+  const all = useDesk((s) => s.media.images);
+  const engines = useMemo(() => all.filter((e) => e.enabled), [all]);
+  const [engineId, setEngineId] = useState(() => sessionStorage.getItem("pdd-imagine-engine") || "");
+  const engine = engines.find((e) => e.id === engineId) ?? engines[0];
+  const [prompt, setPrompt] = useState(() => sessionStorage.getItem("pdd-imagine-prompt") || "");
+  const [negative, setNegative] = useState("");
+  const [size, setSize] = useState(0);
+  const [count, setCount] = useState(1);
+  const [seed, setSeed] = useState("");
+  const [made, setMade] = useState<Made[]>(session);
+  const [status, setStatus] = useState("");
+  const [setup, setSetup] = useState(false);
+  const stop = useRef<AbortController | null>(null);
+  const [running, setRunning] = useState(false);
+
+  const go = async () => {
+    if (!engine || !prompt.trim()) return;
+    sessionStorage.setItem("pdd-imagine-prompt", prompt);
+    const ctl = new AbortController();
+    stop.current = ctl;
+    setRunning(true);
+    setStatus("Starting…");
+    try {
+      const [, w, h] = SIZES[size];
+      const pics = await makePictures(engine, { prompt: prompt.trim(), negative: negative.trim(), width: w, height: h, count, seed: seed.trim() ? Number(seed) : undefined }, setStatus, ctl.signal);
+      setStatus("Saving…");
+      const paths = await savePictures(pics, prompt);
+      session = [...paths.map((p) => ({ path: p, prompt })), ...session].slice(0, 60);
+      setMade(session);
+      setStatus("");
+    } catch (e) {
+      setStatus(ctl.signal.aborted ? "Stopped. (The engine may finish the job anyway.)" : e instanceof Error ? e.message : String(e));
+    } finally {
+      stop.current = null;
+      setRunning(false);
+    }
+  };
+
+  return (
+    <div className="imagine">
+      <div className="imagine-form">
+        <div className="row">
+          <select className="select grow" value={engine?.id ?? ""} onChange={(e) => (setEngineId(e.target.value), sessionStorage.setItem("pdd-imagine-engine", e.target.value))} aria-label="Engine">
+            {engines.length ? engines.map((e) => <option key={e.id} value={e.id}>{e.name}</option>) : <option value="">No picture engine yet</option>}
+          </select>
+          <button className="icon-btn" data-tip="Picture engines" aria-label="Picture engines" onClick={() => setSetup(true)}>
+            <Settings2 size={15} />
+          </button>
+        </div>
+        {!engines.length ? (
+          <div className="note small">
+            Add the server that makes the pictures: ComfyUI, Draw Things (on a Mac), Automatic1111/Forge, or an OpenAI-style image
+            service. <button className="btn small" onClick={() => setSetup(true)}>Add one</button>
+          </div>
+        ) : null}
+        <textarea className="input" rows={5} value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe the picture: who or what, where, the light, the style…" aria-label="Prompt" onKeyDown={(e) => e.key === "Enter" && (e.ctrlKey || e.metaKey) && void go()} />
+        <details>
+          <summary className="small">Leave out, seed</summary>
+          <textarea className="input small" rows={2} value={negative} onChange={(e) => setNegative(e.target.value)} placeholder="What to leave out (not used by OpenAI-style services)" aria-label="Leave out" />
+          <input className="input small" value={seed} onChange={(e) => setSeed(e.target.value.replace(/[^0-9]/g, ""))} placeholder="Seed (blank: a new one each time)" aria-label="Seed" />
+        </details>
+        <div className="row">
+          <select className="select grow" value={size} onChange={(e) => setSize(Number(e.target.value))} aria-label="Size">
+            {SIZES.map(([n, w, h], i) => <option key={n} value={i}>{n} · {w}×{h}</option>)}
+          </select>
+          <select className="select" style={{ width: "auto" }} value={count} onChange={(e) => setCount(Number(e.target.value))} aria-label="How many">
+            {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n} picture{n > 1 ? "s" : ""}</option>)}
+          </select>
+        </div>
+        <div className="row">
+          {running ? (
+            <button className="btn" onClick={() => stop.current?.abort()}>
+              <Square size={14} /> Stop
+            </button>
+          ) : (
+            <button className="btn primary grow" disabled={!engine || !prompt.trim()} onClick={() => void go()}>
+              <Sparkles size={14} /> Make it
+            </button>
+          )}
+        </div>
+        {status ? <div className="small muted">{status}</div> : null}
+        <div className="small faint">Saved in the vault under {desk().media.pictureFolder}/. Ctrl+Enter makes it.</div>
+      </div>
+      <div className="imagine-results">
+        {!made.length ? <div className="empty small faint">What you make shows here.</div> : null}
+        {made.map((m) => (
+          <figure key={m.path} className="imagine-pic" onContextMenu={(e) => openMenu(e, [{ heading: m.path }, ...openWith(m.path, apps, onPaint), { sep: true }, { label: "Use this prompt again", run: () => setPrompt(m.prompt) }])}>
+            <img src={raw(m.path)} alt={m.prompt} onDoubleClick={() => onPaint(m.path)} />
+            <figcaption className="small">
+              <span className="grow faint" title={m.prompt}>{m.prompt}</span>
+              <button className="btn small" onClick={() => onPaint(m.path)}>Edit</button>
+              <button className="btn small" onClick={() => setPrompt(m.prompt)}>Again</button>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+      {setup ? <EnginesDialog type="images" onClose={() => setSetup(false)} /> : null}
     </div>
   );
 }

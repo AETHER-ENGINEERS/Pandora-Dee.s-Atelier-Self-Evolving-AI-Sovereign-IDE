@@ -248,3 +248,12 @@ test("ranked memory keeps the lines that fit, in order, under their headings", (
   assert.match(out, /2 more lines/);
   assert.equal(rankMemory(mem, "anything", 10), mem);
 });
+
+import { parseSong } from "./songText.ts";
+
+test("a song a character wrote comes apart into title, style and lyrics", () => {
+  const s = parseSong("<think>hmm</think>**TITLE:** \"Harbor Lights\"\nSTYLE: synthwave, female vocals, dreamy\nLYRICS:\n[Verse]\nNeon on the water\n\n[Chorus]\nCarry me home");
+  assert.deepEqual(s, { title: "Harbor Lights", style: "synthwave, female vocals, dreamy", lyrics: "[Verse]\nNeon on the water\n\n[Chorus]\nCarry me home" });
+  assert.equal(parseSong("TITLE: X\nSTYLE: ambient\nLYRICS:\n[Instrumental]", true)?.lyrics, "");
+  assert.equal(parseSong("Just some words, no style"), null);
+});

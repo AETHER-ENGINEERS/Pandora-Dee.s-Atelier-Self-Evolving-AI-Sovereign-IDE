@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Disc3, FolderPlus, Globe2, ListMusic, Maximize2, Mic2, Pause, Play, Radio, Repeat, Repeat1, Search, Shuffle, SkipBack, SkipForward, Star, Trash2, Upload, Users, Volume2 } from "lucide-react";
+import { Disc3, FolderPlus, Globe2, ListMusic, Maximize2, Mic2, Pause, Play, Radio, Repeat, Repeat1, Search, Shuffle, SkipBack, Sparkles, SkipForward, Star, Trash2, Upload, Users, Volume2 } from "lucide-react";
 import { desk, useDesk } from "../lib/store.ts";
 import {
   addFiles,
@@ -27,8 +27,9 @@ import { openMenu, type MenuItem } from "../ui/ContextMenu.tsx";
 import { useWidth } from "../ui/hooks.ts";
 import { Visualizer, importPresets, milkdropPresets } from "./Visualizer.tsx";
 import { WorldRadio } from "./WorldRadio.tsx";
+import { SongMaker } from "./SongMaker.tsx";
 
-type View = "songs" | "albums" | "artists" | "world" | "radio" | "find" | "folders";
+type View = "songs" | "make" | "albums" | "artists" | "world" | "radio" | "find" | "folders";
 const time = (s: number) => (Number.isFinite(s) && s > 0 ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}` : "–:––");
 const setPrefs = (p: Partial<ReturnType<typeof desk>["music"]>) => desk().set({ music: { ...desk().music, ...p } });
 const asItems = (ts: Track[]): Item[] => ts.map((t) => ({ kind: "track", ...t }));
@@ -79,6 +80,7 @@ export function MusicApp() {
       {(
         [
           ["songs", <ListMusic size={15} key="s" />, `Songs (${m.tracks.length})`],
+          ["make", <Sparkles size={15} key="m" />, "Make a song"],
           ["albums", <Disc3 size={15} key="a" />, "Albums"],
           ["artists", <Users size={15} key="r" />, "Artists"],
           ["world", <Globe2 size={15} key="w" />, "Worldband"],
@@ -109,7 +111,7 @@ export function MusicApp() {
       <div className="music-body">
         {side}
         <section className="music-main">
-          {prefs.viz !== "off" ? (
+          {prefs.viz !== "off" && view !== "make" ? (
             <div className="music-viz" ref={vizBox} onDoubleClick={() => void vizBox.current?.requestFullscreen?.()}>
               <Visualizer big />
             </div>
@@ -210,6 +212,7 @@ export function MusicApp() {
               : null}
 
             {view === "world" ? <WorldRadio /> : null}
+            {view === "make" ? <SongMaker /> : null}
             {view === "radio" ? <Stations list={prefs.stations} saved /> : null}
             {view === "find" ? <FindStations /> : null}
             {view === "folders" ? <Folders onFiles={() => files.current?.click()} /> : null}
