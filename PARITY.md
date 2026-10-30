@@ -146,12 +146,17 @@ webxdc apps as peers, rebindable shortcuts, right-click menus, movable dock.
 
 ## Classic, enhanced builds
 
-Classic also offers each original app with the other one's features added: **Pandora Dee 2.9.9.2-enhanced**
+Classic also offers each original app with the other one's features added: **Pandora Dee 2.9.9.2-jv2.22.1-enhanced**
 and **Jade Vault 2.22.1-enhanced** (pick them in Classic's corner switcher or Settings → Classic; Jade Vault
 2.22.1 as released, and the earlier 2.20.1, 2.20.1-enhanced, 2.18.2 and 2.18.2-enhanced builds are there too). Every feature
 an enhanced build adds is **off until you turn it on** in that app's Config, so with nothing switched on each
 behaves like the original it is built from. They are built from the upstream sources with patches and a script
 kept outside this repo (a separate `classic-enhanced` folder: `build.sh --install`, patches in `patches/`).
+
+**Pandora Dee 2.9.9.2-jv2.22.1-enhanced** is the same build carried forward to Jade Vault 2.22.1: Jade's 2.21–2.22.1
+additions are in (the onnx tool sits under the local-models switch with look and litert; the usb tool has its own
+switch; both start off), while Pandora keeps her own way of saving settings in IndexedDB. The earlier
+2.9.9.2-enhanced, described next, stays in Classic.
 
 **Pandora Dee 2.9.9.2-enhanced** = Pandora Dee 2.9.9.2 + everything Jade Vault 2.20.1 adds, merged from both
 apps' sources and given Pandora's words (/Pandora paths, rituals, leaves). Jade's 2.18.3–2.20.1 improvements

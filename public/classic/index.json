@@ -1,6 +1,10 @@
 {
   "pandora": [
     {
+      "version": "2.9.9.2-jv2.22.1-enhanced",
+      "file": "pandora-dee-2.9.9.2-jv2.22.1-enhanced.html"
+    },
+    {
       "version": "2.9.9.2-enhanced",
       "file": "pandora-dee-2.9.9.2-enhanced.html"
     },
