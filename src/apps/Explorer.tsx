@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   ArrowLeft, Copy, Download, ExternalLink, File as FileIcon, FileText, Folder, FolderPlus, FolderUp, Gamepad2, HardDrive, Image as ImageIcon,
-  LayoutGrid, LayoutList, Monitor, Music2, RotateCcw, Trash2, Upload, Video,
+  LayoutGrid, LayoutList, Monitor, Music2, RotateCcw, Share2, Trash2, Upload, Video,
 } from "lucide-react";
 import { desk } from "../lib/store.ts";
 import { Markdown } from "../ui/common.tsx";
@@ -232,6 +232,9 @@ function FileBrowser({ mode, go, pick }: { mode: Mode; go?: { path: string; at: 
             { label: "Copy path", icon: <Copy size={14} />, run: () => void navigator.clipboard?.writeText(e.path) },
           ]
         : []),
+      ...(!many && e.dir && ov?.sharing.canChange
+        ? [{ label: isShared(e.path) ? "Stop sharing on the network" : "Share on the network", icon: <Share2 size={14} />, hint: isShared(e.path) ? "shared" : "with your other devices", run: () => void fileApi.share(e.path, !isShared(e.path)).then((o) => (setOv(o), desk().say(isShared(e.path) ? `${e.name} isn't shared any more.` : `${e.name} is shared with your other devices on this network.`)), fail) }]
+        : []),
       { sep: true },
       ...(!many ? [{ label: "Rename…", run: () => void rename(e) }] : []),
       { label: many ? `Move ${list.length} items to…` : "Move to…", run: () => void moveTo(list) },
@@ -269,7 +272,9 @@ function FileBrowser({ mode, go, pick }: { mode: Mode; go?: { path: string; at: 
     return out;
   }, [cwd, ov]);
 
-  const places = ov ? [...ov.places, ...(ov.wholePc.on && ov.wholePc.local ? ov.wholePc.drives : [])] : [];
+  const places = ov ? [...ov.places, ...ov.wholePc.drives] : [];
+  const shared = ov?.sharing.folders ?? [];
+  const isShared = (p: string) => shared.some((s) => s.path.toLowerCase() === p.toLowerCase());
   const sidebar = (
     <nav className="side explorer-side">
       <div className="list">
@@ -277,6 +282,12 @@ function FileBrowser({ mode, go, pick }: { mode: Mode; go?: { path: string; at: 
         {places.map((p) => (
           <button key={p.id} className={`item${!trashView && cwd.toLowerCase().startsWith(p.path.toLowerCase()) ? " on" : ""}`} onClick={() => void open(p.path)} title={p.path}>
             {p.kind === "drive" ? <HardDrive size={15} /> : p.kind === "music" ? <Music2 size={15} /> : <Folder size={15} />} {p.name}
+          </button>
+        ))}
+        {shared.length ? <div className="folder">Shared from this computer</div> : null}
+        {shared.map((p) => (
+          <button key={p.id} className={`item${!trashView && cwd.toLowerCase().startsWith(p.path.toLowerCase()) ? " on" : ""}`} onClick={() => void open(p.path)} title={p.path}>
+            <Share2 size={15} /> {p.name}
           </button>
         ))}
         {!picking ? (
@@ -291,6 +302,15 @@ function FileBrowser({ mode, go, pick }: { mode: Mode; go?: { path: string; at: 
           <span>
             The rest of this computer
             <span className="faint"> (only here, never from phones or the network)</span>
+          </span>
+        </label>
+      ) : null}
+      {ov?.sharing.canChange && !picking ? (
+        <label className="explorer-pc small">
+          <input type="checkbox" checked={ov.sharing.wholePc} onChange={(e) => void fileApi.shareWholePc(e.target.checked).then(setOv, fail)} />
+          <span>
+            Share the whole computer with your other devices
+            <span className="faint"> (on this network they can open, add and change files; folders can be shared one at a time from their menu)</span>
           </span>
         </label>
       ) : null}

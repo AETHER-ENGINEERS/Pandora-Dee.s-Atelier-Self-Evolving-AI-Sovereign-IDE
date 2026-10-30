@@ -13,7 +13,12 @@ import { spawn } from "node:child_process";
 const win = process.platform === "win32";
 const mac = process.platform === "darwin";
 
-export function createFiles({ dataDir, musicFolders, getWholePc, setWholePc }) {
+export function createFiles({ dataDir, musicFolders, getWholePc, setWholePc, getSharing = () => ({}), setSharing = () => {} }) {
+  // what this computer shares with the other devices on the network: chosen folders, or all of it (both off at first)
+  const sharing = () => {
+    const s = getSharing() || {};
+    return { wholePc: s.wholePc === true, folders: Array.isArray(s.folders) ? s.folders.filter((f) => typeof f === "string") : [] };
+  };
   const trashDir = () => path.join(dataDir(), "trash");
   const trashIndex = () => path.join(trashDir(), "index.json");
 
@@ -56,13 +61,21 @@ export function createFiles({ dataDir, musicFolders, getWholePc, setWholePc }) {
     const full = path.resolve(String(p));
     if (local && getWholePc()) return full;
     if (places().some((pl) => inside(full, pl.path))) return full;
+    const sh = sharing();
+    if (sh.wholePc || sh.folders.some((f) => inside(full, f))) return full;
     throw Object.assign(new Error("That's outside the desktop's places."), { status: 403 });
   }
 
   function overview(local) {
     return {
       places: places(),
-      wholePc: { on: Boolean(getWholePc()), local, drives: local && getWholePc() ? drives() : [] },
+      wholePc: { on: Boolean(getWholePc()), local, drives: (local && getWholePc()) || sharing().wholePc ? drives() : [] },
+      // what's shared with the network; only the computer itself can change it
+      sharing: {
+        wholePc: sharing().wholePc,
+        folders: sharing().folders.filter((f) => fs.existsSync(f)).map((f, i) => ({ id: `share-${i}`, name: path.basename(f) || f, path: f, kind: "shared" })),
+        canChange: local,
+      },
       deviceExplorer: local,
     };
   }
@@ -208,5 +221,20 @@ export function createFiles({ dataDir, musicFolders, getWholePc, setWholePc }) {
     return overview(local);
   }
 
-  return { overview, list, stat, allowed, upload, mkdir, move, trash, trashList, restore, revealOnDevice, setWhole };
+  /** Share a folder with the network, or stop; or the whole computer (only from the computer itself). */
+  function share({ path: p, on, wholePc }, local) {
+    if (!local) throw Object.assign(new Error("Sharing is changed on the computer running the desktop."), { status: 403 });
+    const s = sharing();
+    if (typeof wholePc === "boolean") s.wholePc = wholePc;
+    if (p) {
+      const full = path.resolve(String(p));
+      if (!fs.existsSync(full) || !fs.statSync(full).isDirectory()) throw Object.assign(new Error("Only folders can be shared."), { status: 400 });
+      s.folders = s.folders.filter((f) => path.resolve(f).toLowerCase() !== full.toLowerCase());
+      if (on) s.folders.push(full);
+    }
+    setSharing(s);
+    return overview(local);
+  }
+
+  return { share, overview, list, stat, allowed, upload, mkdir, move, trash, trashList, restore, revealOnDevice, setWhole };
 }

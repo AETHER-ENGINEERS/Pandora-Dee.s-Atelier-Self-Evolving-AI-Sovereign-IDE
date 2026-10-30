@@ -85,15 +85,17 @@ export function deskServer() {
   const vector = () => (vec ??= createVector(() => dataDir));
   let vh;
   const vectorHost = () => (vh ??= createVectorHost(() => dataDir));
+  // PDD_CONFIG: another settings file (a test copy keeps its own, so it never changes the real desktop's)
+  const configFile = () => process.env.PDD_CONFIG || path.join(root, "pdd.config.json");
   // pdd.config.json: this computer's own settings for the desktop (data folder, network sharing, …), kept whole
   const readConfig = () => {
     try {
-      return JSON.parse(fs.readFileSync(path.join(root, "pdd.config.json"), "utf8"));
+      return JSON.parse(fs.readFileSync(configFile(), "utf8"));
     } catch {
       return {};
     }
   };
-  const writeConfig = (patch) => fs.writeFileSync(path.join(root, "pdd.config.json"), JSON.stringify({ ...readConfig(), ...patch }, null, 2));
+  const writeConfig = (patch) => fs.writeFileSync(configFile(), JSON.stringify({ ...readConfig(), ...patch }, null, 2));
   let fl;
   const files = () =>
     (fl ??= createFiles({
@@ -101,6 +103,8 @@ export function deskServer() {
       musicFolders: () => music().folders(),
       getWholePc: () => readConfig().filesWholeComputer === true,
       setWholePc: (on) => writeConfig({ filesWholeComputer: on }),
+      getSharing: () => readConfig().filesSharing,
+      setSharing: (s) => writeConfig({ filesSharing: s }),
     }));
   const library = () => {
     if (!lib) {
@@ -382,6 +386,7 @@ export function deskServer() {
           if (parts[1] === "restore") return send(res, 200, { path: F.restore(String(b.id), local) });
           if (parts[1] === "reveal-device") return send(res, 200, (F.revealOnDevice(b.path, local), { ok: true }));
           if (parts[1] === "whole-pc") return send(res, 200, F.setWhole(b.on, local));
+          if (parts[1] === "share") return send(res, 200, F.share({ path: b.path, on: Boolean(b.on), wholePc: typeof b.wholePc === "boolean" ? b.wholePc : undefined }, local));
           // a Mini App (.xdc) from anywhere Explorer reaches, into Games & Apps
           if (parts[1] === "import-xdc") {
             const file = F.allowed(b.path, local);
@@ -732,7 +737,7 @@ export function deskServer() {
       root = config.root;
       let saved = "";
       try {
-        saved = JSON.parse(fs.readFileSync(path.join(root, "pdd.config.json"), "utf8")).dataDir || "";
+        saved = JSON.parse(fs.readFileSync(configFile(), "utf8")).dataDir || "";
       } catch {
         saved = "";
       }

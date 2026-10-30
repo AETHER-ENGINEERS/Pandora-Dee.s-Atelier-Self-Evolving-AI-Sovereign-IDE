@@ -8,7 +8,13 @@ import { library } from "./xdc.ts";
 
 export type Entry = { name: string; path: string; dir: boolean; size: number; mtime: number; ext: string };
 export type Place = { id: string; name: string; path: string; kind: string };
-export type Overview = { places: Place[]; wholePc: { on: boolean; local: boolean; drives: Place[] }; deviceExplorer: boolean };
+export type Overview = {
+  places: Place[];
+  wholePc: { on: boolean; local: boolean; drives: Place[] };
+  deviceExplorer: boolean;
+  /** shared with the other devices on the network (only the computer itself can change it) */
+  sharing: { wholePc: boolean; folders: Place[]; canChange: boolean };
+};
 export type Listing = { path: string; parent: string | null; entries: Entry[] };
 export type Trashed = { id: string; from: string; name: string; at: number };
 
@@ -32,6 +38,8 @@ export const fileApi = {
   restore: (id: string) => call<{ path: string }>("/api/files/restore", { id }),
   revealOnDevice: (p: string) => call<{ ok: true }>("/api/files/reveal-device", { path: p }),
   setWholePc: (on: boolean) => call<Overview>("/api/files/whole-pc", { on }),
+  share: (p: string, on: boolean) => call<Overview>("/api/files/share", { path: p, on }),
+  shareWholePc: (on: boolean) => call<Overview>("/api/files/share", { wholePc: on }),
   importXdc: (p: string) => call<{ id: string | null; added: number; errors: string[] }>("/api/files/import-xdc", { path: p }),
   async upload(dir: string, file: File): Promise<string> {
     const r = await fetch(`/api/files/upload?dir=${q(dir)}`, { method: "POST", headers: { "X-Filename": encodeURIComponent(file.name) }, body: file });
