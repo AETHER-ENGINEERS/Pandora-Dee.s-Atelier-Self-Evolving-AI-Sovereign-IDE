@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { desk, useDesk } from "../lib/store.ts";
 import { run } from "../lib/shell.ts";
+import { mcpCommand } from "../lib/mcpshell.ts";
 import { privately } from "../lib/agent.ts";
 import { CharacterPicker } from "./Files.tsx";
 import { findHost, openHost, sshOp } from "../lib/ssh.ts";
@@ -110,6 +111,11 @@ export function TerminalApp() {
       const name = res.action.id;
       const hit = st.visibleCharacters().find((x) => x.short === name);
       if (hit) setCharId(hit.id);
+    }
+    if (res.action?.kind === "mcp") {
+      setLines((prev) => [...prev, { kind: "out", text: "…" }]);
+      const r = await mcpCommand(res.action.argv, charId);
+      setLines((prev) => [...prev.slice(0, -1), { kind: "out", text: r.out }]);
     }
     if (res.action?.kind === "ask") {
       setLines((prev) => [...prev, { kind: "out", text: `${c?.short} is thinking…` }]);

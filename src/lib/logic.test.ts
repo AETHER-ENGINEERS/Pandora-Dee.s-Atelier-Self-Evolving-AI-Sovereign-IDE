@@ -339,3 +339,10 @@ test("her Classic model, turns and voice become her desktop preferences, and go 
   assert.equal(out.settings.voiceName, "af_bella");
   assert.equal(out.settings.memoryRag, true);
 });
+
+test("the shell hands mcp commands on whole, JSON arguments included", () => {
+  const ctx = { who: "Dee", host: "seaside", room: [], env: {}, model: "", characters: [] };
+  const r = run(`mcp call mcp__fae__echo '{"text": "hi there"}'`, "", {}, ctx);
+  assert.deepEqual(r.action, { kind: "mcp", argv: ["call", "mcp__fae__echo", '{"text": "hi there"}'] });
+  assert.deepEqual(run("mcp", "", {}, ctx).action, { kind: "mcp", argv: [] });
+});

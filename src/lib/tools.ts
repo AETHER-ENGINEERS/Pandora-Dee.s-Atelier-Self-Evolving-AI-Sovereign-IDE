@@ -9,6 +9,8 @@ import { httpRequest, webFetch, webSearch, type HttpArgs } from "./net.ts";
 import { discordHistory, discordTool, notifyLocksmith, saveToVault, vectorTool } from "./messengers.ts";
 import { allMcp, callMcp, listResources, readResource, runCodemode, searchMcp, specOf } from "./mcptools.ts";
 import { sshTool } from "./ssh.ts";
+import { run } from "./shell.ts";
+import { mcpCommand } from "./mcpshell.ts";
 import { backupTool } from "./serverBackup.ts";
 import { gameScreen } from "./bus.ts";
 import { describeRows, library, recentLive, sendLive, sendUpdate } from "./xdc.ts";
@@ -164,6 +166,39 @@ const SKILL: Tool = {
     const list = action === "find" ? searchSkills(files, str(a.query)) : skillsOf(files);
     if (!list.length) return action === "find" ? "No skill fits that." : "You have no skills yet.";
     return list.map((s) => `- ${s.name}: ${s.description || "(no description)"}`).join("\n");
+  },
+};
+
+/** Her shell, as in Classic: the Terminal's commands over her own files, one per line, `mcp …` included. */
+const BASH: Tool = {
+  name: "bash",
+  description:
+    "Run shell commands over your own files (ls, cat, grep, echo > file, mv, cp, rm, tree…) and `mcp` to manage and call your tool servers (mcp list | tools | call <tool> '<json>' | add <name> <url> | remove <name> | reconnect). One command per line; type help for the list.",
+  parameters: obj({ command: { type: "string", description: "One or more commands, one per line" } }, ["command"]),
+  run: async (id, a) => {
+    const s = desk();
+    const me = s.character(id);
+    const ctx = {
+      who: me?.short ?? id,
+      host: "seaside",
+      room: s.roomCharacters().map((x) => `${x.short}  ${x.name}`),
+      env: Object.fromEntries(Object.keys(s.env).map((k) => [k, s.env[k] ? "set" : ""])),
+      model: "",
+      characters: [],
+    };
+    let cwd = "";
+    const out: string[] = [];
+    for (const line of str(a.command).split("\n")) {
+      if (!line.trim()) continue;
+      const res = run(line, cwd, desk().filesOf(id), ctx);
+      cwd = res.cwd;
+      if (res.tree) desk().set({ files: { ...desk().files, [id]: res.tree } });
+      if (res.out) out.push(res.out);
+      if (res.action?.kind === "mcp") out.push((await mcpCommand(res.action.argv, id)).out);
+      else if (res.action?.kind === "open") out.push("(open works in the Terminal app; use cat here)");
+      else if (res.action) out.push("(that command works in the Terminal app, not here)");
+    }
+    return out.join("\n").slice(0, 16000) || "(done)";
   },
 };
 
@@ -877,7 +912,7 @@ export function toolsFor(ctx: TurnCtx): Tool[] {
     if (web) list.push(WEB[0]);
     return list;
   }
-  const list = [...BASE, MEMORY, SKILL, ...NOTES_TOOLS, MUSIC_TOOL, APPS, NOTIFY];
+  const list = [...BASE, BASH, MEMORY, SKILL, ...NOTES_TOOLS, MUSIC_TOOL, APPS, NOTIFY];
   if (web) list.push(...WEB, HTTP);
   if (vector) list.push(VECTOR_TOOL);
   if (discord) list.push(DISCORD_TOOL, DISCORD_HISTORY);

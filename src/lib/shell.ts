@@ -9,7 +9,7 @@ export type ShellResult = {
   tree?: Tree;
   clear?: boolean;
   /** Something the terminal should do outside the shell. */
-  action?: { kind: "open"; path: string } | { kind: "ask"; text: string } | { kind: "switch"; id: string };
+  action?: { kind: "open"; path: string } | { kind: "ask"; text: string } | { kind: "switch"; id: string } | { kind: "mcp"; argv: string[] };
 };
 
 export type ShellContext = { who: string; host: string; room: string[]; env: Record<string, string>; model: string; characters: string[] };
@@ -24,6 +24,7 @@ const HELP = `Commands
   head / tail <file>  first / last lines    open <file>         open in Files
   ask <message>       talk to this character privately
   ssh <host>          connect to a saved host (or user@host); ~. hangs up
+  mcp [list|add|remove|reconnect|tools|call]   tool servers, as in Classic
   use <character>     switch to another character's files
   whoami, who, env, model, date, clear, help`;
 
@@ -184,6 +185,8 @@ export function run(line: string, cwd: string, tree: Tree, ctx: ShellContext): S
     case "ask":
       if (!args.length) return { out: "usage: ask <message>", cwd };
       return { out: "", cwd, action: { kind: "ask", text: trimmed.slice(4).trim() } };
+    case "mcp":
+      return { out: "", cwd, action: { kind: "mcp", argv: args } };
     case "use": {
       const name = args.join(" ").toLowerCase();
       const hit = ctx.characters.find((c) => c.toLowerCase().startsWith(name));
