@@ -1,0 +1,4 @@
+[
+  { "file": "gomoku-0.6.199.xdc", "name": "Gomoku", "by": "th2tran", "source": "https://github.com/th2tran/gomoku-webxdc", "license": "BSD-2-Clause" },
+  { "file": "machstrike-0.7.0.53.xdc", "name": "MachStrike", "by": "th2tran", "source": "https://github.com/th2tran/flightsim-xdc", "license": "included at the author's request" }
+]

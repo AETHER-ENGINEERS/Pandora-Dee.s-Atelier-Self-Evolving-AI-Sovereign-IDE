@@ -35,7 +35,8 @@ export function createLibrary(dataDir) {
     return full;
   }
 
-  function importXdc(bytes, filename, when = Date.now(), extra = {}) {
+  /** `defaults` fill only what the manifest leaves empty (a shipped app's home repo, say); `extra` overrides. */
+  function importXdc(bytes, filename, when = Date.now(), extra = {}, defaults = {}) {
     const id = crypto.createHash("sha256").update(bytes).digest("hex").slice(0, 16);
     const existing = pkgs.find((p) => p.id === id);
     if (existing) return { pkg: existing, added: false };
@@ -71,11 +72,13 @@ export function createLibrary(dataDir) {
       built: when,
       description: String(manifest.description || manifest.subtitle || ""),
       source: String(manifest.source_code_url || manifest.source || ""),
-      icon: names.find((n) => /^icon\.(png|jpe?g|webp|svg)$/i.test(n)) || "",
+      // the manifest's own icon when it names one that's there (gomoku.png), else icon.png and friends
+      icon: (manifest.icon && names.includes(String(manifest.icon)) ? String(manifest.icon) : "") || names.find((n) => /^icon\.(png|jpe?g|webp|svg)$/i.test(n)) || "",
       parent: "",
       notes: "",
       ...extra,
     };
+    for (const [k, v] of Object.entries(defaults)) if (!pkg[k]) pkg[k] = v;
     void dir;
     pkgs.push(pkg);
     save();
@@ -83,11 +86,11 @@ export function createLibrary(dataDir) {
   }
 
   /** Import a single .xdc or a .zip holding many. */
-  function importAny(bytes, filename) {
+  function importAny(bytes, filename, defaults = {}) {
     const results = [];
     const errors = [];
     if (/\.xdc$/i.test(filename)) {
-      results.push(importXdc(bytes, filename));
+      results.push(importXdc(bytes, filename, Date.now(), {}, defaults));
     } else {
       const dates = zipDates(bytes);
       let inner;
@@ -107,6 +110,8 @@ export function createLibrary(dataDir) {
     return {
       added: results.filter((r) => r.added).map((r) => r.pkg),
       duplicates: results.filter((r) => !r.added).length,
+      // every app in the file, whether just added or already here (to open it either way)
+      found: results.map((r) => r.pkg),
       errors,
     };
   }

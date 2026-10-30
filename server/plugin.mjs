@@ -87,13 +87,40 @@ export function deskServer() {
   const library = () => {
     if (!lib) {
       lib = createLibrary(dataDir);
-      const builtIn = path.join(publicDir || path.join(root, "public"), "apps", "jade-link.xdc");
+      const apps = path.join(publicDir || path.join(root, "public"), "apps");
+      const builtIn = path.join(apps, "jade-link.xdc");
       if (fs.existsSync(builtIn) && !lib.list().some((p) => p.appKey === "jade-link")) {
         try {
           lib.importAny(fs.readFileSync(builtIn), "jade-link.xdc");
         } catch {
           /* the library still works without it */
         }
+      }
+      // apps that come with the desktop (public/apps/shipped.json): each added once per data folder, so one
+      // that someone removes stays removed; a newer shipped version is added next to the old
+      try {
+        const shipped = JSON.parse(fs.readFileSync(path.join(apps, "shipped.json"), "utf8"));
+        const noteFile = path.join(dataDir, "xdc", "shipped.json");
+        let done = [];
+        try {
+          done = JSON.parse(fs.readFileSync(noteFile, "utf8"));
+        } catch {
+          done = [];
+        }
+        const before = done.length;
+        for (const s of shipped) {
+          const file = path.join(apps, path.basename(String(s.file)));
+          if (done.includes(s.file) || !fs.existsSync(file)) continue;
+          try {
+            lib.importAny(fs.readFileSync(file), path.basename(file), s.source ? { source: s.source } : {});
+            done.push(s.file);
+          } catch {
+            /* a broken file: tried again next time */
+          }
+        }
+        if (done.length !== before) fs.writeFileSync(noteFile, JSON.stringify(done, null, 1));
+      } catch {
+        /* no list, or it can't be read: nothing shipped to add */
       }
     }
     return lib;

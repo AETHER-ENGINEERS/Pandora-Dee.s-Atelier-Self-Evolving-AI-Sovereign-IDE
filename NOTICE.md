@@ -47,11 +47,16 @@ Not part of this repository: people bring them into their own library. They're l
 credit, and so the desktop's update check (Games & Apps → Check for updates, or `npm run check-upstreams`)
 knows where newer releases come from. Each keeps its own license.
 
+Two of them **ship with the desktop**, at their maker's request: **Gomoku** (0.6.199, BSD-2-Clause) and **MachStrike**
+(0.7.0.53, the flight simulator from flightsim-xdc), both by th2tran, in `public/apps/` (listed in `shipped.json`) and
+added to each library once.
+
 | App | Made by | Source |
 | --- | --- | --- |
 | XDC-Chess | th2tran | https://github.com/th2tran/chess-webxdc |
 | Aurum Chess | th2tran | https://github.com/th2tran/aurum-chess-xdc |
 | Gomoku | th2tran | https://github.com/th2tran/gomoku-webxdc |
+| MachStrike | th2tran | https://github.com/th2tran/flightsim-xdc |
 | SNES (xdc) | th2tran | https://github.com/th2tran/snes-xdc |
 | Vexel | JSKitty | https://github.com/JSKitty/Vexel |
 | Arcane Dungeon | ArcaneCircle | https://github.com/ArcaneCircle/pixel-dungeon |
