@@ -36,6 +36,9 @@ export function createVectorHost(dataDir) {
   const subscribed = new Set();
   const clients = new Set(); // { res, events: Set }
   const log = [];
+  // the last calls and events, by name only (never their arguments or contents), for troubleshooting
+  const trail = [];
+  const note = (s) => (trail.push(`${new Date().toISOString().slice(11, 23)} ${s}`), trail.length > 60 && trail.shift());
 
   function wake() {
     if (!waiting || !queue.length) return;
@@ -64,6 +67,7 @@ export function createVectorHost(dataDir) {
       running: Boolean(proc),
       connected: Boolean(proc) && Date.now() - lastPoll < 35_000,
       log: log.slice(-20),
+      trail: trail.slice(),
     };
   }
 
@@ -137,10 +141,12 @@ export function createVectorHost(dataDir) {
         if (m.event) {
           const line = `event: msg\ndata: ${JSON.stringify({ event: m.event, payload: m.payload })}\n\n`;
           for (const c of clients) if (c.events.has(m.event)) c.res.write(line);
+          note(`event ${m.event}`);
         } else if (pending.has(m.id)) {
           const p = pending.get(m.id);
           pending.delete(m.id);
           clearTimeout(p.timer);
+          note(`${"err" in m ? "✗" : "✓"} ${p.cmd} ${Date.now() - p.at} ms${"err" in m ? `: ${String(m.err).slice(0, 120)}` : ""}`);
           if ("err" in m) p.reject(Object.assign(new Error(String(m.err)), { fromVector: true, value: m.err }));
           else p.resolve(m.ok);
         }
@@ -156,7 +162,8 @@ export function createVectorHost(dataDir) {
     return new Promise((resolve, reject) => {
       // long ones (uploads, big syncs) get plenty of time
       const timer = setTimeout(() => (pending.delete(id), reject(new Error(`Vector didn't answer ${cmd}.`))), 15 * 60_000);
-      pending.set(id, { resolve, reject, timer });
+      pending.set(id, { resolve, reject, timer, cmd, at: Date.now() });
+      note(`→ ${cmd}`);
       post({ id, cmd, args });
     });
   }
