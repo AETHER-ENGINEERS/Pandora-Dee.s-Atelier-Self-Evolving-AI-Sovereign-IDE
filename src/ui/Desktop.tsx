@@ -3,7 +3,7 @@ import { Check, Download, GripVertical, LayoutGrid } from "lucide-react";
 import { APPS, desk, useDesk, type AppId } from "../lib/store.ts";
 import { Window } from "./Window.tsx";
 import { PersonAvatar } from "./common.tsx";
-import { download, makeBackup } from "../lib/backup.ts";
+import { download, makeBackup, toClassic } from "../lib/backup.ts";
 import { scopeOf } from "../lib/model.ts";
 import { allowed } from "../lib/privacy.ts";
 import { resumeBridges } from "../lib/bridges.ts";
@@ -416,6 +416,12 @@ function MenuBar({ onLoad }: { onLoad: () => void }) {
           onClick={act(() => focusChar && download(`${focusChar.id}-backup.json`, makeBackup(focusChar, desk().filesOf(focusChar.id))))}
         >
           Save {focusChar?.short ?? "character"}'s backup
+        </button>
+        <button
+          disabled={!focusChar}
+          onClick={act(() => focusChar && download(`${focusChar.id}-classic-config.json`, toClassic(focusChar, desk().filesOf(focusChar.id))))}
+        >
+          Export {focusChar?.short ?? "character"} for Classic (Pandora Dee / Jade Vault)
         </button>
         <div className="sep" />
         <button onClick={act(() => openSettings("backup"))}>Export or import everything…</button>

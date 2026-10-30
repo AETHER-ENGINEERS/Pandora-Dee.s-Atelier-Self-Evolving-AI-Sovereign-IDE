@@ -5,7 +5,7 @@ import { loopCheck, mentioned, responders, similarity, streakOf, tidyReply, tran
 import { run } from "./shell.ts";
 import { allowed, maskName, withinHours, PRIVACY_DEFAULT } from "./privacy.ts";
 import { scopeOf, pickModel } from "./model.ts";
-import { parseBackup, scrub } from "./backup.ts";
+import { parseBackup, scrub, toClassic } from "./backup.ts";
 import { BUILT_IN } from "./characters.ts";
 
 const dee = BUILT_IN.find((c) => c.id === "dee")!;
@@ -256,4 +256,69 @@ test("a song a character wrote comes apart into title, style and lyrics", () => 
   assert.deepEqual(s, { title: "Harbor Lights", style: "synthwave, female vocals, dreamy", lyrics: "[Verse]\nNeon on the water\n\n[Chorus]\nCarry me home" });
   assert.equal(parseSong("TITLE: X\nSTYLE: ambient\nLYRICS:\n[Instrumental]", true)?.lyrics, "");
   assert.equal(parseSong("Just some words, no style"), null);
+});
+
+test("a Classic backup comes in whole and goes back out the same, without keys", () => {
+  const backup = {
+    app: "jade-vault",
+    format: 1,
+    kind: "config",
+    includesKeys: true,
+    settings: { provider: "cloud", memoryRag: true, ollamaKey: "olk_secret", sshHosts: [{ host: "h", password: "p" }], jadeTheme: "amethyst" },
+    storage: { schedules: [{ name: "morning" }] },
+    vault: {
+      files: {
+        "/Pandora/SOUL.md": "# Pandora Dee Fae\n\nShe tends the forge.",
+        "/Pandora/Memory.md": "# Memory\n- tasks first",
+        "/agents.md": "# Agents",
+        "/Pandora/mcp.json": "{\"servers\":{}}",
+        "/Pandora/skills/forge/SKILL.md": "# Forge",
+        "/Pandora/Journal/2026-10-30.md": "## The crossing",
+        "/Pandora/Rituals/dawn.json": "{}",
+        "/Pandora/Logs/cron.log": "ok",
+        "/Pandora/.index/vectors.db": "x",
+        "/Pandora/art.png": { base64: "AAAA" },
+        "/Inbox.md": "a note of the person's own",
+      },
+      dirs: [],
+    },
+  };
+  const r = parseBackup(JSON.stringify(backup), []);
+  assert.ok(r.ok);
+  if (!r.ok) return;
+  const c = r.character;
+  assert.equal(c.name, "Pandora Dee Fae");
+  assert.equal(c.files["SOUL.md"], "# Pandora Dee Fae\n\nShe tends the forge.");
+  assert.equal(c.files["MEMORY.md"], "# Memory\n- tasks first");
+  assert.equal(c.files["AGENTS.md"], "# Agents");
+  assert.equal(c.files["skills/forge/SKILL.md"], "# Forge");
+  assert.equal(c.files["journal/2026-10-30.md"], "## The crossing");
+  assert.equal(c.files["rituals/dawn.json"], "{}");
+  assert.equal(c.files["classic/Logs/cron.log"], "ok");
+  assert.ok(!Object.keys(c.files).some((k) => k.includes(".index") || k.includes("Inbox") || k.includes("art.png")));
+  assert.equal(c.classic?.root, "Pandora");
+  assert.equal(c.classic?.settings.memoryRag, true);
+  assert.equal(c.classic?.settings.jadeTheme, "amethyst");
+  assert.ok(!("ollamaKey" in (c.classic?.settings ?? {})) && !("sshHosts" in (c.classic?.settings ?? {})));
+  assert.match(r.note, /1 note outside her folder/);
+  assert.match(r.note, /1 picture or binary file/);
+  // and back out, as a Classic config backup
+  const out = toClassic(c, c.files);
+  assert.equal(out.app, "jade-vault");
+  assert.equal(out.kind, "config");
+  for (const p of ["/Pandora/SOUL.md", "/Pandora/Memory.md", "/agents.md", "/Pandora/mcp.json", "/Pandora/skills/forge/SKILL.md", "/Pandora/Journal/2026-10-30.md", "/Pandora/Rituals/dawn.json", "/Pandora/Logs/cron.log"])
+    assert.equal(out.vault.files[p], (backup.vault.files as Record<string, unknown>)[p], p);
+  assert.equal(out.settings.provider, "cloud");
+  assert.ok(!("ollamaKey" in out.settings));
+  assert.deepEqual(out.storage, backup.storage);
+});
+
+test("a Jade Vault backup keeps Jade's folder and her flows", () => {
+  const r = parseBackup(JSON.stringify({ app: "jade-vault", format: 1, kind: "config", settings: {}, vault: { files: { "/Jade/SOUL.md": "# Jade", "/Jade/Flows/x.json": "{}" } } }), ["jade"]);
+  assert.ok(r.ok);
+  if (!r.ok) return;
+  assert.equal(r.character.classic?.root, "Jade");
+  assert.equal(r.character.id, "jade-2");
+  assert.equal(r.character.files["rituals/x.json"], "{}");
+  assert.equal(toClassic(r.character, r.character.files).vault.files["/Jade/Flows/x.json"], "{}");
 });

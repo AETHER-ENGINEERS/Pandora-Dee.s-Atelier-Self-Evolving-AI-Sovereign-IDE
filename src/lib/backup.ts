@@ -1,7 +1,7 @@
 // Character backups: our own format, the earlier desk's format, and character exports from
 // other apps (AICord and similar). Anything that looks like a token or secret is dropped.
 
-import { blankCharacter, slug, type Character } from "./characters.ts";
+import { blankCharacter, slug, type Character, type ClassicKeep } from "./characters.ts";
 
 export const FORMAT = "pandora-dee-character";
 
@@ -53,7 +53,15 @@ export function parseBackup(raw: string, takenIds: string[]): Parsed {
   const note = removed.n ? ` ${removed.n} secret-looking value${removed.n === 1 ? " was" : "s were"} left out. Put keys in Keys instead.` : "";
 
   let c: Character;
-  if (clean.format === FORMAT && clean.character && typeof clean.character === "object") {
+  let classicNote = "";
+  if (isClassicBackup(clean)) {
+    // a Pandora Dee or Jade Vault backup (Config → Back up): her files, and her Classic settings kept whole
+    const { character, skipped } = fromClassic(clean);
+    c = character;
+    classicNote =
+      (skipped.notes ? ` ${skipped.notes} note${skipped.notes === 1 ? "" : "s"} outside her folder stay in the backup (bring them into Notes from there).` : "") +
+      (skipped.binary ? ` ${skipped.binary} picture or binary file${skipped.binary === 1 ? " was" : "s were"} left out.` : "");
+  } else if (clean.format === FORMAT && clean.character && typeof clean.character === "object") {
     const ch = clean.character as Partial<Character>;
     if (!text(ch.name)) return { ok: false, reason: "That backup has no name." };
     c = { ...blankCharacter(text(ch.name)), ...ch, files: (clean.files as Record<string, string>) ?? {} } as Character;
@@ -104,7 +112,109 @@ export function parseBackup(raw: string, takenIds: string[]): Parsed {
   const files: Record<string, string> = {};
   for (const [k, v] of Object.entries(c.files ?? {})) if (typeof v === "string") files[k.replace(/^\/+/, "")] = v;
   c.files = files;
-  return { ok: true, character: c, note: `${c.name} is on the desktop.${note}` };
+  return { ok: true, character: c, note: `${c.name} is on the desktop.${classicNote}${note}` };
+}
+
+// ---------- Classic (Pandora Dee / Jade Vault) backups: { app: "jade-vault", kind: "config" | "full", settings, vault: { files } } ----------
+
+/** Her files in Classic's folder ↔ the desktop's names for them. The rest of her folder rides along under classic/. */
+const CLASSIC_NAMES: [desk: string, classic: (root: string) => string][] = [
+  ["SOUL.md", (r) => `/${r}/SOUL.md`],
+  ["MEMORY.md", (r) => `/${r}/Memory.md`],
+  ["SYSTEM.md", (r) => `/${r}/SYSTEM.md`],
+  ["HEARTBEAT.md", (r) => `/${r}/HEARTBEAT.md`],
+  ["CURIOSITY.md", (r) => `/${r}/CURIOSITY.md`],
+  ["mcp.json", (r) => `/${r}/mcp.json`],
+];
+const CLASSIC_DIRS: [desk: string, classic: (root: string) => string][] = [
+  ["skills/", (r) => `/${r}/skills/`],
+  ["journal/", (r) => `/${r}/Journal/`],
+  ["rituals/", (r) => (r === "Jade" ? "/Jade/Flows/" : "/Pandora/Rituals/")],
+];
+
+/** Classic's own list of settings that hold keys or logins (SECRET_KEYS in both apps), and the API token: never kept, never exported. */
+export const CLASSIC_SECRETS = ["ollamaKey", "groqKey", "oaiKey", "lcppKey", "ollayaKey", "mcpSecrets", "secrets", "vecToken", "aicKey", "dcToken", "embedKey", "sshHosts", "abToken", "abPass", "apiToken"];
+const withoutSecrets = (s: Record<string, unknown>) => Object.fromEntries(Object.entries(s).filter(([k]) => !CLASSIC_SECRETS.includes(k)));
+
+export function isClassicBackup(d: unknown): boolean {
+  const o = d as { app?: unknown; vault?: { files?: unknown } };
+  return o?.app === "jade-vault" && Boolean(o.vault?.files && typeof o.vault.files === "object");
+}
+
+/** A Classic backup as a desktop character: her files under the desktop's names, her settings kept whole. */
+export function fromClassic(d: Record<string, unknown>): { character: Character; skipped: { notes: number; binary: number } } {
+  const files = (d.vault as { files: Record<string, unknown> }).files;
+  const paths = Object.keys(files);
+  const root: ClassicKeep["root"] = paths.filter((p) => p.startsWith("/Pandora/")).length >= paths.filter((p) => p.startsWith("/Jade/")).length ? "Pandora" : "Jade";
+  const lower = new Map(paths.map((p) => [p.toLowerCase(), p]));
+  const out: Record<string, string> = {};
+  const used = new Set<string>();
+  const skipped = { notes: 0, binary: 0 };
+  const take = (p: string) => {
+    const v = files[p];
+    used.add(p);
+    if (typeof v === "string") return v;
+    skipped.binary++;
+    return null;
+  };
+  for (const [desk, cl] of CLASSIC_NAMES) {
+    const p = lower.get(cl(root).toLowerCase());
+    if (p) {
+      const v = take(p);
+      if (v !== null) out[desk] = v;
+    }
+  }
+  const agents = lower.get("/agents.md") ?? lower.get(`/${root}/agents.md`.toLowerCase());
+  if (agents) {
+    const v = take(agents);
+    if (v !== null) out["AGENTS.md"] = v;
+  }
+  for (const p of paths) {
+    if (used.has(p)) continue;
+    const dir = CLASSIC_DIRS.find(([, cl]) => p.toLowerCase().startsWith(cl(root).toLowerCase()));
+    const inRoot = p.toLowerCase().startsWith(`/${root}/`.toLowerCase());
+    if (!dir && !inRoot) {
+      skipped.notes++; // the person's own notes (a full backup): they stay in the backup file
+      continue;
+    }
+    if (/\/\.index\//i.test(p)) continue; // search indexes: rebuilt by Classic
+    const v = take(p);
+    if (v === null) continue;
+    out[dir ? dir[0] + p.slice(dir[1](root).length) : `classic/${p.slice(root.length + 2)}`] = v;
+  }
+  const soul = out["SOUL.md"] ?? "";
+  const name = (/^#\s+(.+)$/m.exec(soul)?.[1] ?? "").trim() || (root === "Pandora" ? "Pandora Dee" : "Jade");
+  const c = blankCharacter(name);
+  c.files = { ...c.files, ...out };
+  c.classic = {
+    app: root === "Pandora" ? "pandora-dee" : "jade-vault",
+    root,
+    settings: withoutSecrets((d.settings as Record<string, unknown>) ?? {}),
+    storage: (d.storage as Record<string, unknown>) ?? {},
+  };
+  return { character: c, skipped };
+}
+
+/** A desktop character as a Classic config backup (Config → Import in Pandora Dee or Jade Vault). Keys never go in. */
+export function toClassic(c: Character, files: Record<string, string>) {
+  const root = c.classic?.root ?? (/jade/i.test(c.id) ? "Jade" : "Pandora");
+  const vault: Record<string, string> = {};
+  for (const [p, v] of Object.entries(files)) {
+    const named = CLASSIC_NAMES.find(([desk]) => desk === p);
+    const dir = CLASSIC_DIRS.find(([desk]) => p.startsWith(desk));
+    const path = p === "AGENTS.md" ? "/agents.md" : named ? named[1](root) : dir ? dir[1](root) + p.slice(dir[0].length) : p.startsWith("classic/") ? `/${root}/${p.slice(8)}` : `/${root}/${p}`;
+    vault[path] = v;
+  }
+  return {
+    app: "jade-vault",
+    format: 1,
+    kind: "config",
+    exportedAt: new Date().toISOString(),
+    includesKeys: false,
+    settings: withoutSecrets(scrub(c.classic?.settings ?? {}) as Record<string, unknown>),
+    storage: c.classic?.storage ?? {},
+    vault: { files: vault, dirs: [] },
+  };
 }
 
 export function download(name: string, data: unknown) {

@@ -30,6 +30,16 @@ export type Character = {
   /** Optional model name that overrides the desktop default for this character. */
   model?: string;
   files: Record<string, string>;
+  /** Her Classic settings (Pandora Dee / Jade Vault), kept whole so a backup goes back to Classic losing nothing. */
+  classic?: ClassicKeep;
+};
+
+/** What a Classic backup carries besides files: which app and folder she lives in, her settings, and her app's other saved state. */
+export type ClassicKeep = {
+  app: "pandora-dee" | "jade-vault";
+  root: "Pandora" | "Jade";
+  settings: Record<string, unknown>;
+  storage?: Record<string, unknown>;
 };
 
 const LICENSE =

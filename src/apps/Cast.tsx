@@ -11,7 +11,7 @@ import { openMenu } from "../ui/ContextMenu.tsx";
 import { characterMenu } from "../ui/menus.ts";
 
 import { blankCharacter, type Character, type Look } from "../lib/characters.ts";
-import { download, makeBackup } from "../lib/backup.ts";
+import { download, makeBackup, toClassic } from "../lib/backup.ts";
 import { shrinkPicture } from "../lib/secure.ts";
 import { MAX_IN_ROOM } from "../lib/room.ts";
 import { CharAvatar, Confirm, Seg } from "../ui/common.tsx";
@@ -170,6 +170,13 @@ function Profile({ c, onBack }: { c: Character; onBack: () => void }) {
             </button>
             <button className="btn" onClick={() => download(`${c.id}-backup.json`, makeBackup(c, files))}>
               <Download size={14} /> Save backup
+            </button>
+            <button
+              className="btn"
+              title="A config backup Pandora Dee or Jade Vault opens with Config → Import: her files and her Classic settings, no keys"
+              onClick={() => download(`${c.id}-classic-config.json`, toClassic(c, files))}
+            >
+              <Download size={14} /> Export for Classic
             </button>
           </div>
         </div>
