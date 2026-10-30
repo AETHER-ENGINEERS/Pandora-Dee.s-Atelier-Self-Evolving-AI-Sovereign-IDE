@@ -20,6 +20,7 @@ export type AppId =
   | "presence"
   | "cast"
   | "files"
+  | "explorer"
   | "notes"
   | "music"
   | "visualizer"
@@ -46,6 +47,7 @@ export const APPS: { id: AppId; title: string; hint: string }[] = [
   { id: "vector", title: "Vector", hint: "Your Vector messenger: chats, Communities and Mini Apps" },
   { id: "browser", title: "Browser", hint: "Web pages in tabs, with a reader view" },
   { id: "create", title: "Create", hint: "Pictures and PDFs: a gallery, a painter, and GIMP and other apps to open them in" },
+  { id: "explorer", title: "Explorer", hint: "Your files: the vault, Vector's files, music, and more" },
   { id: "files", title: "Files", hint: "Each character's own files" },
   { id: "journal", title: "Journal", hint: "Quest journals and memory" },
   { id: "terminal", title: "Terminal", hint: "A shell over a character's files" },
@@ -355,6 +357,7 @@ export type DockPrefs = {
   createAdded?: boolean;
   browserAdded?: boolean;
   vectorAdded?: boolean;
+  explorerAdded?: boolean;
 };
 
 export const DOCK_DEFAULT: DockPrefs = {
@@ -483,7 +486,11 @@ function withNotes(d: DockPrefs): DockPrefs {
     const at = items.indexOf("room");
     items.splice(at < 0 ? 0 : at + 1, 0, "vector");
   }
-  return { ...d, items, notesAdded: true, musicAdded: true, createAdded: true, browserAdded: true, vectorAdded: true };
+  if (!items.includes("explorer") && !d.explorerAdded) {
+    const at = items.indexOf("files");
+    items.splice(at < 0 ? items.length : at, 0, "explorer");
+  }
+  return { ...d, items, notesAdded: true, musicAdded: true, createAdded: true, browserAdded: true, vectorAdded: true, explorerAdded: true };
 }
 
 export function defaultWins(): Record<AppId, Win> {
@@ -501,6 +508,7 @@ export function defaultWins(): Record<AppId, Win> {
     presence: W(presX, 12, presW, presH, true),
     cast: W(12, 12, castW || 260, Math.max(320, vh - 20), wide),
     files: W(140, 80, 760, 520),
+    explorer: W(120, 40, Math.min(1000, vw - 40), Math.min(640, vh - 10)),
     notes: W(110, 30, Math.min(1080, vw - 40), Math.min(700, vh - 10)),
     music: W(150, 40, Math.min(960, vw - 40), Math.min(620, vh - 10)),
     visualizer: W(220, 60, Math.min(720, vw - 40), Math.min(440, vh - 10)),

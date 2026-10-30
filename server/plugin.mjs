@@ -15,6 +15,7 @@ import { createCreative } from "./creative.mjs";
 import { createBrowser } from "./browse.mjs";
 import { createVector } from "./vector.mjs";
 import { createVectorHost } from "./vectorHost.mjs";
+import { createFiles } from "./files.mjs";
 import { checkUpdates, download } from "./upstreams.mjs";
 import * as aicordAuth from "./oauth.mjs";
 import { findCurl, findPython, forgetPrograms } from "./programs.mjs";
@@ -84,6 +85,23 @@ export function deskServer() {
   const vector = () => (vec ??= createVector(() => dataDir));
   let vh;
   const vectorHost = () => (vh ??= createVectorHost(() => dataDir));
+  // pdd.config.json: this computer's own settings for the desktop (data folder, network sharing, …), kept whole
+  const readConfig = () => {
+    try {
+      return JSON.parse(fs.readFileSync(path.join(root, "pdd.config.json"), "utf8"));
+    } catch {
+      return {};
+    }
+  };
+  const writeConfig = (patch) => fs.writeFileSync(path.join(root, "pdd.config.json"), JSON.stringify({ ...readConfig(), ...patch }, null, 2));
+  let fl;
+  const files = () =>
+    (fl ??= createFiles({
+      dataDir: () => dataDir,
+      musicFolders: () => music().folders(),
+      getWholePc: () => readConfig().filesWholeComputer === true,
+      setWholePc: (on) => writeConfig({ filesWholeComputer: on }),
+    }));
   const library = () => {
     if (!lib) {
       lib = createLibrary(dataDir);
@@ -139,6 +157,9 @@ export function deskServer() {
   // reached through Tailscale (`tailscale serve`, or the tailnet name): one address for the desktop and its apps
   const viaTailnet = (req) => hostOf(req).endsWith(".ts.net");
   const lan = () => process.env.PDD_LAN === "1";
+  // made on this computer itself: from this machine, to the local address (not through Tailscale or the network)
+  const onThisPc = (req) =>
+    /^(127\.|::1$|::ffff:127\.)/.test(String(req.socket.remoteAddress || "")) && (isDeskHost(req) || hostOf(req) === "127.0.0.1" || hostOf(req) === "[::1]");
 
   const send = (res, code, body, type = "application/json") => {
     res.statusCode = code;
@@ -291,8 +312,7 @@ export function deskServer() {
             const bytes = await V.attachment(token, b.attachment ?? {});
             const name = /\.xdc$/i.test(String(b.attachment?.name || "")) ? String(b.attachment.name) : `${String(b.attachment?.name || "app").replace(/\.[^.]*$/, "")}.xdc`;
             const r = library().importAny(bytes, name);
-            const pkg = r.added[0] ?? library().list().find((p) => r.duplicates && p.name && name.toLowerCase().includes(String(p.name).toLowerCase().slice(0, 8)));
-            return send(res, 200, { ok: true, added: r.added.length, duplicates: r.duplicates, id: pkg?.id ?? null, errors: r.errors });
+            return send(res, 200, { ok: true, added: r.added.length, duplicates: r.duplicates, id: r.found[0]?.id ?? null, errors: r.errors });
           }
         }
       } catch (e) {
@@ -325,6 +345,44 @@ export function deskServer() {
         }
       } catch (e) {
         return send(res, e?.status || 400, { error: e instanceof Error ? e.message : String(e) });
+      }
+    }
+    // Explorer: the desktop's places, and the computer when that's allowed (see files.mjs)
+    if (parts[0] === "files") {
+      const F = files();
+      const local = onThisPc(req);
+      try {
+        if (m === "GET") {
+          if (parts[1] === "places") return send(res, 200, F.overview(local));
+          if (parts[1] === "list") return send(res, 200, F.list(url.searchParams.get("path"), local));
+          if (parts[1] === "stat") return send(res, 200, F.stat(url.searchParams.get("path"), local));
+          if (parts[1] === "trash") return send(res, 200, F.trashList());
+          if (parts[1] === "raw") {
+            const file = F.allowed(url.searchParams.get("path"), local);
+            // "download": saved on the device asking, under its own name
+            if (url.searchParams.get("download")) res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(path.basename(file))}`);
+            return serveRange(req, res, file);
+          }
+        }
+        if (m === "POST" && parts[1] === "upload")
+          return send(res, 200, { path: F.upload(url.searchParams.get("dir"), decodeURIComponent(String(req.headers["x-filename"] || "file")), await readBody(req, 4_000_000_000), local) });
+        if (m === "POST") {
+          const b = JSON.parse((await readBody(req, 100_000)).toString("utf8") || "{}");
+          if (parts[1] === "mkdir") return send(res, 200, { path: F.mkdir(b.path, b.name, local) });
+          if (parts[1] === "move") return send(res, 200, { path: F.move(b.path, { name: b.name, into: b.into }, local) });
+          if (parts[1] === "trash") return send(res, 200, F.trash(b.path, local));
+          if (parts[1] === "restore") return send(res, 200, { path: F.restore(String(b.id), local) });
+          if (parts[1] === "reveal-device") return send(res, 200, (F.revealOnDevice(b.path, local), { ok: true }));
+          if (parts[1] === "whole-pc") return send(res, 200, F.setWhole(b.on, local));
+          // a Mini App (.xdc) from anywhere Explorer reaches, into Games & Apps
+          if (parts[1] === "import-xdc") {
+            const file = F.allowed(b.path, local);
+            const r = library().importAny(fs.readFileSync(file), path.basename(file));
+            return send(res, 200, { added: r.added.length, duplicates: r.duplicates, id: r.found[0]?.id ?? null, errors: r.errors });
+          }
+        }
+      } catch (e) {
+        return send(res, e?.status || (e?.code === "ENOENT" ? 404 : 400), { error: e?.code === "ENOENT" ? "That isn't there any more." : e instanceof Error ? e.message : String(e) });
       }
     }
     // the Mac that last ran the setup (curl …/mac | bash), for filling in engine addresses
@@ -389,7 +447,7 @@ export function deskServer() {
       const old = dataDir;
       dataDir = target;
       lib = undefined;
-      fs.writeFileSync(path.join(root, "pdd.config.json"), JSON.stringify({ dataDir }, null, 2));
+      writeConfig({ dataDir });
       return send(res, 200, { dataDir, previous: old, moved: Boolean(body.move) });
     }
     if (parts[0] === "xdc") {

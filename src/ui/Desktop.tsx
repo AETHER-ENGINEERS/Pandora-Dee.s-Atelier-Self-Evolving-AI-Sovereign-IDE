@@ -45,6 +45,7 @@ import { canPrompt, install, installed } from "../lib/install.ts";
 import { CreateApp } from "../apps/Create.tsx";
 import { BrowserApp } from "../apps/Browser.tsx";
 import { VectorApp } from "../apps/Vector.tsx";
+import { ExplorerApp, PickerHost } from "../apps/Explorer.tsx";
 import { ICONS, loadBackupFile, openSettings, useWide } from "./desktopApi.tsx";
 
 
@@ -53,6 +54,7 @@ const BODIES: Record<AppId, () => ReactNode> = {
   presence: () => <PresenceApp />,
   cast: () => <CastApp />,
   files: () => <FilesApp />,
+  explorer: () => <ExplorerApp />,
   notes: () => <NotesApp />,
   music: () => <MusicApp />,
   visualizer: () => <VisualizerApp />,
@@ -181,6 +183,7 @@ export function Desktop() {
       {drop ? <div className="drop-hint">Drop a character backup to bring them in</div> : null}
       <ContextMenuHost />
       <AskHost />
+      <PickerHost />
       <TooltipHost />
       {s.toast ? (
         <div className="toast" role="status" onClick={() => desk().set({ toast: "" })}>
