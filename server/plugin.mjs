@@ -346,7 +346,7 @@ export function deskServer() {
       // Move (or just point) the library to another folder, e.g. a roomier drive.
       const body = JSON.parse((await readBody(req)).toString("utf8") || "{}");
       const target = path.resolve(String(body.dataDir || ""));
-      if (!body.dataDir || !path.isAbsolute(String(body.dataDir))) return send(res, 400, { error: "Give a full folder path, like F:\pandora-data." });
+      if (!body.dataDir || !path.isAbsolute(String(body.dataDir))) return send(res, 400, { error: "Give a full folder path, like D:\\PandoraData or /home/me/pandora-data." });
       if (target === dataDir) return send(res, 200, { dataDir });
       try {
         fs.mkdirSync(target, { recursive: true });
@@ -643,7 +643,7 @@ export function deskServer() {
       } catch {
         saved = "";
       }
-      // a folder saved on another kind of computer (F:\... copied over to a Mac) means nothing here: use the default
+      // a folder saved on another kind of computer (a Windows D:\... copied over to a Mac) means nothing here: use the default
       if (process.platform !== "win32" && /^[a-zA-Z]:[\\/]/.test(saved)) {
         console.warn(`[pandora] The saved data folder ${saved} is a Windows path; using ./data instead (choose another in Settings).`);
         saved = "";

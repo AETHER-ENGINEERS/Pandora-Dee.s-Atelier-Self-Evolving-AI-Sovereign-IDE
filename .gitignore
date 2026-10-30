@@ -16,3 +16,11 @@ data/
 .DS_Store
 Thumbs.db
 *.log
+
+# notes between the developer and Claude (kept on this computer only)
+Claude Please Read This First*.md
+bug reports or feature requests for Claude.md
+High Priority Requests from residents.md
+Priority List*.md
+Priority list*.md
+Questions.md

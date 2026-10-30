@@ -38,6 +38,6 @@ export function AddressField({ value, onChange, placeholder }: { value: string; 
 
 /** Ask for the address when adding an engine (pre-filled with the best guess), or null if cancelled. */
 export function askAddress(name: string, guess: string): string | null {
-  const v = prompt(`Where does ${name} answer? Type its address: an IP or name with the port (e.g. http://100.109.22.103:15666), or an online service's https address.`, guess);
+  const v = prompt(`Where does ${name} answer? Type its address: an IP or name with the port (e.g. http://192.168.1.20:15666 or a Tailscale address), or an online service's https address.`, guess);
   return v === null ? null : v.trim() || guess;
 }

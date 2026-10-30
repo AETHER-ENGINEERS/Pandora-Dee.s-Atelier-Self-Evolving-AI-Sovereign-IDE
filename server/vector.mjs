@@ -13,7 +13,7 @@ const exe = win ? "vector-agent.exe" : "vector-agent";
 
 /** Where vector-agent is: PDD_VECTOR_AGENT, the data folder, the usual build folder, or PATH. */
 export function findAgent(dataDir) {
-  const tries = [process.env.PDD_VECTOR_AGENT, path.join(dataDir, "vector", exe), win ? "F:\\pandora-work\\vector-build\\release\\vector-agent.exe" : "", path.join(process.cwd(), "..", "Vector", "crates", "target", "release", exe)].filter(Boolean);
+  const tries = [process.env.PDD_VECTOR_AGENT, path.join(dataDir, "vector", exe), path.join(process.cwd(), "..", "Vector", "crates", "target", "release", exe)].filter(Boolean);
   for (const t of tries) if (fs.existsSync(t)) return t;
   const r = spawnSync(win ? "where" : "which", ["vector-agent"], { encoding: "utf8", windowsHide: true });
   return r.status === 0 ? r.stdout.split(/\r?\n/)[0].trim() : "";

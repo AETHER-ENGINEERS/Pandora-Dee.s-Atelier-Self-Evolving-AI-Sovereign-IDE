@@ -76,7 +76,7 @@ The characters need a model to talk. **Settings → AI**:
 
 ### Where things are kept
 
-Vector apps and their saved game state live in a folder (Settings → Storage; this machine uses `F:\pandora-data`). Apps run on `127.0.0.1` while the desktop runs on `localhost`: two separate origins, so an app can never read the desktop's keys. Apps also can't reach the internet, as the webxdc standard requires. Characters, settings and the conversation live in the browser.
+Vector apps and their saved game state live in a folder (Settings → Storage). Apps run on `127.0.0.1` while the desktop runs on `localhost`: two separate origins, so an app can never read the desktop's keys. Apps also can't reach the internet, as the webxdc standard requires. Characters, settings and the conversation live in the browser.
 
 ### What characters can do (tools)
 

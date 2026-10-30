@@ -2,10 +2,10 @@
 // Builds Vector's own app in PDA SEASIDE host mode (see vector-host/files/src-tauri/src/pda_host.rs) from a
 // checkout of https://github.com/VectorPrivacy/Vector, and puts it where the desktop looks for it.
 //
-//   node vector-host/build.mjs --vector F:\pandora-work\repos\Vector --out F:\pandora-data\vector-host\app
-//     [--msvc F:\pandora-work\msvc]        Windows: a portable MSVC folder (with setup_x64.bat), if Visual Studio isn't installed
-//     [--target F:\pandora-work\vector-target]   where cargo builds (5–10 GB)
-//     [--cargo-home F:\pandora-work\cargo-home]  where cargo keeps downloaded crates
+//   node vector-host/build.mjs --vector <checkout of Vector> --out <data folder>/vector-host/app
+//     [--msvc <folder>]        Windows: a portable MSVC folder (with setup_x64.bat), if Visual Studio isn't installed
+//     [--target <folder>]      where cargo builds (5–10 GB)
+//     [--cargo-home <folder>]  where cargo keeps downloaded crates
 //     [--no-build]                          only add host mode to the checkout
 //
 // The checkout gets three new files and a few marked lines in src-tauri/src/lib.rs; a normal build of it

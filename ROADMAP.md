@@ -100,7 +100,7 @@ Still to build:
 - **Classic, enhanced** ✅ (done early): Pandora Dee 2.9.9.2-enhanced and Jade Vault 2.20.1-enhanced are in
   Classic (next to Jade Vault 2.20.1 as released), each with the other's features, every added feature off until
   switched on; Pandora Dee's carries Jade's 2.20 Rust core and speed-ups too. What each contains is in
-  PARITY.md ("Classic, enhanced builds"). They build from upstream with `F:\pandora-work\classic-enhanced\build.sh`
+  PARITY.md ("Classic, enhanced builds"). They build from upstream with `classic-enhanced/build.sh`
   (pinned commits + patches); for a new upstream release, rebase the patches and rerun it. Still to do: the Jade
   Docs webxdc app as an installable app, and the APK pages (`build_index.py`, `twbuild`) for the enhanced builds.
 - **Merged features on the desktop**: everything in the table, as desktop apps and settings, each

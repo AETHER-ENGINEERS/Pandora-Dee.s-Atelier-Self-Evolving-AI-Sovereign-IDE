@@ -151,7 +151,7 @@ and **Jade Vault 2.20.1-enhanced** (pick them in Classic's corner switcher or Se
 2.20.1 as released and the earlier 2.18.2 and 2.18.2-enhanced builds are there too). Every feature
 an enhanced build adds is **off until you turn it on** in that app's Config, so with nothing switched on each
 behaves like the original it is built from. They are built from the upstream sources with patches and a script
-kept outside this repo (`F:\pandora-work\classic-enhanced\`: `build.sh --install`, patches in `patches/`).
+kept outside this repo (a separate `classic-enhanced` folder: `build.sh --install`, patches in `patches/`).
 
 **Pandora Dee 2.9.9.2-enhanced** = Pandora Dee 2.9.9.2 + everything Jade Vault 2.20.1 adds, merged from both
 apps' sources and given Pandora's words (/Pandora paths, rituals, leaves). Jade's 2.18.3–2.20.1 improvements
