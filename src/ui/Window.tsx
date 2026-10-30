@@ -30,6 +30,7 @@ export function Window({
   bare?: boolean;
 }) {
   const win = useDesk((s) => s.wins[id]);
+  const inHangout = useDesk((s) => s.hangout && s.hang.windows.includes(id));
   const { focusApp, moveApp, closeApp, minimizeApp, toggleMax } = useDesk.getState();
   const ref = useRef<HTMLDivElement>(null);
 
@@ -90,7 +91,7 @@ export function Window({
   return (
     <div
       ref={ref}
-      className={`win${front ? " front" : ""}${win.min ? " min" : ""}${win.max ? " max" : ""}`}
+      className={`win${front ? " front" : ""}${win.min ? " min" : ""}${win.max ? " max" : ""}${inHangout ? " in-hangout" : ""}`}
       style={{ left: win.x, top: win.y, width: win.w, height: win.h, zIndex: win.z }}
       onPointerDownCapture={() => focusApp(id)}
       role="dialog"

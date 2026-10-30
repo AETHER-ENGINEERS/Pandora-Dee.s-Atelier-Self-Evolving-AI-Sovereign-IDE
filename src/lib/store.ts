@@ -313,8 +313,10 @@ export type HangPrefs = {
   chat: "full" | "bar" | "off";
   /** Keep the controls on screen instead of hiding them when idle. */
   pinControls: boolean;
-  /** How dark the scene is, 0 (bright) to 0.8. */
+  /** How dark the scene is, 0 (bright) to 0.8, in Hangout and behind the desktop's windows alike. */
   dim: number;
+  /** Windows shown over the scene in Hangout (picked from its right-click menu); the rest stay out of the way. */
+  windows: AppId[];
 };
 
 export const HANG_DEFAULT: HangPrefs = {
@@ -330,6 +332,7 @@ export const HANG_DEFAULT: HangPrefs = {
   chat: "full",
   pinControls: false,
   dim: 0.15,
+  windows: [],
 };
 
 export type DockItem = AppId | "hangout" | "classic" | "|";

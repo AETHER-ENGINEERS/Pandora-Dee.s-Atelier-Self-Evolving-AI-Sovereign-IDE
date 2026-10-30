@@ -902,3 +902,7 @@ p { line-height: 1.55; margin: 0 0 10px; }
   .dock.vertical { left: 28px; }
   .dock.right { left: auto; right: 28px; }
 }
+/* windows picked for Hangout (its right-click menu): over the scene, undimmed; the others stay out of the way */
+.hangout-on .workspace { opacity: 1; visibility: visible; z-index: 30001; top: 0; bottom: 0; pointer-events: none; }
+.hangout-on .workspace .win:not(.in-hangout) { display: none; }
+.hangout-on .workspace .win.in-hangout { pointer-events: auto; }

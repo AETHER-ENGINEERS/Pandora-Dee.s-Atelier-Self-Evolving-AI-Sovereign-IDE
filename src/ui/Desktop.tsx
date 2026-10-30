@@ -146,7 +146,7 @@ export function Desktop() {
     >
       <div
         className={`wallpaper${wallpaper ? "" : " plain"}`}
-        style={{ ...(wallpaper ? { backgroundImage: `url("${wallpaper}")` } : {}), ["--dim" as string]: s.hangout ? s.hang.dim : 0.62 }}
+        style={{ ...(wallpaper ? { backgroundImage: `url("${wallpaper}")` } : {}), ["--dim" as string]: s.hang.dim }}
       />
       {s.music.vizBackground && s.music.viz !== "off" && !s.hangout ? (
         <div className="viz-background" style={{ opacity: s.music.vizBackgroundOpacity }} aria-hidden>

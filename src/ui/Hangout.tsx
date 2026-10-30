@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { FullAvatar } from "./FullAvatar.tsx";
 import { runSlash } from "./slash.ts";
 import { MessagesSquare, Monitor, Send, Square, Settings as SettingsIcon, Users } from "lucide-react";
-import { desk, useDesk } from "../lib/store.ts";
+import { APPS, desk, useDesk } from "../lib/store.ts";
 import type { Character } from "../lib/characters.ts";
 import { letThemTalk, say, stopAll } from "../lib/agent.ts";
 import { maskName, maskText } from "../lib/privacy.ts";
@@ -65,6 +65,22 @@ export function Stage({ interactive = true }: { interactive?: boolean }) {
           { label: "Speech bubbles", checked: desk().hang.bubbles, run: () => desk().set({ hang: { ...desk().hang, bubbles: !desk().hang.bubbles } }) },
           ...(desk().hangout
             ? [
+                { sep: true as const },
+                // windows over the scene, without leaving Hangout or darkening it
+                { heading: "Windows in Hangout" },
+                ...APPS.filter((a) => a.id !== "welcome").map((a) => {
+                  const shown = desk().hang.windows.includes(a.id) && desk().wins[a.id].open && !desk().wins[a.id].min;
+                  return {
+                    label: a.title,
+                    checked: shown,
+                    run: () => {
+                      const h = desk().hang;
+                      if (shown) return desk().set({ hang: { ...h, windows: h.windows.filter((w) => w !== a.id) } });
+                      desk().set({ hang: { ...h, windows: [...h.windows.filter((w) => w !== a.id), a.id] } });
+                      desk().openApp(a.id);
+                    },
+                  };
+                }),
                 { sep: true as const },
                 { heading: "Chat" },
                 { label: "Conversation and typing bar", checked: desk().hang.chat === "full", run: () => desk().set({ hang: { ...desk().hang, chat: "full" as const } }) },
