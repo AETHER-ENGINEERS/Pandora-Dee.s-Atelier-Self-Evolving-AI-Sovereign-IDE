@@ -15,7 +15,29 @@
   const replacer = (_k, v) => (ArrayBuffer.isView(v) ? Array.from(v) : v instanceof ArrayBuffer ? Array.from(new Uint8Array(v)) : v instanceof Map ? Object.fromEntries(v) : v);
   const decOut = (v) => (v && typeof v === "object" && typeof v.__b64 === "string" ? unb64(v.__b64).buffer : v);
 
+  // ── asking the desktop's window (Explorer, its dialogs, Games & Apps); the page is on the desktop's own address ──
+  const deskWaits = new Map();
+  let deskSeq = 0;
+  window.addEventListener("message", (e) => {
+    if (e.source !== window.parent || e.origin !== location.origin || !e.data?.pddReply) return;
+    deskWaits.get(e.data.id)?.(e.data.value);
+    deskWaits.delete(e.data.id);
+  });
+  const inDesk = window.parent !== window;
+  const askDesk = (type, data = {}) =>
+    new Promise((resolve) => {
+      const id = ++deskSeq;
+      deskWaits.set(id, resolve);
+      window.parent.postMessage({ pddVector: type, id, ...data }, location.origin);
+    });
+
   async function invoke(cmd, args = {}) {
+    // a Mini App opens in Games & Apps (added there first if this version is new), not in a window of its own
+    if (cmd === "miniapp_open" && inDesk) {
+      const r = await askDesk("miniapp", { path: args.filePath });
+      if (r?.error) throw r.error;
+      return null;
+    }
     const r = await fetch(`${API}/invoke`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -75,7 +97,20 @@
     if (!r.ok) throw j.error || "Upload failed";
     return j.path;
   }
-  function pick({ multiple = false, filters = [], directory = false } = {}) {
+  async function pick({ multiple = false, filters = [], directory = false, title } = {}) {
+    // inside the desktop: Explorer is the picker (it can upload from the device being used, too)
+    if (inDesk) {
+      const paths = await askDesk("pick", { mode: directory ? "folder" : "open", multiple, filters, title });
+      return paths?.length ? (multiple ? paths : paths[0]) : null;
+    }
+    return browserPick({ multiple, filters, directory });
+  }
+  async function save({ defaultPath = "", filters = [], title } = {}) {
+    if (!inDesk) return null;
+    const paths = await askDesk("pick", { mode: "save", filters, title, defaultName: String(defaultPath).split(/[\\/]/).pop() });
+    return paths?.[0] ?? null;
+  }
+  function browserPick({ multiple = false, filters = [], directory = false } = {}) {
     if (directory) {
       alert("Choosing a folder isn't available inside the desktop yet. Use Vector's app on this computer for that.");
       return Promise.resolve(null);
@@ -161,16 +196,18 @@
     event: { listen, once, emit, TauriEvent: {} },
     dialog: {
       open: pick,
-      save: async () => (alert("Saving to a chosen place isn't available inside the desktop yet."), null),
-      message: async (m) => alert(m),
-      ask: async (m) => confirm(m),
-      confirm: async (m) => confirm(m),
+      save,
+      // the desktop's own dialogs (a browser one would pause its music and animations)
+      message: async (m, o = {}) => (inDesk ? void (await askDesk("ask", { title: o.title || "Vector", body: String(m), yes: o.okLabel || "OK", no: "" })) : alert(m)),
+      ask: async (m, o = {}) => (inDesk ? Boolean(await askDesk("ask", { title: o.title || "Vector", body: String(m), yes: o.okLabel || "Yes", no: o.cancelLabel || "No" })) : confirm(m)),
+      confirm: async (m, o = {}) => (inDesk ? Boolean(await askDesk("ask", { title: o.title || "Vector", body: String(m), yes: o.okLabel || "OK", no: o.cancelLabel || "Cancel" })) : confirm(m)),
     },
     app: { getVersion: () => invoke("plugin:app|version"), getName: async () => "Vector" },
     opener: {
       openUrl: async (u) => void window.open(u, "_blank", "noopener,noreferrer"),
-      openPath: noop,
-      revealItemInDir: noop,
+      // the desktop's Explorer, at that file
+      openPath: async (p) => inDesk && void (await askDesk("open", { path: String(p) })),
+      revealItemInDir: async (p) => inDesk && void (await askDesk("reveal", { path: String(p) })),
     },
     window: { getCurrentWindow: () => win, getAllWindows: async () => [win] },
     webview: { getCurrentWebview: () => win },

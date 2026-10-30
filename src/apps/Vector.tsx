@@ -3,6 +3,8 @@ import { Hash, LogOut, MessageSquarePlus, Package, Paperclip, RefreshCw, Send, U
 import { desk, useDesk } from "../lib/store.ts";
 import { library } from "../lib/xdc.ts";
 import { openMenu } from "../ui/ContextMenu.tsx";
+import { askUser } from "../ui/Ask.tsx";
+import { pickInExplorer, showInExplorer, type PickOptions } from "../lib/explorer.ts";
 import qrcode from "qrcode-generator";
 
 /**
@@ -110,6 +112,37 @@ type HostStatus = { built: boolean; build: { version: string; commit: string } |
 function VectorHosted({ onBack }: { onBack: () => void }) {
   const [st, setSt] = useState<HostStatus | null>(null);
   const [error, setError] = useState("");
+  const frame = useRef<HTMLIFrameElement>(null);
+  // what Vector's page asks of the desktop (vector-host/shim.js): Explorer as its file pickers, the desktop's dialogs,
+  // "Reveal in folder", and Mini Apps into Games & Apps
+  useEffect(() => {
+    const on = async (e: MessageEvent) => {
+      const m = e.data as { pddVector?: string; id?: number; [k: string]: unknown };
+      if (!m?.pddVector || e.source !== frame.current?.contentWindow || e.origin !== location.origin) return;
+      const reply = (value: unknown) => frame.current?.contentWindow?.postMessage({ pddReply: true, id: m.id, value }, location.origin);
+      try {
+        if (m.pddVector === "pick") return reply(await pickInExplorer({ mode: m.mode as PickOptions["mode"], multiple: Boolean(m.multiple), filters: m.filters as PickOptions["filters"], defaultName: m.defaultName as string, title: m.title as string }));
+        if (m.pddVector === "ask") return reply(await askUser(String(m.title || "Vector"), String(m.body || ""), String(m.yes || "OK"), String(m.no ?? "")));
+        if (m.pddVector === "reveal" || (m.pddVector === "open" && !/\.xdc$/i.test(String(m.path)))) return reply(void showInExplorer(String(m.path)));
+        if (m.pddVector === "miniapp" || m.pddVector === "open") {
+          // the same version already there is just opened; a new one is added beside the others, then opened
+          const r = await fetch("/api/vector-host/import-xdc", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: m.path }) });
+          const j = (await r.json()) as { id?: string; error?: string };
+          if (!r.ok || !j.id) return reply({ error: j.error || "That Mini App couldn't be opened." });
+          const pkg = (await library.list()).find((p) => p.id === j.id);
+          if (pkg) {
+            desk().set({ game: { kind: "xdc", slug: pkg.appKey, title: pkg.name, players: [], pkgId: pkg.id, scope: pkg.appKey } });
+            desk().openApp("games");
+          }
+          return reply({ ok: true });
+        }
+      } catch (err) {
+        reply({ error: err instanceof Error ? err.message : String(err) });
+      }
+    };
+    window.addEventListener("message", on);
+    return () => window.removeEventListener("message", on);
+  }, []);
   const load = useCallback(
     () =>
       void fetch("/api/vector-host/status")
@@ -177,7 +210,7 @@ function VectorHosted({ onBack }: { onBack: () => void }) {
           Vector {st.build?.version}
         </span>
       </div>
-      <iframe className="vector-frame" src="/vector-app/index.html" title="Vector" allow="clipboard-read; clipboard-write; microphone; camera" />
+      <iframe ref={frame} className="vector-frame" src="/vector-app/index.html" title="Vector" allow="clipboard-read; clipboard-write; microphone; camera" />
     </div>
   );
 }

@@ -326,6 +326,14 @@ export function deskServer() {
         if (parts[1] === "status" && m === "GET") return send(res, 200, H.status());
         if (parts[1] === "events" && m === "GET") return void H.connect(req, res);
         if (parts[1] === "asset" && m === "GET") return serveRange(req, res, H.assetPath(url.searchParams.get("p")));
+        // a Mini App from Vector's own folders, into Games & Apps (the same file is found again, a new version added)
+        if (parts[1] === "import-xdc" && m === "POST") {
+          const b = JSON.parse((await readBody(req, 100_000)).toString("utf8") || "{}");
+          const file = H.assetPath(b.path);
+          if (!file || !fs.existsSync(file)) return send(res, 404, { error: "That Mini App isn't in Vector's folders." });
+          const r = library().importAny(fs.readFileSync(file), path.basename(file));
+          return send(res, 200, { id: r.found[0]?.id ?? null, added: r.added.length, errors: r.errors });
+        }
         if (parts[1] === "upload" && m === "POST") return send(res, 200, { path: H.upload(decodeURIComponent(String(req.headers["x-filename"] || "file")), await readBody(req, 500_000_000)) });
         if (m === "POST") {
           const b = JSON.parse((await readBody(req, 300_000_000)).toString("utf8") || "{}");

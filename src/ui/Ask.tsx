@@ -48,9 +48,11 @@ export function AskHost() {
         </pre>
         {list.length > 1 ? <p className="small faint">{list.length - 1} more waiting.</p> : null}
         <div className="actions">
-          <button className="btn" onClick={() => answer(q.id, false)}>
-            {q.no}
-          </button>
+          {q.no ? (
+            <button className="btn" onClick={() => answer(q.id, false)}>
+              {q.no}
+            </button>
+          ) : null}
           <button className="btn primary" autoFocus onClick={() => answer(q.id, true)}>
             {q.yes}
           </button>
