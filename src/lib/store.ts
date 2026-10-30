@@ -60,6 +60,11 @@ export const APPS: { id: AppId; title: string; hint: string }[] = [
   { id: "welcome", title: "Getting started", hint: "What this is and how to start" },
 ];
 
+/** Toddler mode: the fun things (making and watching media, games, notes, Hangout) with every AI feature off.
+ *  The adult passcode turns it off again. Classic is AI too, so it waits as well. */
+export const TODDLER_APPS: string[] = ["notes", "music", "visualizer", "create", "games", "welcome", "hangout"];
+export const inToddler = (id: string) => TODDLER_APPS.includes(id);
+
 export type Win = { open: boolean; min: boolean; max: boolean; x: number; y: number; w: number; h: number; z: number };
 
 export type Account = { name: string; role: Role; picture: string; sealed: Sealed | null };
@@ -453,6 +458,8 @@ export type State = {
   appPrefs: Record<string, AppPrefs>;
   /** The webxdc version open in XDC Studio. */
   studioPkg: string;
+  /** Toddler mode (kept across restarts until the passcode turns it off). */
+  toddler: boolean;
 
   // memory only (not saved)
   session: string | null;
@@ -643,6 +650,7 @@ const INITIAL: State = {
   libSection: "all",
   appPrefs: {},
   studioPkg: "",
+  toddler: false,
   session: null,
   adultOpen: false,
   sensorPass: false,
@@ -659,6 +667,7 @@ export const useDesk = create<Store>()(
 
       openApp: (id) =>
         set((s) => {
+          if (s.toddler && !inToddler(id)) return {};
           // Keep the window on screen if the screen got smaller since it was last placed.
           const vw = window.innerWidth;
           const vh = window.innerHeight - 100;

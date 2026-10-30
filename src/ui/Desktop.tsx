@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Check, Download, GripVertical, LayoutGrid } from "lucide-react";
-import { APPS, desk, useDesk, type AppId } from "../lib/store.ts";
+import { APPS, desk, inToddler, useDesk, type AppId } from "../lib/store.ts";
+import { ToddlerPill } from "./Toddler.tsx";
 import { Window } from "./Window.tsx";
 import { PersonAvatar } from "./common.tsx";
 import { download, makeBackup, toClassic } from "../lib/backup.ts";
@@ -133,7 +134,7 @@ export function Desktop() {
     };
   }, []);
 
-  if (s.classic) return <Classic />;
+  if (s.classic && !s.toddler) return <Classic />;
 
   return (
     <div
@@ -173,7 +174,7 @@ export function Desktop() {
           if (e.target === e.currentTarget && desk().touch.doubleTapScene) desk().set({ hangout: true });
         }}
       >
-        {APPS.map((a) => (
+        {APPS.filter((a) => !s.toddler || inToddler(a.id)).map((a) => (
           <Window
             key={a.id}
             id={a.id}
@@ -410,7 +411,7 @@ function MenuBar({ onLoad }: { onLoad: () => void }) {
           Settings… <span className="kbd">Ctrl ,</span>
         </button>
         <div className="sep" />
-        <button onClick={act(() => desk().set({ classic: true }))}>Classic Pandora Dee</button>
+        {s.toddler ? null : <button onClick={act(() => desk().set({ classic: true }))}>Classic Pandora Dee</button>}
         <div className="sep" />
         <button disabled={!s.accounts.length} onClick={act(() => desk().lock())}>
           Lock the desktop
@@ -468,11 +469,11 @@ function MenuBar({ onLoad }: { onLoad: () => void }) {
         <button onClick={act(() => desk().set({ fontSize: Math.min(22, s.fontSize + 1) }))}>Bigger text</button>
         <button onClick={act(() => desk().set({ fontSize: Math.max(12, s.fontSize - 1) }))}>Smaller text</button>
         <div className="sep" />
-        <button onClick={act(() => desk().set({ classic: true }))}>Classic Pandora Dee</button>
+        {s.toddler ? null : <button onClick={act(() => desk().set({ classic: true }))}>Classic Pandora Dee</button>}
         <button onClick={act(() => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.()))}>Full screen</button>
       </Menu>
       <Menu id="window" label="Window">
-        {APPS.map((a) => (
+        {APPS.filter((a) => !s.toddler || inToddler(a.id)).map((a) => (
           <button key={a.id} onClick={act(() => desk().openApp(a.id))}>
             <Tick on={s.wins[a.id].open} /> {a.title}
           </button>
@@ -519,6 +520,7 @@ function MenuBar({ onLoad }: { onLoad: () => void }) {
             Adult shelf open
           </button>
         ) : null}
+        <ToddlerPill />
         <VolumeControl />
         <Clock />
         {s.accounts.length ? (

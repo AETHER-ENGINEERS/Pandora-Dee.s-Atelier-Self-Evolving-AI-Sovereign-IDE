@@ -10,6 +10,7 @@ import { ViaPicker } from "../ui/Via.tsx";
 import { askUser } from "../ui/Ask.tsx";
 import { allowed, FEATURES, MODES, type Feature, type Mode } from "../lib/privacy.ts";
 import { canSeal, matches, seal, shrinkPicture } from "../lib/secure.ts";
+import { startToddler } from "../ui/Toddler.tsx";
 import { speak, voiceList } from "../lib/voice.ts";
 import type { Role } from "../lib/flood.ts";
 import { Confirm, PersonAvatar, RiskDialog, Seg, Sensitive } from "../ui/common.tsx";
@@ -681,6 +682,15 @@ function AdultSection() {
           </div>
         </>
       ) : null}
+      <h4 style={{ marginTop: 18 }}>Toddler mode</h4>
+      <p className="small muted">
+        For little ones: making and watching pictures and music, games, notes and Hangout, with the characters still around but every AI feature resting (AI can cost
+        money). Other apps and Classic are put away. It stays on after a restart; the passcode above turns it off (the 🧸 in the top bar).
+      </p>
+      <button className="btn" disabled={!s.adult} onClick={() => setNote(startToddler())}>
+        Turn on toddler mode
+      </button>
+      {!s.adult ? <span className="small faint" style={{ marginLeft: 8 }}>Set a passcode first.</span> : null}
       {note ? <div className="note small" style={{ marginTop: 10 }}>{note}</div> : null}
     </>
   );

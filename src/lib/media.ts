@@ -29,6 +29,7 @@ export const uid = () => (typeof crypto.randomUUID === "function" ? crypto.rando
 
 /** Whether the privacy settings let the desktop reach this engine, and why not if they don't. */
 export function engineAllowed(url: string): string {
+  if (desk().toddler) return "Picture and song makers are resting: toddler mode is on. The adult passcode turns it off.";
   const scope = scopeOf(url);
   if (scope === "device") return "";
   const f: Feature = scope === "network" ? "network-models" : "online-models";
@@ -369,6 +370,7 @@ export async function keepSong(a: SongAsk, made: { audio: Blob; ext: string; see
 
 /** A character writes a title, a style and lyrics from a description (Suno's "simple" mode). */
 export async function writeSong(charId: string, description: string, instrumental: boolean): Promise<{ title: string; style: string; lyrics: string }> {
+  if (desk().toddler) throw new Error("The AI is resting: toddler mode is on.");
   const { chainFor } = await import("./agent.ts");
   const { streamOnce, credential } = await import("./model.ts");
   const { list } = chainFor(charId);

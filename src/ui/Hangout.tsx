@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { FullAvatar } from "./FullAvatar.tsx";
 import { runSlash } from "./slash.ts";
 import { MessagesSquare, Monitor, Send, Square, Settings as SettingsIcon, Users } from "lucide-react";
-import { APPS, desk, useDesk } from "../lib/store.ts";
+import { APPS, desk, inToddler, useDesk } from "../lib/store.ts";
 import type { Character } from "../lib/characters.ts";
 import { letThemTalk, say, stopAll } from "../lib/agent.ts";
 import { maskName, maskText } from "../lib/privacy.ts";
@@ -68,7 +68,7 @@ export function Stage({ interactive = true }: { interactive?: boolean }) {
                 { sep: true as const },
                 // windows over the scene, without leaving Hangout or darkening it
                 { heading: "Windows in Hangout" },
-                ...APPS.filter((a) => a.id !== "welcome").map((a) => {
+                ...APPS.filter((a) => a.id !== "welcome" && (!desk().toddler || inToddler(a.id))).map((a) => {
                   const shown = desk().hang.windows.includes(a.id) && desk().wins[a.id].open && !desk().wins[a.id].min;
                   return {
                     label: a.title,

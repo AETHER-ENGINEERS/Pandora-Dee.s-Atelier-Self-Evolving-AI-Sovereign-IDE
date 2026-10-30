@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { GripVertical, MonitorPlay, Trees } from "lucide-react";
-import { APPS, desk, useDesk, type AppId, type DockPrefs } from "../lib/store.ts";
+import { APPS, desk, inToddler, useDesk, type AppId, type DockPrefs } from "../lib/store.ts";
 import { ICONS, openSettings } from "./desktopApi.tsx";
 import { openMenu, type MenuItem } from "./ContextMenu.tsx";
 
@@ -25,6 +25,7 @@ function labelOf(id: string) {
 export function Dock({ front }: { front?: AppId }) {
   const wins = useDesk((s) => s.wins);
   const d = useDesk((s) => s.dock);
+  const toddler = useDesk((s) => s.toddler);
   const swipe = useDesk((s) => s.touch.edgeSwipe);
   const [shown, setShown] = useState(!d.autoHide);
   const [dragEdge, setDragEdge] = useState<Edge | null>(null);
@@ -163,7 +164,7 @@ export function Dock({ front }: { front?: AppId }) {
         <span className="dock-grip" onPointerDown={grip} title="Drag to move the dock anywhere; let go near an edge to dock it there" aria-hidden="true">
           <GripVertical size={14} />
         </span>
-        {d.items.map(button)}
+        {d.items.map((id, i) => (toddler && id !== "|" && !inToddler(id) ? null : button(id, i)))}
       </nav>
       {dragEdge ? <div className={`dock-target ${dragEdge}`} /> : null}
     </>

@@ -128,6 +128,7 @@ type TurnOpts = {
 
 async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
   const s = desk();
+  if (s.toddler) throw new Error("The AI is resting: toddler mode is on.");
   const room = s.roomCharacters();
   const signal = opts.signal ?? controller!.signal;
   const history = opts.history ?? s.messages;
@@ -378,6 +379,7 @@ async function guard(focus: string) {
 /** The characters answer a human message that's already in the room. */
 async function respond(msg: Message, instruction?: string) {
   const s = desk();
+  if (s.toddler) return s.notice("The characters are resting: toddler mode is on.");
   const room = s.roomCharacters();
   if (!room.length) {
     s.notice("Nobody's in the room yet. Open Characters and invite someone.");
