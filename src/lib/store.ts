@@ -140,6 +140,8 @@ export type McpServer = {
   description?: string;
   /** How requests are sent; empty follows Connections → Web's default. */
   via?: Via;
+  /** A character's own server (from her mcp.json): only she gets its tools. Empty: every character. */
+  owner?: string;
 };
 
 export type WebPrefs = { search: "auto" | "ollama" | "searxng" | "ddg" | "wikipedia"; searx: string };

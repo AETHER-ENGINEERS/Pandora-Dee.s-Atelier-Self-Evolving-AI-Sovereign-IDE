@@ -368,13 +368,13 @@ function McpPanel() {
   return (
     <>
       <h2>Tool servers (MCP)</h2>
-      <p className="lead small">More tools for the characters, from any MCP server that speaks streamable HTTP. Servers on this computer work right away; others need permission. The same mcp.json as Classic can be brought in or saved.</p>
+      <p className="lead small">More tools for the characters, from any MCP server that speaks streamable HTTP. Servers on this computer work right away; others need permission. The same mcp.json as Classic can be brought in or saved. A character's own mcp.json (in her files) adds servers only she uses.</p>
       {s.mcp.some((m) => scopeOf(m.url) !== "device") ? <Permission feature="remote-tools" /> : null}
       <div className="row" style={{ marginBottom: 12 }}>
         <button className="btn small" onClick={() => fileRef.current?.click()}>
           <Upload size={13} /> Bring in mcp.json
         </button>
-        <button className="btn small" disabled={!s.mcp.length} onClick={() => download("mcp.json", JSON.parse(toMcpJson(s.mcp)))}>
+        <button className="btn small" disabled={!s.mcp.some((m) => !m.owner)} onClick={() => download("mcp.json", JSON.parse(toMcpJson(s.mcp.filter((m) => !m.owner))))}>
           <Download size={13} /> Save mcp.json
         </button>
       </div>
@@ -386,6 +386,11 @@ function McpPanel() {
             <div className="row">
               <b>{m.name}</b>
               <span className="pill">{SCOPE_LABEL[scopeOf(m.url)]}</span>
+              {m.owner ? (
+                <span className="pill" title="From her mcp.json; only she uses it. Edit her file to change it.">
+                  {s.character(m.owner)?.name ?? m.owner}'s own
+                </span>
+              ) : null}
               <StateLine k={`mcp:${m.id}`} />
               <span className="grow" />
               <button

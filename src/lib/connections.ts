@@ -3,6 +3,7 @@
 import { McpClient } from "./mcp.ts";
 import { desk, type BridgeId, type McpServer } from "./store.ts";
 import { scopeOf } from "./model.ts";
+import { fromMcpJson } from "./mcptools.ts";
 import { allowed } from "./privacy.ts";
 
 export type LinkState = { state: "off" | "connecting" | "on" | "error"; error: string; tools: number; detail: string };
@@ -90,6 +91,33 @@ export async function connectBridge(id: BridgeId) {
   } catch (e) {
     emit(key, { ...OFF, state: "error", error: e instanceof Error ? e.message : String(e) });
   }
+}
+
+/** Each character's own servers follow her mcp.json (the file she brings from Classic, or edits in Files):
+ *  rebuilt when the file changes, connected when enabled. Run at start and whenever files change. */
+const lastMcpJson = new Map<string, string>();
+export function syncCharacterMcp() {
+  const s = desk();
+  let servers = s.mcp;
+  let changed = false;
+  for (const c of s.allCharacters()) {
+    const text = s.filesOf(c.id)["mcp.json"] ?? "";
+    if (lastMcpJson.get(c.id) === text) continue;
+    lastMcpJson.set(c.id, text);
+    let mine: McpServer[] = [];
+    try {
+      mine = text.trim() ? fromMcpJson(text).map((m) => ({ ...m, id: `${c.id}--${m.name}`, owner: c.id })) : [];
+    } catch {
+      continue; // not valid JSON yet (she may be mid-edit): keep what she had
+    }
+    const before = servers.filter((m) => m.owner === c.id);
+    if (JSON.stringify(before) === JSON.stringify(mine)) continue;
+    servers = [...servers.filter((m) => m.owner !== c.id), ...mine];
+    changed = true;
+    for (const old of before) if (!mine.some((m) => m.id === old.id)) disconnect(`mcp:${old.id}`);
+    for (const m of mine) if (m.enabled) void connectServer(m);
+  }
+  if (changed) s.set({ mcp: servers });
 }
 
 export function serverClients(): { server: McpServer; client: McpClient }[] {

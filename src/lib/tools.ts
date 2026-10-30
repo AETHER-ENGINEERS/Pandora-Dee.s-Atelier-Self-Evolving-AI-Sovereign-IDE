@@ -550,8 +550,8 @@ const TOOL_SEARCH: Tool = {
   name: "tool_search",
   description: "Find MCP tools that aren't loaded yet and load them, so you can call them directly on your next step.",
   parameters: obj({ query: { type: "string", description: "What you need the tool to do" } }, ["query"]),
-  run: async (_id, a, ctx) => {
-    const found = searchMcp(str(a.query), allMcp().filter((e) => e.exposure === "deferred"));
+  run: async (charId, a, ctx) => {
+    const found = searchMcp(str(a.query), allMcp(charId).filter((e) => e.exposure === "deferred"));
     for (const e of found) ctx.loaded.add(e.name);
     return found.length ? `Loaded:\n${found.map((e) => `- ${e.name}: ${(e.tool.description ?? "").slice(0, 160)}`).join("\n")}` : "Nothing matched.";
   },
@@ -562,7 +562,7 @@ const CODEMODE: Tool = {
   description:
     "Run JavaScript in a sandbox that can call MCP tools (no network of its own). Call a tool with await tools.mcp__server__tool({...}); find tools with searchTools('words'), inspect one with describeTool(name), list them with describeNamespace() or ALL_TOOLS. store(k, v) / load(k) keep values between steps. Only what you console.log or return reaches you.",
   parameters: obj({ code: { type: "string", description: "The script (top-level await works)" }, timeout: { type: "number", description: "Seconds (default 60)" } }, ["code"]),
-  run: async (_id, a) => runCodemode(str(a.code), Number(a.timeout) || 60),
+  run: async (charId, a) => runCodemode(str(a.code), Number(a.timeout) || 60, charId),
 };
 
 const RESOURCES: Tool[] = [
@@ -587,7 +587,7 @@ const RESOURCES: Tool[] = [
 ];
 
 function mcpTools(ctx: TurnCtx): Tool[] {
-  const all = allMcp();
+  const all = allMcp(ctx.charId);
   if (!all.length) return [];
   const out: Tool[] = [];
   for (const e of all) {

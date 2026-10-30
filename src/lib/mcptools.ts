@@ -21,10 +21,12 @@ function exposureOf(server: McpServer, tool: string): Exposure {
   return server.exposure ?? "codemode";
 }
 
-/** Every MCP tool from connected servers, with how it's exposed. */
-export function allMcp(): McpEntry[] {
+/** Every MCP tool from connected servers, with how it's exposed; with `charId`, only what that character may use
+ *  (the desktop's shared servers, and her own from her mcp.json). */
+export function allMcp(charId?: string): McpEntry[] {
   const out: McpEntry[] = [];
   for (const { server, client } of serverClients()) {
+    if (charId !== undefined && server.owner && server.owner !== charId) continue;
     for (const tool of client.tools) out.push({ name: mcpName(server.name, tool.name), server, client, tool, exposure: exposureOf(server, tool.name) });
   }
   return out;
@@ -89,8 +91,8 @@ self.onmessage = async (e) => {
   } catch (err) { postMessage({ op: 'done', logs, error: String(err && err.message || err) }); }
 };`;
 
-export async function runCodemode(code: string, timeoutSec = 60): Promise<string> {
-  const list = allMcp().filter((e) => e.exposure !== "hidden");
+export async function runCodemode(code: string, timeoutSec = 60, charId?: string): Promise<string> {
+  const list = allMcp(charId).filter((e) => e.exposure !== "hidden");
   const worker = new Worker(URL.createObjectURL(new Blob([WORKER], { type: "text/javascript" })));
   return new Promise((resolve) => {
     const timer = window.setTimeout(() => {
