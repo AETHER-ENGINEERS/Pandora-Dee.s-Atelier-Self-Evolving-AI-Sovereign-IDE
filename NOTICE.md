@@ -43,13 +43,12 @@ The crunch sound in Cook and Eat ("Human Eating_Crunch - Sound Effect (HD)") is 
 
 ## Webxdc apps by others
 
-Not part of this repository: people bring them into their own library. They're listed so their makers get the
-credit, and so the desktop's update check (Games & Apps → Check for updates, or `npm run check-upstreams`)
-knows where newer releases come from. Each keeps its own license.
-
-Two of them **ship with the desktop**, at their maker's request: **Gomoku** (0.6.199, BSD-2-Clause) and **MachStrike**
-(0.7.0.53, the flight simulator from flightsim-xdc), both by th2tran, in `public/apps/` (listed in `shipped.json`) and
-added to each library once.
+Shared with this ecosystem to be played and built on together, they **come with the desktop**: the files are in
+`public/apps/` (listed in `shipped.json`, with each one's maker, home and license where it states one) and are added
+to each library once, so one someone removes stays removed. Each keeps its own license and credit. The desktop's
+update check (Games & Apps → Check for updates, or `npm run check-upstreams`) follows where newer releases come from.
+Where a maker publishes release files, the shipped copy is that file, checked against the release's checksum; the
+others are the copies their makers shared. SNES (xdc) isn't shipped yet: there's no release file to ship.
 
 | App | Made by | Source |
 | --- | --- | --- |

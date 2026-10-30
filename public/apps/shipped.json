@@ -1,4 +1,139 @@
 [
-  { "file": "gomoku-0.6.199.xdc", "name": "Gomoku", "by": "th2tran", "source": "https://github.com/th2tran/gomoku-webxdc", "license": "BSD-2-Clause" },
-  { "file": "machstrike-0.7.0.53.xdc", "name": "MachStrike", "by": "th2tran", "source": "https://github.com/th2tran/flightsim-xdc", "license": "included at the author's request" }
+ {
+  "file": "gomoku-0.6.199.xdc",
+  "name": "Gomoku",
+  "by": "th2tran",
+  "source": "https://github.com/th2tran/gomoku-webxdc",
+  "license": "BSD-2-Clause"
+ },
+ {
+  "file": "machstrike-0.7.0.53.xdc",
+  "name": "MachStrike",
+  "by": "th2tran",
+  "source": "https://github.com/th2tran/flightsim-xdc",
+  "license": "included at the author's request"
+ },
+ {
+  "file": "xdc-chess-0.7.0+48.xdc",
+  "name": "XDC-Chess",
+  "by": "th2tran",
+  "source": "https://github.com/th2tran/chess-webxdc"
+ },
+ {
+  "file": "aurum-chess-0.0.2.9.xdc",
+  "name": "Aurum Chess",
+  "by": "th2tran"
+ },
+ {
+  "file": "vexel-0.5.6.xdc",
+  "name": "Vexel",
+  "by": "JSKitty",
+  "source": "https://github.com/JSKitty/Vexel"
+ },
+ {
+  "file": "arcane-dungeon-1.5.0.xdc",
+  "name": "Arcane Dungeon",
+  "by": "ArcaneCircle",
+  "source": "https://github.com/ArcaneCircle/pixel-dungeon",
+  "license": "GPL-3.0"
+ },
+ {
+  "file": "color-pixel-0.5.0.xdc",
+  "name": "Color Pixel",
+  "by": "ArcaneCircle",
+  "source": "https://github.com/ArcaneCircle/pixel",
+  "license": "MIT"
+ },
+ {
+  "file": "scramble-1.0.4.xdc",
+  "name": "Scramble",
+  "by": "Acbn-Nick",
+  "source": "https://github.com/Acbn-Nick/webxdc-scramble"
+ },
+ {
+  "file": "telengard-4e557643.xdc",
+  "name": "Telengard",
+  "by": "nicegamer7",
+  "source": "https://github.com/nicegamer7/telengard-webxdc"
+ },
+ {
+  "file": "lootforge-0555c71a.xdc",
+  "name": "Lootforge",
+  "by": "ayahohner",
+  "source": "https://github.com/ayahohner/lootforge-rpg"
+ },
+ {
+  "file": "webxdc-creator-studio-8d592d03.xdc",
+  "name": "Webxdc Creator Studio",
+  "by": "YosvanyAlain",
+  "source": "https://github.com/YosvanyAlain/creator-studio",
+  "license": "MIT"
+ },
+ {
+  "file": "astro-0.0.4-1.xdc",
+  "name": "astro",
+  "by": "sweetpotatopress",
+  "source": "https://github.com/sweetpotatopress/astro",
+  "license": "AGPL-3.0"
+ },
+ {
+  "file": "so-many-colors-81593b86.xdc",
+  "name": "So Many Colors!",
+  "by": "durian",
+  "source": "https://codeberg.org/durian/colors"
+ },
+ {
+  "file": "neon-runner-f8d00efe.xdc",
+  "name": "Neon Runner",
+  "by": "webxdc",
+  "source": "https://github.com/webxdc"
+ },
+ {
+  "file": "vectorjs-emulator-bb2632d0.xdc",
+  "name": "VectorJS Emulator",
+  "by": "EmulatorJS (GPL-3.0)",
+  "source": "https://emulatorjs.org/"
+ },
+ {
+  "file": "vectorjs-nes-arcade-1.xdc",
+  "name": "VectorJS & NES Arcade",
+  "by": "EmulatorJS (GPL-3.0), jsnes",
+  "source": "https://emulatorjs.org/"
+ },
+ {
+  "file": "aether-foundry-0.1.7.xdc",
+  "name": "Aether Foundry",
+  "by": "AETHER-ENGINEERS",
+  "source": "https://github.com/AETHER-ENGINEERS/aether-foundry"
+ },
+ {
+  "file": "undercroft-bb9c4375.xdc",
+  "name": "Undercroft",
+  "by": "AETHER-ENGINEERS",
+  "source": "https://github.com/AETHER-ENGINEERS/aether-foundry"
+ },
+ {
+  "file": "roses-0.0.7.xdc",
+  "name": "ROSES",
+  "by": "AETHER-ENGINEERS",
+  "source": "https://github.com/AETHER-ENGINEERS/xdc-roses-for-vector"
+ },
+ {
+  "file": "sid-step-7fc5915e.xdc",
+  "name": "SID-STEP",
+  "by": "AETHER-ENGINEERS",
+  "source": "https://github.com/AETHER-ENGINEERS/sid-step"
+ },
+ {
+  "file": "strudel-0.1.11.xdc",
+  "name": "Strudel",
+  "by": "AETHER-ENGINEERS",
+  "source": "https://github.com/AETHER-ENGINEERS/OMARG-Vector-strudel"
+ },
+ {
+  "file": "xdc-forge-32eb796b.xdc",
+  "name": "XDC Forge",
+  "by": "AETHER-ENGINEERS",
+  "source": "https://github.com/AETHER-ENGINEERS/vector-xdc-forge"
+ }
 ]
