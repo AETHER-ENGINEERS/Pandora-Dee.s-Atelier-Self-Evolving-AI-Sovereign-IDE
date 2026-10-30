@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { FolderTree, AudioWaveform, BookOpen, Cable, Code2, FolderOpen, Gamepad2, Globe, HelpCircle, KeyRound, MessageCircleHeart, MessagesSquare, Music2, NotebookPen, Palette, Settings as SettingsIcon, ShieldAlert, SquareTerminal, Users, Video } from "lucide-react";
 import { desk, type AppId } from "../lib/store.ts";
-import { parseBackup } from "../lib/backup.ts";
+import { parseBackup, prefsFromClassic } from "../lib/backup.ts";
 
 export const ICONS: Record<AppId, (size: number) => ReactNode> = {
   room: (s) => <MessagesSquare size={s} />,
@@ -56,6 +56,8 @@ export function loadBackupFile(file: File) {
         return s.say(`${parsed.character.name} was added to the adult shelf. Unlock it in Settings → Adult shelf to see them.`);
       }
       s.addCharacter(parsed.character);
+      // a Classic character's model, temperature, turns and voice become hers here too
+      if (parsed.character.classic) s.setCharPrefs(parsed.character.id, prefsFromClassic(parsed.character.classic.settings, s.model.connections));
       const err = s.join(parsed.character.id);
       s.say(err ? `${parsed.note} ${err}` : parsed.note);
     })

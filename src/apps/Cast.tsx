@@ -174,7 +174,7 @@ function Profile({ c, onBack }: { c: Character; onBack: () => void }) {
             <button
               className="btn"
               title="A config backup Pandora Dee or Jade Vault opens with Config → Import: her files and her Classic settings, no keys"
-              onClick={() => download(`${c.id}-classic-config.json`, toClassic(c, files))}
+              onClick={() => download(`${c.id}-classic-config.json`, toClassic(c, files, desk().charPrefs[c.id], desk().model.connections))}
             >
               <Download size={14} /> Export for Classic
             </button>

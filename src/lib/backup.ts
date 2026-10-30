@@ -2,6 +2,8 @@
 // other apps (AICord and similar). Anything that looks like a token or secret is dropped.
 
 import { blankCharacter, slug, type Character, type ClassicKeep } from "./characters.ts";
+import type { CharPrefs } from "./store.ts";
+import type { Connection } from "./model.ts";
 
 export const FORMAT = "pandora-dee-character";
 
@@ -195,8 +197,50 @@ export function fromClassic(d: Record<string, unknown>): { character: Character;
   return { character: c, skipped };
 }
 
+// Classic's provider names and the desktop connections they mean (by where the connection points)
+const PROVIDER_AT: [provider: string, test: (c: Connection) => boolean][] = [
+  ["local", (c) => c.kind === "ollama" && /localhost|127\.0\.0\.1/.test(c.baseUrl)],
+  ["cloud", (c) => /ollama\.com/.test(c.baseUrl)],
+  ["groq", (c) => /groq\.com/.test(c.baseUrl)],
+  ["openai", (c) => /api\.openai\.com/.test(c.baseUrl)],
+  ["aicord", (c) => c.kind === "aicord"],
+];
+
+/** The Classic settings the desktop has a place for, as her per-character preferences. */
+export function prefsFromClassic(s: Record<string, unknown>, connections: Connection[]): Partial<CharPrefs> {
+  const p: Partial<CharPrefs> = {};
+  if (typeof s.model === "string" && s.model) p.model = s.model;
+  if (typeof s.temperature === "number") p.temperature = s.temperature;
+  if (typeof s.maxTurns === "number" && s.maxTurns > 0) p.maxSteps = s.maxTurns;
+  const conn = PROVIDER_AT.find(([name]) => name === s.provider)?.[1];
+  const found = conn && connections.find(conn);
+  if (found) p.connection = found.id;
+  const voice: NonNullable<CharPrefs["voice"]> = {};
+  if (typeof s.voiceName === "string" && s.voiceName) voice.voiceName = s.voiceName;
+  if (typeof s.voiceRate === "number") voice.rate = s.voiceRate;
+  if (typeof s.voicePitch === "number") voice.pitch = s.voicePitch;
+  if (Object.keys(voice).length) p.voice = voice;
+  return p;
+}
+
+/** Her desktop preferences written back over the Classic settings she came with (for Export for Classic). */
+export function classicFromPrefs(s: Record<string, unknown>, p: Partial<CharPrefs> | undefined, connections: Connection[]): Record<string, unknown> {
+  const out = { ...s };
+  if (!p) return out;
+  if (p.model) out.model = p.model;
+  if (typeof p.temperature === "number") out.temperature = p.temperature;
+  if (typeof p.maxSteps === "number") out.maxTurns = p.maxSteps;
+  const conn = p.connection && connections.find((c) => c.id === p.connection);
+  const provider = conn && PROVIDER_AT.find(([, test]) => test(conn))?.[0];
+  if (provider) out.provider = provider;
+  if (p.voice?.voiceName) out.voiceName = p.voice.voiceName;
+  if (typeof p.voice?.rate === "number") out.voiceRate = p.voice.rate;
+  if (typeof p.voice?.pitch === "number") out.voicePitch = p.voice.pitch;
+  return out;
+}
+
 /** A desktop character as a Classic config backup (Config → Import in Pandora Dee or Jade Vault). Keys never go in. */
-export function toClassic(c: Character, files: Record<string, string>) {
+export function toClassic(c: Character, files: Record<string, string>, prefs?: Partial<CharPrefs>, connections: Connection[] = []) {
   const root = c.classic?.root ?? (/jade/i.test(c.id) ? "Jade" : "Pandora");
   const vault: Record<string, string> = {};
   for (const [p, v] of Object.entries(files)) {
@@ -211,7 +255,7 @@ export function toClassic(c: Character, files: Record<string, string>) {
     kind: "config",
     exportedAt: new Date().toISOString(),
     includesKeys: false,
-    settings: withoutSecrets(scrub(c.classic?.settings ?? {}) as Record<string, unknown>),
+    settings: withoutSecrets(scrub(classicFromPrefs(c.classic?.settings ?? {}, prefs, connections)) as Record<string, unknown>),
     storage: c.classic?.storage ?? {},
     vault: { files: vault, dirs: [] },
   };

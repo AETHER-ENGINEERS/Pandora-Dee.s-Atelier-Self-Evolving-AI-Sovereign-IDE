@@ -5,7 +5,7 @@ import { loopCheck, mentioned, responders, similarity, streakOf, tidyReply, tran
 import { run } from "./shell.ts";
 import { allowed, maskName, withinHours, PRIVACY_DEFAULT } from "./privacy.ts";
 import { scopeOf, pickModel } from "./model.ts";
-import { parseBackup, scrub, toClassic } from "./backup.ts";
+import { parseBackup, scrub, toClassic, prefsFromClassic } from "./backup.ts";
 import { BUILT_IN } from "./characters.ts";
 
 const dee = BUILT_IN.find((c) => c.id === "dee")!;
@@ -321,4 +321,21 @@ test("a Jade Vault backup keeps Jade's folder and her flows", () => {
   assert.equal(r.character.id, "jade-2");
   assert.equal(r.character.files["rituals/x.json"], "{}");
   assert.equal(toClassic(r.character, r.character.files).vault.files["/Jade/Flows/x.json"], "{}");
+});
+
+test("her Classic model, turns and voice become her desktop preferences, and go back the same", () => {
+  const conns = [
+    { id: "local", label: "Ollama here", kind: "ollama", baseUrl: "http://localhost:11434", keyName: "", model: "qwen3:8b", enabled: true },
+    { id: "oc", label: "Ollama Cloud", kind: "openai", baseUrl: "https://ollama.com/v1", keyName: "OLLAMA", model: "", enabled: true },
+  ] as Parameters<typeof prefsFromClassic>[1];
+  const p = prefsFromClassic({ provider: "cloud", model: "gpt-oss:120b", temperature: 0.6, maxTurns: 12, voiceName: "af_bella", voiceRate: 1.1, voicePitch: 0.9 }, conns);
+  assert.deepEqual(p, { model: "gpt-oss:120b", temperature: 0.6, maxSteps: 12, connection: "oc", voice: { voiceName: "af_bella", rate: 1.1, pitch: 0.9 } });
+  const c = { id: "fae", name: "Fae", classic: { app: "pandora-dee", root: "Pandora", settings: { provider: "local", model: "old", memoryRag: true } } } as unknown as Parameters<typeof toClassic>[0];
+  const out = toClassic(c, {}, { ...p, temperature: 0.4 }, conns);
+  assert.equal(out.settings.provider, "cloud");
+  assert.equal(out.settings.model, "gpt-oss:120b");
+  assert.equal(out.settings.temperature, 0.4);
+  assert.equal(out.settings.maxTurns, 12);
+  assert.equal(out.settings.voiceName, "af_bella");
+  assert.equal(out.settings.memoryRag, true);
 });

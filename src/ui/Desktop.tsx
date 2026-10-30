@@ -419,7 +419,7 @@ function MenuBar({ onLoad }: { onLoad: () => void }) {
         </button>
         <button
           disabled={!focusChar}
-          onClick={act(() => focusChar && download(`${focusChar.id}-classic-config.json`, toClassic(focusChar, desk().filesOf(focusChar.id))))}
+          onClick={act(() => focusChar && download(`${focusChar.id}-classic-config.json`, toClassic(focusChar, desk().filesOf(focusChar.id), desk().charPrefs[focusChar.id], desk().model.connections)))}
         >
           Export {focusChar?.short ?? "character"} for Classic (Pandora Dee / Jade Vault)
         </button>
