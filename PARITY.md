@@ -147,8 +147,8 @@ webxdc apps as peers, rebindable shortcuts, right-click menus, movable dock.
 ## Classic, enhanced builds
 
 Classic also offers each original app with the other one's features added: **Pandora Dee 2.9.9.2-enhanced**
-and **Jade Vault 2.20.1-enhanced** (pick them in Classic's corner switcher or Settings → Classic; Jade Vault
-2.20.1 as released and the earlier 2.18.2 and 2.18.2-enhanced builds are there too). Every feature
+and **Jade Vault 2.22.1-enhanced** (pick them in Classic's corner switcher or Settings → Classic; Jade Vault
+2.22.1 as released, and the earlier 2.20.1, 2.20.1-enhanced, 2.18.2 and 2.18.2-enhanced builds are there too). Every feature
 an enhanced build adds is **off until you turn it on** in that app's Config, so with nothing switched on each
 behaves like the original it is built from. They are built from the upstream sources with patches and a script
 kept outside this repo (a separate `classic-enhanced` folder: `build.sh --install`, patches in `patches/`).
@@ -180,8 +180,11 @@ Unlike Jade Vault, each tool has its own switch (there the senses switch also to
 others with it). "Ask me before Pandora places a call, sends a text…" stays on: it is the safety check for those
 tools, which are themselves off. Not included: the Jade Docs webxdc app (a separate app, not part of the page).
 
-**Jade Vault 2.20.1-enhanced** = Jade Vault 2.20.1 + Pandora Dee 2.9.9.2's extras, in Jade's words (the same
-extras as 2.18.2-enhanced, rebased onto the new code):
+**Jade Vault 2.22.1-enhanced** = Jade Vault 2.22.1 + Pandora Dee 2.9.9.2's extras, in Jade's words (the same
+extras as 2.20.1-enhanced, rebased onto the new code). 2.22.1 is upstream's 2.21–2.22.1 (the Jade Fleet client,
+WebGPU on phones with TensorFlow.js, LiteRT and ONNX Runtime, the onnx and usb tools, the offline terminal, settings
+kept in IndexedDB so nothing is lost on reload) merged with this project's own Jade Vault changes (the Chalice
+Discord archive, quota failover, the persona). The extras:
 
 | Added from Pandora Dee | Where to turn it on (Config) |
 | --- | --- |
