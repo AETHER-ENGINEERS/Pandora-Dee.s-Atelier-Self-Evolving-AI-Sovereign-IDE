@@ -112,7 +112,7 @@ export function deskServer() {
           const file = path.join(apps, path.basename(String(s.file)));
           if (done.includes(s.file) || !fs.existsSync(file)) continue;
           try {
-            lib.importAny(fs.readFileSync(file), path.basename(file), s.source ? { source: s.source } : {});
+            lib.importAny(fs.readFileSync(file), path.basename(file), { ...(s.source ? { source: s.source } : {}), ...(s.name ? { name: s.name } : {}) });
             done.push(s.file);
           } catch {
             /* a broken file: tried again next time */

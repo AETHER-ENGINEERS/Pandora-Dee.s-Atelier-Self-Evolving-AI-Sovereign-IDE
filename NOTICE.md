@@ -73,6 +73,15 @@ others are the copies their makers shared. SNES (xdc) isn't shipped yet: there's
 | SID-STEP | AETHER-ENGINEERS | https://github.com/AETHER-ENGINEERS/sid-step |
 | Strudel | AETHER-ENGINEERS | https://github.com/AETHER-ENGINEERS/OMARG-Vector-strudel |
 | XDC Forge | AETHER-ENGINEERS | https://github.com/AETHER-ENGINEERS/vector-xdc-forge |
+| Jade Cat Girl | Lucky | shared on Vector |
+| Local LLM Chat | Lucky | shared on Vector |
+| Tiny Linux | Lucky | shared on Vector |
+| Forts | Henky | shared on Vector |
+| Starlight on Whisker Street | Ice Cream Ghost Cat (SunkissedButterfly), who also made its art | shared on Vector |
+| Ashen Tides: The Dragon Concord | Henky (to confirm) | shared on Vector |
+| The Path of the Fool: Deep Descent | Libra; music by Mrrowr-murrr, Oknytt and Libra's Claude | shared on Vector |
+| Container | Doctor Todd (to confirm) | shared on Vector |
+| AtariSynth | Lucky or Henky (to confirm) | shared on Vector |
 
 Commercial games (RuneScape, Jazz Jackrabbit, Half-Life) are never included: people import their own copies.
 

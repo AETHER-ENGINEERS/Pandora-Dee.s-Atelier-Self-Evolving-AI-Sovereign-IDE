@@ -135,5 +135,50 @@
   "name": "XDC Forge",
   "by": "AETHER-ENGINEERS",
   "source": "https://github.com/AETHER-ENGINEERS/vector-xdc-forge"
+ },
+ {
+  "file": "jade-cat-girl-14.xdc",
+  "name": "Jade Cat Girl",
+  "by": "Lucky"
+ },
+ {
+  "file": "local-llm-chat-3d64092d.xdc",
+  "name": "Local LLM Chat",
+  "by": "Lucky"
+ },
+ {
+  "file": "tiny-linux-28202ff4.xdc",
+  "name": "Tiny Linux",
+  "by": "Lucky"
+ },
+ {
+  "file": "forts-0.17.15.xdc",
+  "name": "Forts",
+  "by": "Henky"
+ },
+ {
+  "file": "starlight-on-whisker-street-0.0.3.xdc",
+  "name": "Starlight on Whisker Street",
+  "by": "Ice Cream Ghost Cat (SunkissedButterfly), who also made the art"
+ },
+ {
+  "file": "ashen-tides-2.0.0-review.5.xdc",
+  "name": "Ashen Tides: The Dragon Concord",
+  "by": "Henky (to confirm)"
+ },
+ {
+  "file": "the-path-of-the-fool-dc51e7c6.xdc",
+  "name": "The Path of the Fool: Deep Descent",
+  "by": "Libra; music by Mrrowr-murrr, Oknytt and Libra's Claude"
+ },
+ {
+  "file": "container-8dfff438.xdc",
+  "name": "Container",
+  "by": "Doctor Todd (to confirm)"
+ },
+ {
+  "file": "atarisynth-00b0e396.xdc",
+  "name": "AtariSynth",
+  "by": "Lucky or Henky (to confirm)"
  }
 ]

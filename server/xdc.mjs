@@ -58,7 +58,7 @@ export function createLibrary(dataDir) {
     }
     fs.writeFileSync(path.join(root, `${id}.xdc`), bytes);
     const stem = filename.replace(/\.xdc$/i, "");
-    const name = String(manifest.name || prettify(stem));
+    const name = String(manifest.name || defaults.name || prettify(stem));
     /** @type {Pkg} */
     const pkg = {
       id,
