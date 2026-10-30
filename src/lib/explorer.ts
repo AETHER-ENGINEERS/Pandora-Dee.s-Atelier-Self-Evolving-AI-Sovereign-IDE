@@ -14,6 +14,8 @@ export type Overview = {
   deviceExplorer: boolean;
   /** shared with the other devices on the network (only the computer itself can change it) */
   sharing: { wholePc: boolean; folders: Place[]; canChange: boolean };
+  /** shared by other devices (phones, other computers) while their page is open: paths start with "device:" */
+  devices?: Place[];
 };
 export type Listing = { path: string; parent: string | null; entries: Entry[] };
 export type Trashed = { id: string; from: string; name: string; at: number };

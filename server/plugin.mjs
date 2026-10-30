@@ -16,6 +16,7 @@ import { createBrowser } from "./browse.mjs";
 import { createVector } from "./vector.mjs";
 import { createVectorHost } from "./vectorHost.mjs";
 import { createFiles } from "./files.mjs";
+import { createDevShare, isDevicePath } from "./devshare.mjs";
 import { checkUpdates, download } from "./upstreams.mjs";
 import * as aicordAuth from "./oauth.mjs";
 import { findCurl, findPython, forgetPrograms } from "./programs.mjs";
@@ -106,6 +107,9 @@ export function deskServer() {
       getSharing: () => readConfig().filesSharing,
       setSharing: (s) => writeConfig({ filesSharing: s }),
     }));
+  // other devices sharing their own files, while their page is open (see devshare.mjs)
+  const devices = createDevShare();
+  const withDevices = (o) => ({ ...o, devices: devices.places() });
   const library = () => {
     if (!lib) {
       lib = createLibrary(dataDir);
@@ -359,13 +363,42 @@ export function deskServer() {
         return send(res, e?.status || 400, { error: e instanceof Error ? e.message : String(e) });
       }
     }
+    // a device sharing its own files: its page opens a share, waits for requests, and answers them
+    if (parts[0] === "devshare") {
+      try {
+        const id = url.searchParams.get("id"), token = url.searchParams.get("token");
+        if (parts[1] === "next" && m === "GET") return devices.next(id, token, res);
+        if (parts[1] === "reply" && m === "POST") return send(res, 200, { ok: await devices.reply(id, token, url.searchParams.get("rid"), req) });
+        if (m === "POST") {
+          const b = JSON.parse((await readBody(req, 10_000)).toString("utf8") || "{}");
+          if (parts[1] === "open") return send(res, 200, devices.open(b));
+          if (parts[1] === "close") return send(res, 200, (devices.close(b.id, b.token), { ok: true }));
+        }
+      } catch (e) {
+        return send(res, e?.status || 400, { error: e instanceof Error ? e.message : String(e) });
+      }
+    }
     // Explorer: the desktop's places, and the computer when that's allowed (see files.mjs)
     if (parts[0] === "files") {
       const F = files();
       const local = onThisPc(req);
       try {
+        const asked = url.searchParams.get("path");
+        if (m === "GET" && isDevicePath(asked)) {
+          // shared by another device: listed and sent by that device's page
+          if (parts[1] === "list") return send(res, 200, await devices.list(asked));
+          if (parts[1] === "raw") return devices.raw(asked, res, Boolean(url.searchParams.get("download")));
+          if (parts[1] === "stat") {
+            const up = asked.includes("/") ? asked.slice(0, asked.lastIndexOf("/")) : asked;
+            if (up === asked) return send(res, 200, { path: asked, name: asked, dir: true, size: 0, mtime: 0, ctime: 0, ext: "" });
+            const hit = (await devices.list(up)).entries.find((e) => e.path === asked);
+            if (!hit) return send(res, 404, { error: "That isn't there any more." });
+            return send(res, 200, { ...hit, ctime: hit.mtime });
+          }
+        }
+        if (m === "POST" && isDevicePath(asked)) return send(res, 403, { error: "Files shared from another device can be opened and downloaded here, not changed." });
         if (m === "GET") {
-          if (parts[1] === "places") return send(res, 200, F.overview(local));
+          if (parts[1] === "places") return send(res, 200, { ...F.overview(local), devices: devices.places() });
           if (parts[1] === "list") return send(res, 200, F.list(url.searchParams.get("path"), local));
           if (parts[1] === "stat") return send(res, 200, F.stat(url.searchParams.get("path"), local));
           if (parts[1] === "trash") return send(res, 200, F.trashList());
@@ -380,13 +413,14 @@ export function deskServer() {
           return send(res, 200, { path: F.upload(url.searchParams.get("dir"), decodeURIComponent(String(req.headers["x-filename"] || "file")), await readBody(req, 4_000_000_000), local) });
         if (m === "POST") {
           const b = JSON.parse((await readBody(req, 100_000)).toString("utf8") || "{}");
+          if ([b.path, b.into].some(isDevicePath)) return send(res, 403, { error: "Files shared from another device can be opened and downloaded here, not changed." });
           if (parts[1] === "mkdir") return send(res, 200, { path: F.mkdir(b.path, b.name, local) });
           if (parts[1] === "move") return send(res, 200, { path: F.move(b.path, { name: b.name, into: b.into }, local) });
           if (parts[1] === "trash") return send(res, 200, F.trash(b.path, local));
           if (parts[1] === "restore") return send(res, 200, { path: F.restore(String(b.id), local) });
           if (parts[1] === "reveal-device") return send(res, 200, (F.revealOnDevice(b.path, local), { ok: true }));
-          if (parts[1] === "whole-pc") return send(res, 200, F.setWhole(b.on, local));
-          if (parts[1] === "share") return send(res, 200, F.share({ path: b.path, on: Boolean(b.on), wholePc: typeof b.wholePc === "boolean" ? b.wholePc : undefined }, local));
+          if (parts[1] === "whole-pc") return send(res, 200, { ...F.setWhole(b.on, local), devices: devices.places() });
+          if (parts[1] === "share") return send(res, 200, withDevices(F.share({ path: b.path, on: Boolean(b.on), wholePc: typeof b.wholePc === "boolean" ? b.wholePc : undefined }, local)));
           // a Mini App (.xdc) from anywhere Explorer reaches, into Games & Apps
           if (parts[1] === "import-xdc") {
             const file = F.allowed(b.path, local);

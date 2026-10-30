@@ -2,12 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   ArrowLeft, Copy, Download, ExternalLink, File as FileIcon, FileText, Folder, FolderPlus, FolderUp, Gamepad2, HardDrive, Image as ImageIcon,
-  LayoutGrid, LayoutList, Monitor, Music2, RotateCcw, Share2, Trash2, Upload, Video,
+  LayoutGrid, LayoutList, Monitor, Music2, RotateCcw, Share2, Smartphone, Trash2, Upload, Video,
 } from "lucide-react";
 import { desk } from "../lib/store.ts";
 import { Markdown } from "../ui/common.tsx";
 import { openMenu, type MenuItem } from "../ui/ContextMenu.tsx";
 import { useWidth } from "../ui/hooks.ts";
+import { canShareFolder, deviceName, shareFiles, shareFolder, stopSharing, useMyShares } from "../lib/devshare.ts";
 import {
   answerPick, baseName, dirName, downloadToDevice, fileApi, kindOf, openXdcInGames, pickInExplorer, rawUrl, showOnDevice, sizeOf, usePickRequest,
   type Entry, type Listing, type Overview, type PickOptions, type Trashed,
@@ -79,7 +80,23 @@ function FileBrowser({ mode, go, pick }: { mode: Mode; go?: { path: string; at: 
   const picking = mode !== "browse";
 
   const loadOverview = useCallback(() => fileApi.overview().then(setOv, fail), []);
-  useEffect(() => void loadOverview(), [loadOverview]);
+  const myShares = useMyShares();
+  const sharePicker = useRef<HTMLInputElement>(null);
+  // other devices' shares come and go with their pages: look again now and then, and when this one's change
+  useEffect(() => {
+    void loadOverview();
+    const t = window.setInterval(() => void fileApi.overview().then(setOv, () => {}), 15_000);
+    return () => window.clearInterval(t);
+  }, [loadOverview, myShares]);
+  const shareMenu = (ev: React.MouseEvent) =>
+    openMenu(ev, [
+      { heading: `Share from ${deviceName()}` },
+      ...(canShareFolder()
+        ? [{ label: "Share a folder…", icon: <Folder size={14} />, hint: "while this page is open", run: () => void shareFolder().then((s) => s && desk().say(`"${s.name}" is shared with your other devices while this page stays open.`), fail) }]
+        : []),
+      { label: "Share files…", icon: <FileIcon size={14} />, hint: "while this page is open", run: () => sharePicker.current?.click() },
+      ...(myShares.length ? [{ sep: true } as MenuItem, ...myShares.map((s) => ({ label: `Stop sharing "${s.name}"`, icon: <Trash2 size={14} />, run: () => stopSharing(s.id) }))] : []),
+    ]);
 
   const open = useCallback(
     async (p: string, selectName?: string, remember = true) => {
@@ -262,7 +279,7 @@ function FileBrowser({ mode, go, pick }: { mode: Mode; go?: { path: string; at: 
 
   const crumbs = useMemo(() => {
     if (!cwd || !ov) return [];
-    const place = [...ov.places, ...ov.wholePc.drives].filter((p) => cwd.toLowerCase().startsWith(p.path.toLowerCase())).sort((a, b) => b.path.length - a.path.length)[0];
+    const place = [...ov.places, ...ov.wholePc.drives, ...(ov.devices ?? [])].filter((p) => cwd.toLowerCase().startsWith(p.path.toLowerCase())).sort((a, b) => b.path.length - a.path.length)[0];
     if (!place) return [{ name: cwd, path: cwd }];
     const rest = cwd.slice(place.path.length).split(/[\\/]/).filter(Boolean);
     const sep = cwd.includes("\\") ? "\\" : "/";
@@ -273,6 +290,7 @@ function FileBrowser({ mode, go, pick }: { mode: Mode; go?: { path: string; at: 
   }, [cwd, ov]);
 
   const places = ov ? [...ov.places, ...ov.wholePc.drives] : [];
+  const fromDevices = ov?.devices ?? [];
   const shared = ov?.sharing.folders ?? [];
   const isShared = (p: string) => shared.some((s) => s.path.toLowerCase() === p.toLowerCase());
   const sidebar = (
@@ -288,6 +306,12 @@ function FileBrowser({ mode, go, pick }: { mode: Mode; go?: { path: string; at: 
         {shared.map((p) => (
           <button key={p.id} className={`item${!trashView && cwd.toLowerCase().startsWith(p.path.toLowerCase()) ? " on" : ""}`} onClick={() => void open(p.path)} title={p.path}>
             <Share2 size={15} /> {p.name}
+          </button>
+        ))}
+        {fromDevices.length ? <div className="folder">Shared by your devices</div> : null}
+        {fromDevices.map((p) => (
+          <button key={p.id} className={`item${!trashView && cwd.startsWith(p.path) ? " on" : ""}`} onClick={() => void open(p.path)} title="Open while that device's page stays open">
+            <Smartphone size={15} /> {p.name}
           </button>
         ))}
         {!picking ? (
@@ -421,7 +445,7 @@ function FileBrowser({ mode, go, pick }: { mode: Mode; go?: { path: string; at: 
         {narrow ? (
           <select className="select explorer-places" value="" onChange={(e) => e.target.value && void open(e.target.value)} aria-label="Places">
             <option value="">Places…</option>
-            {places.map((p) => (
+            {[...places, ...shared, ...fromDevices].map((p) => (
               <option key={p.id} value={p.path}>
                 {p.name}
               </option>
@@ -450,6 +474,11 @@ function FileBrowser({ mode, go, pick }: { mode: Mode; go?: { path: string; at: 
             <button className="icon-btn" aria-label="Upload from this device" data-tip="Upload from this device" onClick={() => uploader.current?.click()}>
               <Upload size={15} />
             </button>
+            {!picking ? (
+              <button className={`icon-btn${myShares.length ? " on" : ""}`} aria-label="Share from this device" data-tip={myShares.length ? `Sharing ${myShares.length} from this device` : "Share files or a folder from this device"} onClick={shareMenu}>
+                <Smartphone size={15} />
+              </button>
+            ) : null}
             <button
               className="icon-btn"
               aria-label={view === "grid" ? "List view" : "Tile view"}
@@ -492,6 +521,17 @@ function FileBrowser({ mode, go, pick }: { mode: Mode; go?: { path: string; at: 
           const list = [...(e.target.files ?? [])];
           e.target.value = "";
           void upload(list);
+        }}
+      />
+      <input
+        ref={sharePicker}
+        type="file"
+        multiple
+        hidden
+        onChange={(e) => {
+          const list = [...(e.target.files ?? [])];
+          e.target.value = "";
+          void shareFiles(list).then((s) => s && desk().say(`"${s.name}" is shared with your other devices while this page stays open.`), fail);
         }}
       />
     </div>
