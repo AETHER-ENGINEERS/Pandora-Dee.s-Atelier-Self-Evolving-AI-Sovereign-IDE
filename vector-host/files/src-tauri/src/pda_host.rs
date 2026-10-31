@@ -53,11 +53,25 @@ pub fn download_dir() -> Option<PathBuf> {
     host()?.data.as_ref().map(|d| d.join("downloads"))
 }
 
+/// One identity per data folder: two desktops on one computer (say, the real one and a test copy) each get their own
+/// Vector engine, instead of the second being turned away by the first's "only one copy may run" lock. It's a fixed
+/// hash of the folder's path (FNV-1a, the same in every build); the accounts themselves already live in that folder.
+fn identifier(data: Option<&PathBuf>) -> String {
+    let Some(d) = data else { return "io.vectorapp.pdahost".into() };
+    let path = d.to_string_lossy().replace('\\', "/").trim_end_matches('/').to_lowercase();
+    let mut hash: u64 = 0xcbf29ce484222325;
+    for b in path.bytes() {
+        hash ^= u64::from(b);
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    format!("io.vectorapp.pdahost.d{:012x}", hash & 0xffff_ffff_ffff)
+}
+
 /// Before the app starts: its own identity, no window from the config, and room for the bridge to reach the desktop.
 pub fn adjust<R: Runtime>(context: &mut tauri::Context<R>) {
     let Some(h) = host() else { return };
     let config = context.config_mut();
-    config.identifier = "io.vectorapp.pdahost".into();
+    config.identifier = identifier(h.data.as_ref());
     config.app.windows.clear();
     let origin = h.bridge.split('/').take(3).collect::<Vec<_>>().join("/");
     if let Some(tauri::utils::config::Csp::Policy(policy)) = config.app.security.csp.as_mut() {
