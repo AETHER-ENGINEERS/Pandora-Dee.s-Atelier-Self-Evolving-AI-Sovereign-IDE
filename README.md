@@ -118,4 +118,4 @@ It needs Node, Rust, and on Windows Microsoft's C++ build tools. Without Visual 
 
 Original characters are shared under the AETHER-ENGINEERS Multiversal License. Jade and Jade Vault are their creator's work. Games by SunkissedButterfly (websim.ai).
 
-## CONTACT US: [![Vector Messenger](https://vectorapp.io/profile/npub1vrte0qmajxq7f805h02s2lle9q9czpcnzezasf8eydnz3mk63ansrwzk8p)
+## CONTACT US: [[Vector Messenger](https://vectorapp.io/profile/npub1vrte0qmajxq7f805h02s2lle9q9czpcnzezasf8eydnz3mk63ansrwzk8p)
