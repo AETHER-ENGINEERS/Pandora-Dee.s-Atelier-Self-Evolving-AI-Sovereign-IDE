@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Hash, LogOut, MessageSquarePlus, Package, Paperclip, RefreshCw, Send, UserRound, Users } from "lucide-react";
+import { ExternalLink, Hash, LogOut, MessageSquarePlus, Package, Paperclip, RefreshCw, Send, UserRound, Users } from "lucide-react";
 import { desk, useDesk } from "../lib/store.ts";
 import { library } from "../lib/xdc.ts";
 import { openMenu } from "../ui/ContextMenu.tsx";
@@ -80,6 +80,8 @@ const isPicture = (a: Attachment) => /^(png|jpe?g|gif|webp|avif)$/i.test(a.exten
 
 const ANDROID = "https://github.com/VectorPrivacy/Vector/releases/latest/download/Vector-arm64-v8a.apk";
 const RELEASES = "https://github.com/VectorPrivacy/Vector/releases/latest";
+/** Vector 0.5.0's beta on the web; when 0.5.0 is released, "Open Vector here" moves to it. */
+const VECTOR_WEB_BETA = "https://web.vectorapp.io";
 
 type AppInfo = { id: string; installed: boolean; version: string; how: string; where: string; job: { state: string; done: number; total: number; error: string } | null };
 
@@ -305,6 +307,22 @@ function VectorHome({ onClient, onHost }: { onClient: () => void; onHost: () => 
           </p>
           <button className="btn primary" onClick={onHost}>
             Open Vector here
+          </button>
+          {/* Vector 0.5.0's beta on the web, until 0.5.0 is released (Nov 2026) and "Open Vector here" moves to it. Vector's web app
+              doesn't allow being shown inside other pages (a deliberate protection for a messenger holding keys), so it opens
+              in a window of its own; signing in with the QR code from Vector 0.5.0 on a phone works there. */}
+          <p className="small muted">
+            <b>Beta 0.5.0:</b> the next Vector, on the web, with sign-in by QR code from Vector 0.5.0 on your phone. It opens in a window of its
+            own, since Vector's web app doesn't allow being shown inside other pages.
+          </p>
+          <button
+            className="btn"
+            onClick={() => {
+              const w = window.open(VECTOR_WEB_BETA, "vector-web-beta", "popup,width=1100,height=760");
+              if (!w) window.open(VECTOR_WEB_BETA, "_blank", "noopener"); // pop-ups blocked: a tab instead
+            }}
+          >
+            Beta 0.5.0 <ExternalLink size={13} />
           </button>
           <p className="small muted">
             Or a lighter built-in client: chats, Communities, files, and Mini Apps opened straight into Games & Apps, on Vector's vector-agent.
