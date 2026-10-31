@@ -31,6 +31,24 @@
       window.parent.postMessage({ pddVector: type, id, ...data }, location.origin);
     });
 
+  // Troubleshooting: the page's own errors go into the desktop's Vector trail (Connections, and /api/vector-host/status)
+  // as one shortened line each, repeats skipped. They pass as a command name the engine doesn't know (it says so and
+  // nothing happens), so no server change is needed for this.
+  const reported = new Set();
+  const report = (what) => {
+    const line = `⚠ page: ${String(what).replace(/\s+/g, " ").slice(0, 160)}`;
+    if (reported.has(line) || reported.size > 40) return;
+    reported.add(line);
+    fetch(`${API}/invoke`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cmd: line, args: {} }) }).catch(() => {});
+  };
+  window.addEventListener("error", (e) => report(`${e.message} (${String(e.filename || "").split("/").pop()}:${e.lineno})`));
+  window.addEventListener("unhandledrejection", (e) => report(e.reason?.stack?.split("\n").slice(0, 2).join(" ← ") || e.reason));
+  const consoleError = console.error.bind(console);
+  console.error = (...a) => {
+    consoleError(...a);
+    report(a.map((x) => (x instanceof Error ? x.message : typeof x === "string" ? x : "")).join(" "));
+  };
+
   async function invoke(cmd, args = {}) {
     // a Mini App opens in Games & Apps (added there first if this version is new), not in a window of its own
     if (cmd === "miniapp_open" && inDesk) {
