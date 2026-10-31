@@ -69,6 +69,7 @@ import { askUser } from "../ui/Ask.tsx";
 import type { NoteRequest } from "../ui/noteNav.ts";
 import { NoteGraph } from "./NoteGraph.tsx";
 import { copyText } from "../lib/clipboard.ts";
+import { askText } from "../ui/Ask.tsx";
 
 type Tab = "files" | "search" | "tags" | "tasks";
 const toast = (t: string) => desk().say(t);
@@ -228,7 +229,7 @@ export function NotesApp() {
     setPrefs({ view: prefs.view === "read" ? "split" : prefs.view });
   };
   const newFolder = async (dir = folderOfOpen) => {
-    const name = window.prompt("Name the new folder", "");
+    const name = await askText("Name the new folder", "");
     if (!name?.trim()) return;
     const p = await makeFolder(dir ? `${dir}/${safeTitle(name)}` : safeTitle(name));
     toggleDir(p, true);
@@ -246,7 +247,7 @@ export function NotesApp() {
   const rename = async (p: string) => {
     const isDir = notes.files.some((f) => f.path === p && f.dir);
     const now = isDir ? baseOf(p) : noteName(p);
-    const name = window.prompt(isDir ? "Rename the folder" : "Rename the note (use a / to move it into a folder)", now);
+    const name = await askText(isDir ? "Rename the folder" : "Rename the note", now, isDir ? {} : { body: "Use a / to move it into a folder." });
     if (!name?.trim() || name.trim() === now) return;
     const clean = name.trim().includes("/") ? cleanVaultPath(name) : `${parentOf(p) ? `${parentOf(p)}/` : ""}${safeTitle(name)}`;
     const to = isDir ? clean : `${clean.replace(/\.(md|markdown)$/i, "")}.md`;

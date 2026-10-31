@@ -31,8 +31,8 @@ export function EnginesDialog({ type, onClose }: { type: "images" | "songs"; onC
   const edit = (id: string, p: Partial<Any>) => save(list.map((e) => (e.id === id ? ({ ...e, ...p } as Any) : e)));
   // the Mac's real address when the desktop knows it (from its setup), instead of macbook.local
   const add = (k: (typeof kinds)[number]) =>
-    void withMacAddress(k.url).then((guess) => {
-      const url = askAddress(k.label, guess);
+    void withMacAddress(k.url).then(async (guess) => {
+      const url = await askAddress(k.label, guess);
       if (url) save([...desk().media[type], { id: newEngineId(), name: k.label, kind: k.kind, url, enabled: true } as Any]);
     });
 

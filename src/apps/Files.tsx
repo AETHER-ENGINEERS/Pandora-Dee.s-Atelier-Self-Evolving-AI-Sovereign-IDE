@@ -6,6 +6,7 @@ import { Confirm, Markdown } from "../ui/common.tsx";
 import { useWidth } from "../ui/hooks.ts";
 import { openMenu } from "../ui/ContextMenu.tsx";
 import { copyText } from "../lib/clipboard.ts";
+import { askText } from "../ui/Ask.tsx";
 
 export function CharacterPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   useDesk((s) => s.custom.length + (s.adultOpen ? 1 : 0));
@@ -55,8 +56,8 @@ export function FilesApp() {
     folders.set(dir, [...(folders.get(dir) ?? []), p]);
   }
 
-  const newFile = () => {
-    const name = prompt("New file name (folders with /, e.g. notes/ideas.md)", "notes/new note.md");
+  const newFile = async () => {
+    const name = await askText("New file name", "notes/new note.md", { body: "Folders with /, e.g. notes/ideas.md" });
     const clean = name ? cleanPath(name) : "";
     if (!clean) return;
     const full = /\.\w+$/.test(clean) ? clean : `${clean}.md`;
@@ -64,8 +65,8 @@ export function FilesApp() {
     setPath(full);
     setMode("edit");
   };
-  const rename = () => {
-    const to = prompt("Rename to", current);
+  const rename = async () => {
+    const to = await askText("Rename to", current);
     const clean = to ? cleanPath(to) : "";
     if (!clean || clean === current) return;
     if (tree[clean] !== undefined) return desk().say("A file with that name already exists.");

@@ -9,6 +9,7 @@ import { renderMarkdown } from "../lib/markdown.ts";
 import { openMenu } from "../ui/ContextMenu.tsx";
 import type { BrowserPrefs, BrowserTab } from "../lib/browserPrefs.ts";
 import { copyText } from "../lib/clipboard.ts";
+import { askText } from "../ui/Ask.tsx";
 
 /**
  * A tabbed browser. Pages come through the desktop (most sites refuse to be framed directly) into a sandboxed
@@ -181,7 +182,7 @@ export function BrowserApp() {
                 openMenu(e, [
                   { label: "Open", run: () => go(m.url) },
                   { label: "Open in a new tab", run: () => add(m.url) },
-                  { label: "Rename…", run: () => { const t = prompt("Bookmark name", m.title); if (t) setPrefs({ bookmarks: prefs().bookmarks.map((x) => (x.url === m.url ? { ...x, title: t } : x)) }); } },
+                  { label: "Rename…", run: async () => { const t = await askText("Bookmark name", m.title); if (t) setPrefs({ bookmarks: prefs().bookmarks.map((x) => (x.url === m.url ? { ...x, title: t } : x)) }); } },
                   { label: "Remove", danger: true, run: () => setPrefs({ bookmarks: prefs().bookmarks.filter((x) => x.url !== m.url) }) },
                 ])
               }

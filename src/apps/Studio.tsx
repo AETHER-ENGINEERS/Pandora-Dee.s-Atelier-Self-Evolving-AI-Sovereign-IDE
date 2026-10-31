@@ -7,6 +7,7 @@ import { Confirm } from "../ui/common.tsx";
 import { useWidth } from "../ui/hooks.ts";
 import { launch, libraryChanged, useXdcLibrary } from "./Games.tsx";
 import { copyText } from "../lib/clipboard.ts";
+import { askText } from "../ui/Ask.tsx";
 
 const TEXT = /\.(html?|js|mjs|cjs|ts|css|json|toml|md|txt|svg|xml|csv|glsl|frag|vert|wgsl)$/i;
 const IMAGE = /\.(png|jpe?g|gif|webp|svg|ico)$/i;
@@ -102,7 +103,7 @@ export function StudioApp() {
 
   const fork = async () => {
     if (!pkg) return;
-    const label = prompt("Name this new version", `${pkg.version || "0.0.0"}-mine`);
+    const label = await askText("Name this new version", `${pkg.version || "0.0.0"}-mine`);
     if (label === null) return;
     const made = await library.fork(pkg.id, label.trim());
     libraryChanged();
@@ -112,7 +113,7 @@ export function StudioApp() {
   };
 
   const newApp = async () => {
-    const name = prompt("What's your app called?", "My App");
+    const name = await askText("What's your app called?", "My App");
     if (!name) return;
     const files: Record<string, Uint8Array> = {};
     for (const [k, v] of Object.entries(TEMPLATE)) files[k] = strToU8(k === "manifest.toml" ? v.replace("My App", name.replace(/"/g, "")) : k === "index.html" ? v.replace(/My App/g, name) : v);
@@ -221,7 +222,7 @@ export function StudioApp() {
                 <button
                   className="btn small ghost"
                   onClick={async () => {
-                    const name = prompt("New file (folders with /)", "notes.md");
+                    const name = await askText("New file", "notes.md", { body: "Folders with /." });
                     if (!name) return;
                     await library.write(pkg.id, name, "");
                     setFiles(await library.files(pkg.id));

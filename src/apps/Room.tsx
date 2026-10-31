@@ -38,6 +38,7 @@ import { runSlash, suggest } from "../ui/slash.ts";
 import { CharAvatar, Markdown, PersonAvatar, timeOf } from "../ui/common.tsx";
 import { openSettings } from "../ui/desktopApi.tsx";
 import { copyText } from "../lib/clipboard.ts";
+import { askText } from "../ui/Ask.tsx";
 
 /** The latest character reply that Retry would replace. */
 function retryTarget(messages: Message[]) {
@@ -65,9 +66,9 @@ export function chatMenu(): MenuItem[] {
     { sep: true },
     {
       label: "Rename this chat…",
-      run: () => {
+      run: async () => {
         const cur = list.find((c) => c.id === s.chatId);
-        const t = window.prompt("Name this chat", cur?.title ?? "");
+        const t = await askText("Name this chat", cur?.title ?? "");
         if (t) renameChat(s.chatId, t);
       },
     },

@@ -7,6 +7,7 @@ import { askUser } from "../ui/Ask.tsx";
 import { pickInExplorer, showInExplorer, type PickOptions } from "../lib/explorer.ts";
 import qrcode from "qrcode-generator";
 import { copyText } from "../lib/clipboard.ts";
+import { askText } from "../ui/Ask.tsx";
 
 /**
  * Vector for the people using the desktop. First and foremost the real thing: Vector's own app, installed and
@@ -544,8 +545,8 @@ function Messenger({ token, me, onOut }: { token: string; me: string; onOut: () 
         <div className="row" style={{ gap: 4, padding: "4px 6px" }}>
           <button
             className="btn small grow"
-            onClick={() => {
-              const npub = prompt("Who? Their npub (npub1…)")?.trim();
+            onClick={async () => {
+              const npub = (await askText("Who?", "", { body: "Their npub (it starts with npub1).", placeholder: "npub1…" }))?.trim();
               if (npub && /^npub1[0-9a-z]{20,}$/.test(npub)) choose(npub, "dm", name(npub));
               else if (npub) setNote("That isn't an npub (they start with npub1).");
             }}
@@ -554,8 +555,8 @@ function Messenger({ token, me, onOut }: { token: string; me: string; onOut: () 
           </button>
           <button
             className="btn small grow"
-            onClick={() => {
-              const url = prompt("A Community invite link (https://vectorapp.io/invite#…)")?.trim();
+            onClick={async () => {
+              const url = (await askText("Join a Community", "", { body: "Its invite link.", placeholder: "https://vectorapp.io/invite#…" }))?.trim();
               if (url) void call(token, "join_community", { invite_url: url }).then(loadLists, fail);
             }}
           >

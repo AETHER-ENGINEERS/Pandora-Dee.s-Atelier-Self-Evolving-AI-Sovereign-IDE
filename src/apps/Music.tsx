@@ -32,6 +32,7 @@ import { WorldRadio } from "./WorldRadio.tsx";
 import { SongMaker } from "./SongMaker.tsx";
 import { openSongInfo, SongInfoHost } from "../ui/SongInfo.tsx";
 import { copyText } from "../lib/clipboard.ts";
+import { askText } from "../ui/Ask.tsx";
 
 type View = "songs" | "make" | "albums" | "artists" | "world" | "radio" | "find" | "folders";
 const time = (s: number) => (Number.isFinite(s) && s > 0 ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}` : "–:––");
@@ -374,7 +375,7 @@ export function MusicApp() {
 
 async function choosePreset() {
   const all = Object.keys(await milkdropPresets()).sort((a, b) => Number(!a.startsWith("★")) - Number(!b.startsWith("★")) || a.localeCompare(b));
-  const name = window.prompt(`Type part of a preset's name (${all.length} presets):`, "");
+  const name = await askText("Choose a preset", "", { body: `Type part of a preset's name (${all.length} presets).` });
   if (!name) return;
   const hit = all.find((x) => x.toLowerCase().includes(name.toLowerCase()));
   if (!hit) return desk().say("No preset has that in its name.");

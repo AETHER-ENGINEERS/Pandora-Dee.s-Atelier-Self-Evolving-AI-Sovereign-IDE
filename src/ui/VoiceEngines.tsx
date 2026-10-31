@@ -123,8 +123,8 @@ export function VoiceEnginesEditor() {
       <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
         {PRESETS.map((p) => (
           <button key={p.label} className="btn small" onClick={() =>
-              void withMacAddress(p.url).then((guess) => {
-                const url = askAddress(p.name, guess);
+              void withMacAddress(p.url).then(async (guess) => {
+                const url = await askAddress(p.name, guess);
                 if (url) save([...desk().voices.engines, { id: newId(), name: p.name, url, keyName: p.keyName, model: p.model, enabled: true }]);
               })
             }>
