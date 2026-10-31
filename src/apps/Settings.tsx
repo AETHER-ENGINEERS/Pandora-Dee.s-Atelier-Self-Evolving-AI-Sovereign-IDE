@@ -26,6 +26,7 @@ import { ROUTER_AT } from "../lib/skills.ts";
 import type { ChatPrefs, NotesPrefs } from "../lib/store.ts";
 import { formatDate } from "../lib/templates.ts";
 import { CLOCK_DEFAULT, formatClock, REGIONS, validLocale, validZone, zones, type ClockPrefs } from "../lib/clock.ts";
+import { FromOtherDevices, TravelSwitch } from "../ui/Travel.tsx";
 
 type Section = "ai" | "chat" | "notes" | "look" | "clock" | "dock" | "hangout" | "voice" | "shortcuts" | "touch" | "classic" | "privacy" | "accounts" | "adult" | "storage" | "backup";
 
@@ -565,7 +566,7 @@ function AccountsSection() {
     <>
       <h2>Accounts</h2>
       <p className="lead small">
-        Accounts live only on this computer. The first one holds the keys: privacy, Keys, the flood gate and the adult shelf answer to them. An account can have no password (its picture opens it) or a password, kept as a salted hash and never stored as itself.
+        Accounts live on this device, and can travel to your others (each account's switch). The first one holds the keys: privacy, Keys, the flood gate and the adult shelf answer to them. An account can have no password (its picture opens it) or a password, kept as a salted hash and never stored as itself.
       </p>
       {!canSeal() ? <div className="note warn small">Passwords need this page on localhost or https.</div> : null}
       {s.accounts.map((a) => (
@@ -583,8 +584,11 @@ function AccountsSection() {
           ) : (
             <span />
           )}
+          {/* your own account's switch, or any account's for the keyholder */}
+          {s.session === a.name || keyholder ? <TravelSwitch account={a} /> : null}
         </div>
       ))}
+      <FromOtherDevices />
       {keyholder ? (
         <>
           <h4 style={{ marginTop: 16 }}>{first ? "Create the keyholder account" : "Add an account"}</h4>

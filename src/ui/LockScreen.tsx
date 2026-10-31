@@ -2,6 +2,7 @@ import { useState } from "react";
 import { desk, useDesk, type Account } from "../lib/store.ts";
 import { matches } from "../lib/secure.ts";
 import { PersonAvatar } from "./common.tsx";
+import { FromOtherDevices } from "./Travel.tsx";
 
 /** Pick a face to open that account. Accounts without a password open with the picture alone. */
 export function LockScreen() {
@@ -72,6 +73,7 @@ export function LockScreen() {
             ))}
           </div>
         )}
+        {!who ? <FromOtherDevices compact /> : null}
       </div>
       {big ? (
         <div className="scrim" onClick={() => setBig(null)}>

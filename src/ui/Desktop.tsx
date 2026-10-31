@@ -9,6 +9,7 @@ import { scopeOf } from "../lib/model.ts";
 import { allowed } from "../lib/privacy.ts";
 import { resumeBridges } from "../lib/bridges.ts";
 import { connectServer, syncCharacterMcp } from "../lib/connections.ts";
+import { startTravel } from "../lib/travel.ts";
 import { useSensors } from "./sensors.ts";
 import { LockScreen } from "./LockScreen.tsx";
 import { Boundary } from "./Boundary.tsx";
@@ -136,6 +137,7 @@ export function Desktop() {
     if (desk().api.on) void applyInbound();
     for (const srv of desk().mcp) if (srv.enabled) void connectServer(srv);
     syncCharacterMcp();
+    startTravel();
     // A character's mcp.json is her own servers: follow it when her files change.
     const unFiles = useDesk.subscribe((s, prev) => {
       if (s.files !== prev.files || s.custom !== prev.custom) syncCharacterMcp();

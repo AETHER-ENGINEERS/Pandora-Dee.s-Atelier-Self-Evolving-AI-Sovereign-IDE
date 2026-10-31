@@ -17,6 +17,7 @@ import { createVector } from "./vector.mjs";
 import { createVectorHost } from "./vectorHost.mjs";
 import { createFiles } from "./files.mjs";
 import { createDevShare, isDevicePath } from "./devshare.mjs";
+import { createTravel } from "./travel.mjs";
 import { checkUpdates, download } from "./upstreams.mjs";
 import * as aicordAuth from "./oauth.mjs";
 import { findCurl, findPython, forgetPrograms } from "./programs.mjs";
@@ -109,6 +110,8 @@ export function deskServer() {
     }));
   // other devices sharing their own files, while their page is open (see devshare.mjs)
   const devices = createDevShare();
+  // accounts that travel between devices (see travel.mjs)
+  const travel = createTravel(() => dataDir);
   const withDevices = (o) => ({ ...o, devices: devices.places() });
   const library = () => {
     if (!lib) {
@@ -359,6 +362,18 @@ export function deskServer() {
             }
           }
         }
+      } catch (e) {
+        return send(res, e?.status || 400, { error: e instanceof Error ? e.message : String(e) });
+      }
+    }
+    // accounts that travel: who travels, one account's desktop, keep it, stop keeping it
+    if (parts[0] === "travel") {
+      try {
+        const name = String(url.searchParams.get("name") || "");
+        if (m === "GET" && !parts[1]) return send(res, 200, travel.list());
+        if (parts[1] === "state" && m === "GET") return send(res, 200, travel.get(name));
+        if (parts[1] === "state" && m === "POST") return send(res, 200, travel.put(name, JSON.parse((await readBody(req, 80_000_000)).toString("utf8") || "{}")));
+        if (parts[1] === "stop" && m === "POST") return send(res, 200, travel.stop(name));
       } catch (e) {
         return send(res, e?.status || 400, { error: e instanceof Error ? e.message : String(e) });
       }

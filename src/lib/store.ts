@@ -67,7 +67,8 @@ export const inToddler = (id: string) => TODDLER_APPS.includes(id);
 
 export type Win = { open: boolean; min: boolean; max: boolean; x: number; y: number; w: number; h: number; z: number };
 
-export type Account = { name: string; role: Role; picture: string; sealed: Sealed | null };
+/** `travels`: this account's desktop is kept on the desktop's server, to pick up on the person's other devices (lib/travel.ts). */
+export type Account = { name: string; role: Role; picture: string; sealed: Sealed | null; travels?: boolean };
 
 export type BridgeId = "discord" | "vector";
 
