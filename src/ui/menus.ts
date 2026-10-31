@@ -8,6 +8,7 @@ import { speak } from "../lib/voice.ts";
 import { voiceFor } from "../lib/prefs.ts";
 import { letThemTalk, retry } from "../lib/agent.ts";
 import type { MenuItem } from "./ContextMenu.tsx";
+import { copyText } from "../lib/clipboard.ts";
 
 function focusComposer() {
   const s = desk();
@@ -87,7 +88,7 @@ export function messageMenu(m: Message, extra: { edit?: () => void; retry?: bool
   const c = m.kind === "character" ? s.character(m.who) : undefined;
   const rate = (r: 1 | -1) => s.patchMessage(m.id, { rating: m.rating === r ? undefined : r });
   return [
-    { label: "Copy", run: () => void navigator.clipboard?.writeText(m.text) },
+    { label: "Copy", run: () => void copyText(m.text) },
     ...(m.kind === "human" && m.source === "desk" && extra.edit ? [{ label: "Edit and send again", run: extra.edit } as MenuItem] : []),
     ...(c && m.text
       ? ([

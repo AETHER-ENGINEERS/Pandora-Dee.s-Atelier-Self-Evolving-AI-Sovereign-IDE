@@ -37,6 +37,7 @@ import { runSlash, suggest } from "../ui/slash.ts";
 
 import { CharAvatar, Markdown, PersonAvatar, timeOf } from "../ui/common.tsx";
 import { openSettings } from "../ui/desktopApi.tsx";
+import { copyText } from "../lib/clipboard.ts";
 
 /** The latest character reply that Retry would replace. */
 function retryTarget(messages: Message[]) {
@@ -356,7 +357,7 @@ export function RoomApp() {
                 {m.files?.length ? <Files files={m.files} /> : null}
                 {c && text ? (
                   <div className={`msg-actions${m.rating ? " rated" : ""}`}>
-                    <button onClick={() => navigator.clipboard?.writeText(text)} title="Copy">
+                    <button onClick={() => copyText(text)} title="Copy">
                       <Copy size={12} /> Copy
                     </button>
                     <button
@@ -393,7 +394,7 @@ export function RoomApp() {
                 ) : null}
                 {mine && editing?.id !== m.id ? (
                   <div className="msg-actions">
-                    <button onClick={() => navigator.clipboard?.writeText(m.text)} title="Copy">
+                    <button onClick={() => copyText(m.text)} title="Copy">
                       <Copy size={12} /> Copy
                     </button>
                     <button disabled={busy} onClick={() => setEditing({ id: m.id, text: m.text })} title="Change it and send it again">

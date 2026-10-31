@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { create } from "zustand";
 import type { Track } from "../lib/music.ts";
 import type { MadeSong } from "../lib/mediaPrefs.ts";
+import { copyText } from "../lib/clipboard.ts";
 
 /** A song's Properties: the file (where, how big, how it's encoded) and, for a made song, what made it. */
 
@@ -71,7 +72,7 @@ export function SongInfoHost() {
         ) : null}
         <div className="actions">
           {info?.path ? (
-            <button className="btn" onClick={() => void navigator.clipboard?.writeText(info.path!)}>
+            <button className="btn" onClick={() => void copyText(info.path!)}>
               Copy the file's location
             </button>
           ) : null}

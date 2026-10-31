@@ -12,6 +12,7 @@ import { readAll } from "../lib/trajectories.ts";
 import { links } from "../lib/connections.ts";
 import { stopSpeaking } from "../lib/voice.ts";
 import { openSettings } from "./desktopApi.tsx";
+import { copyText } from "../lib/clipboard.ts";
 
 export type Command = { name: string; args?: string; help: string };
 
@@ -147,7 +148,7 @@ export async function runSlash(raw: string): Promise<boolean> {
         .filter((m) => !m.pass)
         .map((m) => `${m.name}: ${m.text}`)
         .join("\n\n");
-      await navigator.clipboard?.writeText(body);
+      await copyText(body);
       s.say("Conversation copied.");
       return true;
     }

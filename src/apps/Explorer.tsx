@@ -13,6 +13,7 @@ import {
   answerPick, baseName, dirName, downloadToDevice, fileApi, kindOf, openXdcInGames, pickInExplorer, rawUrl, showOnDevice, sizeOf, usePickRequest,
   type Entry, type Listing, type Overview, type PickOptions, type Trashed,
 } from "../lib/explorer.ts";
+import { copyText } from "../lib/clipboard.ts";
 
 const ICON: Record<string, (s: number) => React.ReactNode> = {
   folder: (s) => <Folder size={s} />,
@@ -246,7 +247,7 @@ function FileBrowser({ mode, go, pick }: { mode: Mode; go?: { path: string; at: 
               hint: ov?.deviceExplorer ? undefined : "on the computer only",
               run: () => void showOnDevice(e.path),
             },
-            { label: "Copy path", icon: <Copy size={14} />, run: () => void navigator.clipboard?.writeText(e.path) },
+            { label: "Copy path", icon: <Copy size={14} />, run: () => void copyText(e.path) },
           ]
         : []),
       ...(!many && e.dir && ov?.sharing.canChange
@@ -263,7 +264,7 @@ function FileBrowser({ mode, go, pick }: { mode: Mode; go?: { path: string; at: 
     { label: "Upload from this device…", icon: <Upload size={14} />, run: () => uploader.current?.click() },
     { sep: true },
     { label: "Show in device file explorer", icon: <Monitor size={14} />, disabled: !ov?.deviceExplorer, hint: ov?.deviceExplorer ? undefined : "on the computer only", run: () => void showOnDevice(cwd) },
-    { label: "Copy path", icon: <Copy size={14} />, run: () => void navigator.clipboard?.writeText(cwd) },
+    { label: "Copy path", icon: <Copy size={14} />, run: () => void copyText(cwd) },
   ];
 
   // a folder chosen from inside this browser (for "Move to…"): the picker over this window

@@ -49,6 +49,7 @@ import { BrowserApp } from "../apps/Browser.tsx";
 import { VectorApp } from "../apps/Vector.tsx";
 import { ExplorerApp, PickerHost } from "../apps/Explorer.tsx";
 import { ICONS, loadBackupFile, openSettings, useWide } from "./desktopApi.tsx";
+import { copyText } from "../lib/clipboard.ts";
 
 
 const BODIES: Record<AppId, () => ReactNode> = {
@@ -473,7 +474,7 @@ function MenuBar({ onLoad }: { onLoad: () => void }) {
               .messages.filter((m) => !m.pass)
               .map((m) => `${m.name}: ${m.text}`)
               .join("\n\n");
-            navigator.clipboard?.writeText(text).then(() => desk().say("Conversation copied."));
+            copyText(text).then((ok) => ok && desk().say("Conversation copied."));
           })}
         >
           Copy the conversation

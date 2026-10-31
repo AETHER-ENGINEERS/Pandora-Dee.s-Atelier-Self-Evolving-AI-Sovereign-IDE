@@ -16,6 +16,7 @@ import { download } from "../lib/backup.ts";
 import { RiskDialog, Seg, Sensitive, timeOf } from "../ui/common.tsx";
 import { Num } from "../ui/Num.tsx";
 import { useWidth } from "../ui/hooks.ts";
+import { copyText } from "../lib/clipboard.ts";
 
 type Tab = "discord" | "vector" | "inbox" | "mcp" | "web" | "ssh" | "api";
 
@@ -896,7 +897,7 @@ function ApiPanel() {
           <button className="btn small" onClick={() => setShow(!show)}>
             {show ? "Hide" : "Show"}
           </button>
-          <button className="icon-btn" aria-label="Copy token" disabled={!tok} onClick={() => navigator.clipboard?.writeText(tok)}>
+          <button className="icon-btn" aria-label="Copy token" disabled={!tok} onClick={() => copyText(tok)}>
             <Copy size={14} />
           </button>
           <button

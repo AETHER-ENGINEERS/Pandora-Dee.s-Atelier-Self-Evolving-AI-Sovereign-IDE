@@ -1,6 +1,7 @@
 import { desk } from "../lib/store.ts";
 import { snippet, VIA_OPTIONS, type Snippet, type Via } from "../lib/outbound.ts";
 import { openMenuAt } from "./ContextMenu.tsx";
+import { copyText } from "../lib/clipboard.ts";
 
 export type SampleRequest = { url: string; method: string; headers: Record<string, string>; body?: string };
 
@@ -15,7 +16,7 @@ export function ViaPicker({ value, onChange, inherit, sample, label = "Connectio
     const r = sample?.();
     if (!r) return;
     const secrets = Object.fromEntries(Object.entries(desk().env).filter(([, v]) => v && v.length >= 4));
-    void navigator.clipboard?.writeText(snippet(kind, r.url, r, secrets)).then(() => desk().say(`Copied the request as ${kind === "js" ? "JavaScript" : kind === "http" ? "HTTP" : kind === "curl" ? "cURL" : "Python"}. Keys are written as their name.`));
+    void copyText(snippet(kind, r.url, r, secrets)).then((ok) => ok && desk().say(`Copied the request as ${kind === "js" ? "JavaScript" : kind === "http" ? "HTTP" : kind === "curl" ? "cURL" : "Python"}. Keys are written as their name.`));
   };
   return (
     <div className="field via-field" style={{ marginBottom: 0 }}>

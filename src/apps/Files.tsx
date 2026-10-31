@@ -5,6 +5,7 @@ import { cleanPath } from "../lib/tools.ts";
 import { Confirm, Markdown } from "../ui/common.tsx";
 import { useWidth } from "../ui/hooks.ts";
 import { openMenu } from "../ui/ContextMenu.tsx";
+import { copyText } from "../lib/clipboard.ts";
 
 export function CharacterPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   useDesk((s) => s.custom.length + (s.adultOpen ? 1 : 0));
@@ -93,7 +94,7 @@ export function FilesApp() {
                       { heading: p },
                       { label: "Open", run: () => setPath(p) },
                       { label: "Edit", run: () => (setPath(p), setMode("edit")) },
-                      { label: "Copy its text", run: () => void navigator.clipboard?.writeText(tree[p] ?? "") },
+                      { label: "Copy its text", run: () => void copyText(tree[p] ?? "") },
                       { label: "Rename…", run: () => (setPath(p), setTimeout(rename, 0)) },
                       { sep: true },
                       { label: "New file…", run: newFile },

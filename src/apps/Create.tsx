@@ -5,6 +5,7 @@ import { makePictures, savePictures } from "../lib/media.ts";
 import { EnginesDialog } from "./Engines.tsx";
 import { Confirm } from "../ui/common.tsx";
 import { openMenu, type MenuItem } from "../ui/ContextMenu.tsx";
+import { copyText } from "../lib/clipboard.ts";
 
 /**
  * Create: the vault's pictures and PDFs (Gallery), a painter that runs right here (miniPaint, kept offline),
@@ -155,7 +156,7 @@ function Gallery({ apps, onPaint }: { apps: AppInfo[]; onPaint: (p: string) => v
             title={p.path}
             onDoubleClick={() => dflt(p)}
             onKeyDown={(e) => e.key === "Enter" && dflt(p)}
-            onContextMenu={(e) => openMenu(e, [{ heading: p.path }, ...openWith(p.path, apps, onPaint), { sep: true }, { label: "Copy its path", run: () => void navigator.clipboard?.writeText(p.path) }])}
+            onContextMenu={(e) => openMenu(e, [{ heading: p.path }, ...openWith(p.path, apps, onPaint), { sep: true }, { label: "Copy its path", run: () => void copyText(p.path) }])}
           >
             {p.kind === "image" || p.kind === "svg" ? <img src={raw(p.path)} alt="" loading="lazy" decoding="async" /> : <div className="gallery-doc"><FileText size={34} /><span className="small">{p.kind.toUpperCase()}</span></div>}
             <span className="gallery-name small">{p.path.split("/").pop()}</span>

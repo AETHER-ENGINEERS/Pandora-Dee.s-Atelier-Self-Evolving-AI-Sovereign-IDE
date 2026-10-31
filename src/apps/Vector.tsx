@@ -6,6 +6,7 @@ import { openMenu } from "../ui/ContextMenu.tsx";
 import { askUser } from "../ui/Ask.tsx";
 import { pickInExplorer, showInExplorer, type PickOptions } from "../lib/explorer.ts";
 import qrcode from "qrcode-generator";
+import { copyText } from "../lib/clipboard.ts";
 
 /**
  * Vector for the people using the desktop. First and foremost the real thing: Vector's own app, installed and
@@ -530,7 +531,7 @@ function Messenger({ token, me, onOut }: { token: string; me: string; onOut: () 
       <aside className="vector-side">
         <div className="toolbar">
           <b className="grow ellipsis" title={me}>{name(me) === "You" ? short(me) : name(me)}</b>
-          <button className="icon-btn" data-tip="Copy your npub (to share with people)" aria-label="Copy your npub" onClick={() => void navigator.clipboard?.writeText(me)}>
+          <button className="icon-btn" data-tip="Copy your npub (to share with people)" aria-label="Copy your npub" onClick={() => void copyText(me)}>
             <UserRound size={14} />
           </button>
           <button className="icon-btn" data-tip="Check for new messages" aria-label="Refresh" onClick={() => (loadLists(), void call(token, "sync_dms", { since_days: 7 }).then(loadLists, fail))}>

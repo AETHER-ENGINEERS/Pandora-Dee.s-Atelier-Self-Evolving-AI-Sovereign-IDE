@@ -31,6 +31,7 @@ import { Visualizer, importPresets, milkdropPresets } from "./Visualizer.tsx";
 import { WorldRadio } from "./WorldRadio.tsx";
 import { SongMaker } from "./SongMaker.tsx";
 import { openSongInfo, SongInfoHost } from "../ui/SongInfo.tsx";
+import { copyText } from "../lib/clipboard.ts";
 
 type View = "songs" | "make" | "albums" | "artists" | "world" | "radio" | "find" | "folders";
 const time = (s: number) => (Number.isFinite(s) && s > 0 ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}` : "–:––");
@@ -75,7 +76,7 @@ export function MusicApp() {
     { label: "Play next", run: () => useMusic.setState((s) => ({ queue: [...s.queue.slice(0, s.index + 1), { kind: "track", ...list[i] }, ...s.queue.slice(s.index + 1)] })) },
     { label: "Add to the queue", run: () => enqueue(asItems([list[i]])) },
     { sep: true },
-    { label: "Copy title and artist", run: () => void navigator.clipboard?.writeText(`${list[i].title}${list[i].artist ? ` · ${list[i].artist}` : ""}`) },
+    { label: "Copy title and artist", run: () => void copyText(`${list[i].title}${list[i].artist ? ` · ${list[i].artist}` : ""}`) },
     { sep: true },
     { label: "Properties…", run: () => openSongInfo({ track: list[i], made: desk().media.made.find((s) => s.file.replace(/\.[^.]+$/, "") === list[i].title || s.title === list[i].title) }) },
   ];

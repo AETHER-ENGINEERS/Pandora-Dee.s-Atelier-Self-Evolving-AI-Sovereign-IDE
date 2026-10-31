@@ -68,6 +68,7 @@ import { openMenu, openMenuAt, type MenuItem } from "../ui/ContextMenu.tsx";
 import { askUser } from "../ui/Ask.tsx";
 import type { NoteRequest } from "../ui/noteNav.ts";
 import { NoteGraph } from "./NoteGraph.tsx";
+import { copyText } from "../lib/clipboard.ts";
 
 type Tab = "files" | "search" | "tags" | "tasks";
 const toast = (t: string) => desk().say(t);
@@ -290,7 +291,7 @@ export function NotesApp() {
           { label: "New note here", run: () => void newNote(p) },
           { label: "New folder here", run: () => void newFolder(p) },
         ]
-      : [{ label: "Open", run: () => setOpen(p) }, { label: "Copy link", run: () => void navigator.clipboard?.writeText(`[[${linkName(p)}]]`) }]),
+      : [{ label: "Open", run: () => setOpen(p) }, { label: "Copy link", run: () => void copyText(`[[${linkName(p)}]]`) }]),
     { sep: true },
     { label: "Rename or move…", run: () => void rename(p) },
     { label: "Delete…", danger: true, run: () => void remove(p) },
@@ -792,7 +793,7 @@ function NoteView({
           aria-label="More"
           onClick={(e) =>
             openMenuAt(e.currentTarget, [
-              { label: "Copy link", run: () => void navigator.clipboard?.writeText(`[[${linkName(path)}]]`) },
+              { label: "Copy link", run: () => void copyText(`[[${linkName(path)}]]`) },
               { label: "Rename or move…", run: onRename },
               { label: "Open the file", run: () => window.open(vaultUrl(path), "_blank") },
               { sep: true },

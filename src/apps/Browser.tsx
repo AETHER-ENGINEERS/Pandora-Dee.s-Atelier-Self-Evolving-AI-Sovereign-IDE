@@ -8,6 +8,7 @@ import { pageToMarkdown } from "../lib/jadeCore.ts";
 import { renderMarkdown } from "../lib/markdown.ts";
 import { openMenu } from "../ui/ContextMenu.tsx";
 import type { BrowserPrefs, BrowserTab } from "../lib/browserPrefs.ts";
+import { copyText } from "../lib/clipboard.ts";
 
 /**
  * A tabbed browser. Pages come through the desktop (most sites refuse to be framed directly) into a sandboxed
@@ -101,7 +102,7 @@ export function BrowserApp() {
   const more = (e: React.MouseEvent) =>
     openMenu(e, [
       { label: "Open in your browser", run: () => void window.open(url, "_blank", "noopener") },
-      { label: "Copy the address", run: () => void navigator.clipboard?.writeText(url) },
+      { label: "Copy the address", run: () => void copyText(url) },
       { label: "Share with the room", run: () => void import("../lib/agent.ts").then((a) => a.say(`${title ? `${title}: ` : ""}${url}`)) },
       { sep: true },
       { label: "Make this the start page", run: () => setPrefs({ home: url }) },

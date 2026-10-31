@@ -6,6 +6,7 @@ import { initials, type Character } from "../lib/characters.ts";
 import { allowed, FEATURES, type Feature } from "../lib/privacy.ts";
 import { desk, useDesk } from "../lib/store.ts";
 import { speech } from "../lib/voice.ts";
+import { copyText } from "../lib/clipboard.ts";
 
 /**
  * Markdown with the notes extras: [[links]] open notes, #tags filter them, math is drawn, code gets a
@@ -56,7 +57,8 @@ export function Markdown({ text, className = "", from, onTask }: { text: string;
         const copy = t.closest(".code-copy");
         if (copy) {
           const code = copy.parentElement?.querySelector("code")?.textContent ?? "";
-          void navigator.clipboard?.writeText(code).then(() => {
+          void copyText(code).then((ok) => {
+            if (!ok) return;
             copy.textContent = "Copied";
             setTimeout(() => (copy.textContent = "Copy"), 1200);
           });

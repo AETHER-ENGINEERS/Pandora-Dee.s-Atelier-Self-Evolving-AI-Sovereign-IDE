@@ -9,6 +9,7 @@ import { CharacterPicker } from "./Files.tsx";
 import { EnginesDialog } from "./Engines.tsx";
 import { openMenu } from "../ui/ContextMenu.tsx";
 import { openSongInfo } from "../ui/SongInfo.tsx";
+import { copyText } from "../lib/clipboard.ts";
 
 /**
  * Making songs, the Suno/Udio way: describe it and a character writes the words, or write the title, style and
@@ -254,7 +255,7 @@ function SongList({ made, jobs, onRemix }: { made: MadeSong[]; jobs: Job[]; onRe
             { heading: s.title },
             { label: "Play", run: () => play(s) },
             { label: "Remix (load into Custom)", run: () => onRemix(s) },
-            { label: "Copy the lyrics", run: () => void navigator.clipboard?.writeText(s.lyrics), disabled: !s.lyrics },
+            { label: "Copy the lyrics", run: () => void copyText(s.lyrics), disabled: !s.lyrics },
             { label: "Properties…", run: () => openSongInfo({ track: t, made: s }) },
             { sep: true },
             { label: "Remove from this list", run: () => forget(s.id), hint: "The file stays in your library" },

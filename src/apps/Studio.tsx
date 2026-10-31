@@ -6,6 +6,7 @@ import { groupApps, library, type Pkg } from "../lib/xdc.ts";
 import { Confirm } from "../ui/common.tsx";
 import { useWidth } from "../ui/hooks.ts";
 import { launch, libraryChanged, useXdcLibrary } from "./Games.tsx";
+import { copyText } from "../lib/clipboard.ts";
 
 const TEXT = /\.(html?|js|mjs|cjs|ts|css|json|toml|md|txt|svg|xml|csv|glsl|frag|vert|wgsl)$/i;
 const IMAGE = /\.(png|jpe?g|gif|webp|svg|ico)$/i;
@@ -207,7 +208,7 @@ export function StudioApp() {
                 <>
                   Your version{pkg.parent ? `, made from ${pkgs.find((p) => p.id === pkg.parent)?.version || "an earlier one"}` : ""}. Also on disk, for your own editor:
                   <code className="mono" style={{ userSelect: "all" }}>{dir ? `${dir}${dir.includes("\\") ? "\\" : "/"}${pkg.id}` : pkg.id}</code>
-                  <button className="icon-btn" aria-label="Copy folder path" onClick={() => navigator.clipboard?.writeText(`${dir}${dir.includes("\\") ? "\\" : "/"}${pkg.id}`)}>
+                  <button className="icon-btn" aria-label="Copy folder path" onClick={() => copyText(`${dir}${dir.includes("\\") ? "\\" : "/"}${pkg.id}`)}>
                     <Copy size={13} />
                   </button>
                 </>

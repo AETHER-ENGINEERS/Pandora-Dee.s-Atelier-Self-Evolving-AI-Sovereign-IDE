@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { desk, useDesk } from "../lib/store.ts";
 import type { Connection } from "../lib/model.ts";
 import { Seg } from "./common.tsx";
+import { copyText } from "../lib/clipboard.ts";
 
 const EXTRA = [
   { id: "characters:read", label: "See the list of your characters" },
@@ -72,7 +73,7 @@ export function AicordSignIn({ c, patch }: { c: Connection; patch: (p: Partial<C
           <div className="row" style={{ gap: 6, alignItems: "center", marginBottom: 6 }}>
             <span className="muted">Callback address:</span>
             <span className="mono">{redirect}</span>
-            <button className="btn small" onClick={() => void navigator.clipboard?.writeText(redirect).then(() => desk().say("Callback address copied."))}>
+            <button className="btn small" onClick={() => void copyText(redirect).then((ok) => ok && desk().say("Callback address copied."))}>
               Copy
             </button>
           </div>
