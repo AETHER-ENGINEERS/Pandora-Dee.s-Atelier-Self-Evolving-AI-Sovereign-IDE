@@ -23,6 +23,9 @@ import { createUngoogled } from "./ungoogled.mjs";
 import { createVecMem } from "./vecmem.mjs";
 import { createMcpStdio } from "./mcpstdio.mjs";
 import { createTheater, PIECE_MAX } from "./theater.mjs";
+import { createPairs, pairedCors } from "./pairs.mjs";
+import os from "node:os";
+import dns from "node:dns";
 import { createHash } from "node:crypto";
 import { checkUpdates, download } from "./upstreams.mjs";
 import * as aicordAuth from "./oauth.mjs";
@@ -129,6 +132,18 @@ export function deskServer() {
   const stdio = createMcpStdio();
   // Media Theater: videos kept in the vault (see theater.mjs)
   const theater = createTheater({ vaultDir: () => path.join(dataDir, "vault") });
+  // Classic opened on its own (a plain browser tab), paired with this desktop to use its relay (see pairs.mjs)
+  const pairs = createPairs({ file: () => path.join(dataDir, "classic-pairs.json") });
+  /** A paired page may use the relay, but never to reach the desktop itself (its own server, by any name that
+   *  leads to this computer, after any redirect): that would give it the desktop's controls. */
+  const notTheDesktop = (req) => async (u) => {
+    const port = Number(u.port || (u.protocol === "https:" ? 443 : 80));
+    if (!deskPorts.has(port) && port !== req.socket.localPort) return "";
+    const own = new Set(Object.values(os.networkInterfaces()).flat().filter(Boolean).map((i) => i.address));
+    const found = await dns.promises.lookup(u.hostname.replace(/^\[|\]$/g, ""), { all: true }).catch(() => []);
+    const local = found.some(({ address }) => /^(127\.|0\.0\.0\.0$|::1$|::$|::ffff:127\.)/.test(address) || own.has(address));
+    return local ? "A paired page can use the relay, but not to reach the desktop itself." : "";
+  };
   setTimeout(() => dataDir && theater.sweep(), 30_000).unref?.();
   // the tool-server programs the locksmith allowed, by fingerprint (what runs, never the keys' values)
   const stdioFile = () => path.join(dataDir, "mcp-commands.json");
@@ -519,6 +534,22 @@ export function deskServer() {
       }
     }
     // Explorer: the desktop's places, and the computer when that's allowed (see files.mjs)
+    // pairings for Classic opened elsewhere: listed here; made and removed only on the desktop's own computer
+    if (parts[0] === "pairs") {
+      if (m === "GET") {
+        // where a paired Classic can find the desktop: this computer, and its home-network addresses (those answer
+        // only when the desktop is shared on the network)
+        const port = req.socket.localPort;
+        const lanIps = Object.values(os.networkInterfaces()).flat().filter((i) => i && i.family === "IPv4" && !i.internal && /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|100\.)/.test(i.address)).map((i) => `http://${i.address}:${port}`);
+        return send(res, 200, { pairs: pairs.list(), canChange: onThisPc(req), addresses: [`http://localhost:${port}`, ...lanIps], lan: lan() });
+      }
+      if (m === "POST") {
+        if (!onThisPc(req)) return send(res, 403, { error: "Pairings are made and removed on the desktop's own computer." });
+        const b = JSON.parse((await readBody(req, 10_000)).toString("utf8") || "{}");
+        if (b.op === "add") return send(res, 200, pairs.add(b.name));
+        if (b.op === "remove") return send(res, 200, pairs.remove(b.id));
+      }
+    }
     if (parts[0] === "theater") {
       const p = Object.fromEntries(url.searchParams.entries());
       try {
@@ -898,6 +929,17 @@ export function deskServer() {
       }
       // the hidden Vector host's bridge (this computer only, with its run's token; see vectorHost.mjs)
       if (url.pathname === "/vh-bridge/next" || url.pathname === "/vh-bridge/reply") return void (await vectorHost().bridge(req, res, url, readBody));
+      // paired Classic pages (other origins, with their pairing token): hello, and the relay
+      if (url.pathname === "/paired/hello" || url.pathname === "/paired/relay") {
+        pairedCors(req, res);
+        if (req.method === "OPTIONS") return (res.statusCode = 204), void res.end();
+        deskPorts.add(req.socket.localPort);
+        const who = pairs.check(req);
+        if (!who) return send(res, 401, { error: "This page isn't paired with the desktop, or its pairing was removed. Pair it again from the desktop: Settings → Classic." });
+        if (url.pathname === "/paired/hello") return send(res, 200, { ok: true, desktop: "PDA SEASIDE", pairing: who.name });
+        if (req.method !== "POST") return send(res, 405, { error: "POST a request for the relay." });
+        return void (await relay(req, res, JSON.parse((await readBody(req, 60_000_000)).toString("utf8") || "{}"), notTheDesktop(req)));
+      }
       // Vector's own interface, for its window in the desktop (on the desktop's address: it uses the API)
       if (url.pathname.startsWith("/vector-app/") && (!isAppHost(req) || lan())) {
         const rel = decodeURIComponent(url.pathname.slice("/vector-app/".length));

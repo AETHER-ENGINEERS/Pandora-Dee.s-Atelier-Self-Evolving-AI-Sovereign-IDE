@@ -8,6 +8,7 @@ import { credential, listModels, explainError, pickModel, PRESETS, sampleRequest
 import { AicordSignIn } from "../ui/AicordSignIn.tsx";
 import { ViaPicker } from "../ui/Via.tsx";
 import { askUser } from "../ui/Ask.tsx";
+import { copyText } from "../lib/clipboard.ts";
 import { allowed, FEATURES, MODES, type Feature, type Mode } from "../lib/privacy.ts";
 import { canSeal, matches, seal, shrinkPicture } from "../lib/secure.ts";
 import { startToddler } from "../ui/Toddler.tsx";
@@ -1501,7 +1502,124 @@ function ClassicSection() {
       <button className="btn primary" onClick={() => desk().set({ classic: true })}>
         Open Classic
       </button>
+      <ClassicPairs />
     </>
+  );
+}
+
+type Pairing = { id: string; name: string; created: number; used: number; origin: string };
+
+/** Classic opened on its own (a plain browser tab, anywhere on the network) can borrow this desktop's relay, to
+ *  get past servers that block pages (CORS). Each pairing has its own code, made here and removable here. */
+function ClassicPairs() {
+  const [data, setData] = useState<{ pairs: Pairing[]; canChange: boolean; addresses: string[]; lan: boolean } | null>(null);
+  const [made, setMade] = useState<{ name: string; token: string } | null>(null);
+  const [address, setAddress] = useState("");
+  const [name, setName] = useState("");
+  const [err, setErr] = useState("");
+  const load = () =>
+    fetch("/api/pairs")
+      .then((r) => r.json())
+      .then((d) => {
+        setData(d);
+        setAddress((a) => a || d.addresses[d.lan && d.addresses.length > 1 ? 1 : 0]);
+      })
+      .catch(() => setData(null));
+  useEffect(() => void load(), []);
+  const post = async (body: unknown) => {
+    setErr("");
+    const r = await fetch("/api/pairs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || `It answered ${r.status}.`);
+    return j;
+  };
+  if (!data) return null;
+  const code = made ? `${address}#${made.token}` : "";
+  const when = (t: number) => (t ? new Date(t).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "never");
+  return (
+    <div style={{ marginTop: 18 }}>
+      <h3 style={{ margin: "0 0 4px" }}>Classic opened elsewhere</h3>
+      <p className="small muted" style={{ margin: "0 0 8px" }}>
+        Pandora Dee or Jade Vault open on their own, in any browser tab, can send their requests through this desktop, so servers that block pages
+        (CORS: many MCP servers, a local Ollama, SearXNG) still answer. Make a pairing code here and paste it into Classic (Config → Connect →
+        Pair with PDA SEASIDE). A paired page can use the relay and nothing else of the desktop. A request that may already have arrived is never sent
+        twice.
+      </p>
+      {data.pairs.length ? (
+        <ul className="small" style={{ listStyle: "none", padding: 0, margin: "0 0 8px" }}>
+          {data.pairs.map((p) => (
+            <li key={p.id} className="row" style={{ gap: 8, padding: "3px 0" }}>
+              <b>{p.name}</b>
+              <span className="faint grow">
+                made {when(p.created)} · last used {when(p.used)}
+                {p.origin ? ` from ${p.origin}` : ""}
+              </span>
+              {data.canChange ? (
+                <button className="btn small danger-text" onClick={() => void post({ op: "remove", id: p.id }).then(load, (e: Error) => setErr(e.message))}>
+                  Remove
+                </button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {data.canChange ? (
+        <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+          <input className="input" style={{ maxWidth: 240 }} value={name} placeholder="Which Classic? e.g. Pandora on the laptop" aria-label="Name for the pairing" onChange={(e) => setName(e.target.value)} />
+          <button
+            className="btn"
+            onClick={() =>
+              void post({ op: "add", name: name || "Classic" }).then(
+                (p: { name: string; token: string }) => (setMade(p), setName(""), load()),
+                (e: Error) => setErr(e.message),
+              )
+            }
+          >
+            Make a pairing code
+          </button>
+        </div>
+      ) : (
+        <p className="small faint">Pairing codes are made on the desktop's own computer.</p>
+      )}
+      {made ? (
+        <div className="note small" style={{ marginTop: 8 }}>
+          <div style={{ marginBottom: 4 }}>
+            <b>{made.name}</b>: paste this into Classic. It's shown only now (the desktop keeps only a fingerprint of it).
+          </div>
+          <label className="row" style={{ gap: 6, marginBottom: 4 }}>
+            <span className="faint">Classic reaches this desktop at</span>
+            <select className="select" style={{ width: "auto" }} value={address} onChange={(e) => setAddress(e.target.value)} aria-label="The desktop's address for Classic">
+              {data.addresses.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="row" style={{ gap: 6 }}>
+            <code className="grow" style={{ wordBreak: "break-all" }}>
+              {code}
+            </code>
+            <button className="btn small" onClick={() => void copyText(code).then(() => desk().say("Pairing code copied."))}>
+              Copy
+            </button>
+            <button className="btn small ghost" onClick={() => setMade(null)}>
+              Done
+            </button>
+          </div>
+          {!data.lan && address !== data.addresses[0] ? (
+            <div className="faint" style={{ marginTop: 4 }}>
+              The desktop isn't shared on the network yet, so only Classic on this computer can reach it (use the localhost address, or share it first).
+            </div>
+          ) : null}
+          <div className="faint" style={{ marginTop: 4 }}>
+            Classic on an https page (GitHub Pages, an artifact) can reach a desktop only at https or localhost: browsers block plain http addresses from
+            https pages.
+          </div>
+        </div>
+      ) : null}
+      {err ? <p className="small bad-text">{err}</p> : null}
+    </div>
   );
 }
 

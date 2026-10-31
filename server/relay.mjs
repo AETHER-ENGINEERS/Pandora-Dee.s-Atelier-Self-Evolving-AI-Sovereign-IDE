@@ -32,8 +32,10 @@ function fail(res, message, code = 502) {
   res.end(JSON.stringify({ error: message }));
 }
 
-/** job: { url, method, headers, body (text), bodyB64, via: "node" | "curl" | "python", timeout (seconds) } */
-export async function relay(req, res, job) {
+/** job: { url, method, headers, body (text), bodyB64, via: "node" | "curl" | "python", timeout (seconds) }
+ *  guard: for requests from outside the desktop's page (paired Classic): async (url) → why it's refused, or "".
+ *  Then the request goes with Node and redirects are followed here, each one checked by the guard. */
+export async function relay(req, res, job, guard = null) {
   let url;
   try {
     url = new URL(String(job.url));
@@ -47,7 +49,7 @@ export async function relay(req, res, job) {
   if (!Object.keys(headers).some((k) => k.toLowerCase() === "user-agent")) headers["User-Agent"] = "PandoraDeeDesktop/3.10 (+https://github.com/AETHER-ENGINEERS/pandora-dee)";
   const body = job.bodyB64 ? Buffer.from(job.bodyB64, "base64") : job.body != null && method !== "GET" && method !== "HEAD" ? Buffer.from(String(job.body)) : undefined;
   const timeout = Math.min(3600, Math.max(1, Number(job.timeout) || 300)); // up to an hour: songs can take a long time
-  const via = job.via === "curl" || job.via === "python" ? job.via : "node";
+  const via = guard ? "node" : job.via === "curl" || job.via === "python" ? job.via : "node";
   const ctrl = new AbortController();
   const stop = () => ctrl.abort();
   req.on("close", stop);
@@ -56,7 +58,23 @@ export async function relay(req, res, job) {
   if (via === "node") {
     const timer = setTimeout(stop, timeout * 1000);
     try {
-      const r = await fetch(url, { method, headers, body, signal: ctrl.signal, redirect: "follow" });
+      let r;
+      if (guard) {
+        // every hop checked: a redirect mustn't lead somewhere the first address couldn't go
+        let at = url, m = method, b = body;
+        for (let hop = 0; ; hop++) {
+          const why = await guard(at);
+          if (why) return fail(res, why, 403);
+          r = await fetch(at, { method: m, headers, body: b, signal: ctrl.signal, redirect: "manual" });
+          const next = r.status >= 300 && r.status < 400 && r.headers.get("location");
+          if (!next) break;
+          if (hop >= 10) return fail(res, "Too many redirects.", 502);
+          at = new URL(next, at);
+          if (at.protocol !== "http:" && at.protocol !== "https:") return fail(res, "A redirect led to something that isn't a web address.", 400);
+          // as browsers do: 303 (and 301/302 after POST) become GET without a body
+          if (r.status === 303 || ((r.status === 301 || r.status === 302) && m === "POST")) (m = "GET"), (b = undefined);
+        }
+      } else r = await fetch(url, { method, headers, body, signal: ctrl.signal, redirect: "follow" });
       begin(res, r.status, Object.fromEntries(r.headers));
       if (r.body) Readable.fromWeb(r.body).on("error", () => res.end()).pipe(res);
       else res.end();
