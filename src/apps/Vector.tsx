@@ -8,6 +8,7 @@ import { pickInExplorer, showInExplorer, type PickOptions } from "../lib/explore
 import qrcode from "qrcode-generator";
 import { copyText } from "../lib/clipboard.ts";
 import { askText } from "../ui/Ask.tsx";
+import { openInFullBrowser } from "./FullBrowser.tsx";
 
 /**
  * Vector for the people using the desktop. First and foremost the real thing: Vector's own app, installed and
@@ -312,16 +313,10 @@ function VectorHome({ onClient, onHost }: { onClient: () => void; onHost: () => 
               doesn't allow being shown inside other pages (a deliberate protection for a messenger holding keys), so it opens
               in a window of its own; signing in with the QR code from Vector 0.5.0 on a phone works there. */}
           <p className="small muted">
-            <b>Beta 0.5.0:</b> the next Vector, on the web, with sign-in by QR code from Vector 0.5.0 on your phone. It opens in a window of its
-            own, since Vector's web app doesn't allow being shown inside other pages.
+            <b>Beta 0.5.0:</b> the next Vector, on the web, with sign-in by QR code from Vector 0.5.0 on your phone. It opens in the desktop's
+            full browser, which keeps it signed in.
           </p>
-          <button
-            className="btn"
-            onClick={() => {
-              const w = window.open(VECTOR_WEB_BETA, "vector-web-beta", "popup,width=1100,height=760");
-              if (!w) window.open(VECTOR_WEB_BETA, "_blank", "noopener"); // pop-ups blocked: a tab instead
-            }}
-          >
+          <button className="btn" onClick={() => void openInFullBrowser(VECTOR_WEB_BETA).catch((e: Error) => setNote(e.message))}>
             Beta 0.5.0 <ExternalLink size={13} />
           </button>
           <p className="small muted">
