@@ -166,7 +166,8 @@ export function createMusic(dataDir) {
     return { tracks: Object.keys(index.tracks).length, read, failed, folders: index.folders, walked, unreadable: unreadable.slice(0, 5) };
   }
 
-  const list = () => ({ folders: index.folders, own: ownDir, tracks: Object.values(index.tracks).map(({ path: _p, mtime: _m, ...t }) => t) });
+  // (the file's own name goes along, for saying which file when one won't play; its full path stays here)
+  const list = () => ({ folders: index.folders, own: ownDir, tracks: Object.values(index.tracks).map(({ path: p, mtime: _m, ...t }) => ({ ...t, file: path.basename(p) })) });
 
   /** Stream a track, with byte ranges so seeking works. */
   function serve(req, res, id) {
