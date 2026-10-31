@@ -38,7 +38,11 @@ export function isRunning() {
   return running;
 }
 
+/** When the last run was stopped by hand (so "nobody had anything to add" isn't said). */
+let lastAbort = false;
+
 export function stopAll() {
+  lastAbort = true;
   controller?.abort();
   controller = null;
   stopSpeaking();
@@ -313,6 +317,7 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
 
 async function withRun(fn: () => Promise<void>) {
   if (running) stopAll();
+  lastAbort = false;
   running = true;
   controller = new AbortController();
   try {
@@ -323,31 +328,36 @@ async function withRun(fn: () => Promise<void>) {
   }
 }
 
-/** A round where each other character may add something, governed by the loop breaker. */
-async function rounds(lastSpeaker: string) {
+/** A round where each other character may add something, governed by the loop breaker. True if anyone spoke.
+ *  With `alone` and one character in the room, she may carry on after herself. */
+async function rounds(lastSpeaker: string, alone = false): Promise<boolean> {
   let last = lastSpeaker;
+  let spoke = false;
+  roundFailed = false;
   for (let round = 0; round < 8; round++) {
     const s = desk();
     const room = s.roomCharacters();
-    const order = [...room.filter((c) => c.id !== last)];
+    const order = alone && room.length === 1 ? room : [...room.filter((c) => c.id !== last)];
     let anyone = false;
     for (const c of order) {
-      if (controller?.signal.aborted || desk().flood.shut) return;
+      if (controller?.signal.aborted || desk().flood.shut) return spoke;
       const r = await takeTurn(c, { nudge: true, scope: "locksmith" });
-      if (!r.ok) return;
+      if (!r.ok) return (roundFailed = true), spoke;
       if (!r.text) continue;
       anyone = true;
+      spoke = true;
       last = c.id;
       const st = desk();
       const prior = st.messages.slice(0, -1);
       const v = loopCheck(prior, r.text, streakOf(st.messages), st.loopBreak);
       if (v !== "ok") {
         st.notice(loopNotice(v));
-        return;
+        return spoke;
       }
     }
-    if (!anyone || !desk().freeTalk) return;
+    if (!anyone || !desk().freeTalk) return spoke;
   }
+  return spoke;
 }
 
 /** Pictures sent with a message, read back from the vault for vision models. */
@@ -464,9 +474,19 @@ export async function letThemTalk() {
     s.notice("The flood gate is shut, so the characters are resting. The keyholder can reopen it in Sentry.");
     return;
   }
+  if (s.toddler) return s.notice("The characters are resting: toddler mode is on.");
+  const room = s.roomCharacters();
+  if (!room.length) return s.notice("Nobody's in the room yet. Invite someone first (Characters, or the people button).");
   const lastChar = [...s.messages].reverse().find((m) => m.kind === "character" && !m.pass);
-  await withRun(() => rounds(lastChar?.who ?? ""));
+  let spoke = false;
+  // with one character in the room, "let them talk" asks her to carry on herself
+  await withRun(async () => {
+    spoke = await rounds(lastChar?.who ?? "", true);
+  });
+  // a failed turn says why itself; only a quiet round (everyone passed) is explained here
+  if (!spoke && !lastAbort && !roundFailed) desk().notice(room.length === 1 ? `${room[0].short} had nothing to add just now.` : "Nobody had anything to add just now.");
 }
+let roundFailed = false;
 
 /** The characters playing the open game each react to what's on the screen. */
 // When a person makes a move in an app with "answer when you make a move" on, the players answer.

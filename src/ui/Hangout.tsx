@@ -320,7 +320,14 @@ export function HangoutMode() {
       <Stage />
       <div className="hang-top">
         <span className="hang-title">{s.roomCharacters().map((c) => c.short).join(" · ") || "Nobody's here yet"}</span>
-        <button className="icon-btn" data-tip="Let them talk" aria-label="Let them talk" disabled={busy} onClick={() => void letThemTalk()}>
+        {/* one button for both: it shows while they're talking, and stops them when pressed again */}
+        <button
+          className={`icon-btn${busy ? " on" : ""}`}
+          data-tip={busy ? "They're talking: press to stop them" : s.freeTalk ? "Let them talk (free talk is on: until the loop breaker stops them)" : "Let them talk (one round; free talk is off)"}
+          aria-label={busy ? "Stop them talking" : "Let them talk"}
+          aria-pressed={busy}
+          onClick={() => (busy ? stopAll() : void letThemTalk())}
+        >
           <MessagesSquare size={17} />
         </button>
         <VolumeControl size={17} />
