@@ -36,7 +36,14 @@ export function ToddlerPill() {
   };
   const tryCode = async () => {
     const sealed = desk().adult;
-    if (sealed && (await matches(code, sealed))) {
+    let ok = false;
+    try {
+      ok = Boolean(sealed && ((await matches(code.normalize("NFC"), sealed)) || (await matches(code, sealed))));
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : String(e)); // e.g. a plain-http address, where browsers can't check passcodes
+      return;
+    }
+    if (ok) {
       desk().set({ toddler: false });
       close();
       desk().say("Toddler mode is off. The AI is back.");

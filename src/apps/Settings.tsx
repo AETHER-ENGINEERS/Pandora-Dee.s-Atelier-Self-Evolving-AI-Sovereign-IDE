@@ -616,27 +616,42 @@ function AccountsSection() {
 function AdultSection() {
   const s = useDesk();
   const keyholder = s.role() === "keyholder";
+  // the unlock box (a) and the new passcode (fresh, b) are separate: sharing one made phones report "don't match"
   const [a, setA] = useState("");
+  const [fresh, setFresh] = useState("");
   const [b, setB] = useState("");
   const [old, setOld] = useState("");
   const [note, setNote] = useState("");
   const adults = s.allCharacters().filter((c) => c.shelf === "adult");
+  const insecure = !canSeal() ? "Passcodes need this page's secure address (https://…ts.net, or localhost on the computer itself); this one is plain http." : "";
 
   const setCode = async () => {
-    if (a.length < 4) return setNote("Use at least four characters.");
-    if (a !== b) return setNote("Those don't match.");
-    if (s.adult && !(await matches(old, s.adult))) return setNote("The current passcode doesn't match.");
-    desk().set({ adult: await seal(a) });
-    setA("");
+    if (insecure) return setNote(insecure);
+    // phone keyboards can compose the same letters differently: compare them the same way
+    const one = fresh.normalize("NFC"), two = b.normalize("NFC");
+    if (one.length < 4) return setNote("Use at least four characters.");
+    if (one !== two) return setNote(one.length !== two.length ? `Those don't match: one is ${one.length} characters, the other ${two.length}.` : "Those don't match (same length, different characters).");
+    try {
+      if (s.adult && !(await matches(old.normalize("NFC"), s.adult)) && !(await matches(old, s.adult))) return setNote("The current passcode doesn't match.");
+      desk().set({ adult: await seal(one) });
+    } catch (e) {
+      return setNote(e instanceof Error ? e.message : String(e));
+    }
+    setFresh("");
     setB("");
     setOld("");
     setNote("Passcode saved. Setting it doesn't open the shelf; unlocking does.");
   };
   const unlock = async () => {
-    if (s.adult && (await matches(a, s.adult))) {
-      desk().set({ adultOpen: true });
-      setNote("");
-    } else setNote("That passcode doesn't match.");
+    if (insecure) return setNote(insecure);
+    try {
+      if (s.adult && ((await matches(a.normalize("NFC"), s.adult)) || (await matches(a, s.adult)))) {
+        desk().set({ adultOpen: true });
+        setNote("");
+      } else setNote("That passcode doesn't match.");
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : String(e));
+    }
     setA("");
   };
   const lock = () => desk().set({ adultOpen: false, sensorPass: false, members: desk().members.filter((id) => desk().character(id)?.shelf !== "adult") });
@@ -674,8 +689,8 @@ function AdultSection() {
           <h4 style={{ marginTop: 18 }}>{s.adult ? "Change the passcode" : "Set a passcode"}</h4>
           {s.adult ? <input className="input" type="password" style={{ maxWidth: 260, marginBottom: 8 }} placeholder="Current passcode" value={old} onChange={(e) => setOld(e.target.value)} /> : null}
           <div className="row">
-            <input className="input" type="password" style={{ maxWidth: 200 }} placeholder="New passcode" value={s.adultOpen || !s.adult ? a : ""} onChange={(e) => setA(e.target.value)} />
-            <input className="input" type="password" style={{ maxWidth: 200 }} placeholder="Again" value={b} onChange={(e) => setB(e.target.value)} />
+            <input className="input" type="password" autoComplete="new-password" style={{ maxWidth: 200 }} placeholder="New passcode" value={fresh} onChange={(e) => setFresh(e.target.value)} />
+            <input className="input" type="password" autoComplete="new-password" style={{ maxWidth: 200 }} placeholder="Again" value={b} onChange={(e) => setB(e.target.value)} />
             <button className="btn" onClick={() => void setCode()}>
               Save passcode
             </button>
