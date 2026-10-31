@@ -19,6 +19,7 @@ import { createFiles } from "./files.mjs";
 import { createDevShare, isDevicePath } from "./devshare.mjs";
 import { createTravel } from "./travel.mjs";
 import { createEngine } from "./engine.mjs";
+import { createUngoogled } from "./ungoogled.mjs";
 import { createVecMem } from "./vecmem.mjs";
 import { createMcpStdio } from "./mcpstdio.mjs";
 import { createTheater, PIECE_MAX } from "./theater.mjs";
@@ -140,6 +141,8 @@ export function deskServer() {
   };
   const stdioPrint = (b) => createHash("sha256").update(JSON.stringify([String(b.command || ""), (b.args ?? []).map(String), String(b.cwd || ""), Object.entries(b.env ?? {}).map(([k, v]) => [k, String(v)]).sort()])).digest("hex").slice(0, 32);
   const engine = createEngine({ dataDir: () => dataDir, getChoice: () => readConfig().browserEngine, deskPorts: () => [...deskPorts] });
+  // Ungoogled Chromium, downloaded into the data folder when asked (see ungoogled.mjs)
+  const ungoogled = createUngoogled({ browserDir: () => path.join(dataDir, "browser"), hold: () => engine.hold() });
   const withDevices = (o) => ({ ...o, devices: devices.places() });
   const library = () => {
     if (!lib) {
@@ -460,7 +463,28 @@ export function deskServer() {
     if (parts[0] === "engine") {
       deskPorts.add(req.socket.localPort);
       try {
-        if (parts[1] === "status" && m === "GET") return send(res, 200, engine.status());
+        if (parts[1] === "status" && m === "GET") return send(res, 200, { ...engine.status(), ungoogled: ungoogled.status(), canChange: onThisPc(req) });
+        // which engine, and fetching Ungoogled Chromium: only from the computer itself
+        if ((parts[1] === "choose" || parts[1] === "ungoogled") && m === "POST") {
+          if (!onThisPc(req)) return send(res, 403, { error: "The browser's engine can only be changed on the desktop's own computer." });
+          const b = JSON.parse((await readBody(req, 10_000)).toString("utf8") || "{}");
+          if (parts[1] === "choose") {
+            // "" = automatic: Ungoogled Chromium if it's here, else the most private browser installed
+            const p = String(b.path || "");
+            const found = engine.installedEngines().find((e) => e.path === p);
+            if (p && !found) return send(res, 400, { error: "That isn't one of the browsers found on this computer." });
+            writeConfig({ browserEngine: found ? { name: found.name, path: found.path } : null });
+            const reopen = await engine.restart();
+            return send(res, 200, { ...engine.status(), reopen });
+          }
+          if (b.op === "check") return send(res, 200, { ...ungoogled.status(), latest: await ungoogled.latest() });
+          if (b.op === "install") {
+            // automatic again, so the new engine is the one used
+            if (readConfig().browserEngine) writeConfig({ browserEngine: null });
+            return send(res, 200, ungoogled.install());
+          }
+          if (b.op === "remove") return send(res, 200, await ungoogled.remove());
+        }
         if (parts[1] === "stream" && m === "GET") return engine.stream(res);
         if (!parts[1] && m === "POST") return send(res, 200, await engine.cmd(JSON.parse((await readBody(req, 200_000)).toString("utf8") || "{}")));
       } catch (e) {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, BookOpenText, Keyboard, Plus, RotateCw, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpenText, Cpu, Keyboard, Plus, RotateCw, X } from "lucide-react";
 import { desk } from "../lib/store.ts";
+import { EnginePanel } from "./BrowserEngine.tsx";
 
 /** Open an address in the full browser, in a new tab, and bring the Browser window forward. */
 export async function openInFullBrowser(url: string) {
@@ -33,11 +34,12 @@ const BUTTON = ["left", "middle", "right"] as const;
 export function FullBrowser({ home, onReader }: { home: string; onReader: () => void }) {
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [engine, setEngine] = useState("");
-  const [frame, setFrame] = useState("");
+  const [frame, setFrame] = useState<{ data: string; w: number; h: number } | null>(null);
   const [address, setAddress] = useState("");
   const [editing, setEditing] = useState(false);
   const [note, setNote] = useState("");
   const [problem, setProblem] = useState("");
+  const [engineOpen, setEngineOpen] = useState(false);
   const view = useRef<HTMLDivElement>(null);
   const typer = useRef<HTMLTextAreaElement>(null);
   const opened = useRef(false);
@@ -56,7 +58,7 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
         void post({ op: "open", url: home }).catch((err: Error) => setProblem(err.message));
       }
     });
-    es.addEventListener("frame", (e) => setFrame((JSON.parse((e as MessageEvent).data) as { data: string }).data));
+    es.addEventListener("frame", (e) => setFrame(JSON.parse((e as MessageEvent).data) as { data: string; w: number; h: number }));
     es.addEventListener("note", (e) => setNote((JSON.parse((e as MessageEvent).data) as { text: string }).text));
     return () => es.close();
   }, [home]);
@@ -75,7 +77,8 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
       timer = window.setTimeout(() => {
         const r = el.getBoundingClientRect();
         if (r.width < 50 || r.height < 50) return;
-        quiet({ op: "view", w: r.width, h: r.height, dpr: Math.min(2, window.devicePixelRatio || 1), mobile: r.width < 600 && matchMedia("(pointer: coarse)").matches });
+        // whole pixels, and the screen's real sharpness (up to 3×), so the picture maps 1:1 onto the screen
+        quiet({ op: "view", w: Math.floor(r.width), h: Math.floor(r.height), dpr: Math.min(3, window.devicePixelRatio || 1), mobile: r.width < 600 && matchMedia("(pointer: coarse)").matches });
       }, 200);
     };
     const ro = new ResizeObserver(tell);
@@ -152,7 +155,23 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
         <button className="icon-btn" aria-label="Reader" data-tip="Reader: the private browser (nothing kept)" onClick={onReader}>
           <BookOpenText size={15} />
         </button>
+        <button className="icon-btn" aria-label="Engine" data-tip="The browser's engine (Ungoogled Chromium…)" onClick={() => setEngineOpen(!engineOpen)}>
+          <Cpu size={15} />
+        </button>
       </div>
+      {engineOpen ? (
+        <EnginePanel
+          onClose={() => setEngineOpen(false)}
+          onRestarted={(urls) => {
+            // the engine started over: bring back what was open (or the start page)
+            setFrame(null);
+            setProblem("");
+            opened.current = true;
+            const list = urls.length ? urls : [home];
+            void list.reduce((p, url) => p.then(() => post({ op: "open", url }).then(() => undefined)), Promise.resolve()).catch((err: Error) => setProblem(err.message));
+          }}
+        />
+      ) : null}
       <div
         ref={view}
         className="full-browser-view"
@@ -184,7 +203,15 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
           if (text) (e.preventDefault(), quiet({ op: "text", id, text }));
         }}
       >
-        {frame ? <img src={`data:image/jpeg;base64,${frame}`} alt={active?.title || "The page"} draggable={false} /> : <div className="muted small" style={{ padding: 16 }}>{engine ? `Starting ${engine}…` : "Starting the browser…"}</div>}
+        {frame ? (
+          <img
+            src={`data:image/jpeg;base64,${frame.data}`}
+            alt={active?.title || "The page"}
+            draggable={false}
+            // shown at the page's own size, never stretched: while the window is being resized it's cut off for a moment rather than blurred
+            style={frame.w && frame.h ? { width: frame.w, height: frame.h } : undefined}
+          />
+        ) : <div className="muted small" style={{ padding: 16 }}>{engine ? `Starting ${engine}…` : "Starting the browser…"}</div>}
         {/* phones: a box the on-screen keyboard types into, passed on to the page */}
         <textarea
           ref={typer}

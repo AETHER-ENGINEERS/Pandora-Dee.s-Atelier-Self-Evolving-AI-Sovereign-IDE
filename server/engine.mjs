@@ -12,6 +12,8 @@ import os from "node:os";
 import { execFileSync } from "node:child_process";
 
 const win = process.platform === "win32";
+/** How many pixels the engine draws per page pixel. */
+const RENDER_SCALE = 2;
 const mac = process.platform === "darwin";
 
 /** Chromium-family browsers already on this computer, best for privacy first. */
@@ -74,6 +76,21 @@ function freeProfile(profile) {
   }
 }
 
+/** The engine starts with an empty tab, not the last session: a session coming back after the desktop had already
+ *  opened a page would replace that page (a blank first tab) or open it twice. Also marks the last run as a clean
+ *  exit, so no "restore pages?" bar appears inside the page. */
+function startFresh(profile) {
+  const file = path.join(profile, "Default", "Preferences");
+  try {
+    const prefs = JSON.parse(fs.readFileSync(file, "utf8"));
+    prefs.session = { ...prefs.session, restore_on_startup: 5 };
+    prefs.profile = { ...prefs.profile, exit_type: "Normal", exited_cleanly: true };
+    fs.writeFileSync(file, JSON.stringify(prefs));
+  } catch {
+    /* a new profile: nothing to restore yet */
+  }
+}
+
 export function createEngine({ dataDir, getChoice, deskPorts }) {
   let ctx = null; // the running engine (a persistent context: its own profile)
   let starting = null;
@@ -83,8 +100,9 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
   let active = null;
   let seq = 0;
   const clients = new Set(); // SSE responses
-  let view = { w: 1100, h: 700, dpr: 1 };
+  let view = { w: 1100, h: 700, dpr: 1, mobile: false };
   let error = "";
+  let paused = null;
 
   const send = (res, type, data) => {
     try {
@@ -109,22 +127,28 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
   }
 
   async function start() {
+    while (paused) await paused; // its files are being replaced (a new Ungoogled Chromium)
     if (ctx) return ctx;
     if (starting) return starting;
     starting = (async () => {
       const eng = pick();
       if (!eng) throw Object.assign(new Error("No Chromium-family browser found on this computer (Edge, Chrome, Brave or Chromium)."), { status: 409 });
       const { chromium } = await import("playwright-core");
-      const profile = path.join(dataDir(), "browser", "profiles", "default");
+      // Ungoogled Chromium keeps a profile of its own (two brands and versions of Chromium mustn't share one);
+      // the installed browsers keep the one they always had, so nobody is signed out
+      const profile = path.join(dataDir(), "browser", "profiles", eng.name === "Ungoogled Chromium" ? "ungoogled" : "default");
       fs.mkdirSync(profile, { recursive: true });
+      startFresh(profile);
       const launch = () => chromium.launchPersistentContext(profile, {
         executablePath: eng.path,
         headless: true,
-        viewport: { width: view.w, height: view.h },
-        deviceScaleFactor: view.dpr,
+        // no fixed viewport: each tab is sized to the Browser window (fit, below)
+        viewport: null,
         acceptDownloads: true,
         downloadsPath: path.join(dataDir(), "vault", "Downloads"),
-        args: ["--no-first-run", "--no-default-browser-check", "--disable-features=Translate,MediaRouter", "--hide-scrollbars=false"],
+        // drawn at twice the pixels, then scaled down to each screen's own sharpness by the stream: crisp text on any
+        // screen up to 2× (a page can't be made sharper from inside, the screencast ignores that)
+        args: ["--no-first-run", "--no-default-browser-check", "--disable-features=Translate,MediaRouter", "--hide-scrollbars=false", `--force-device-scale-factor=${RENDER_SCALE}`],
         ignoreDefaultArgs: ["--enable-automation"],
       });
       let c;
@@ -134,6 +158,7 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
         // most often: a previous run's engine still has the profile open
         freeProfile(profile);
         await new Promise((r) => setTimeout(r, 800));
+        startFresh(profile);
         c = await launch();
       }
       engineName = eng.name;
@@ -173,6 +198,8 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     // like any copy of it a person opens, so ordinary sites don't take the person for a bot
     if (!ua) ua = String(await page.evaluate(() => navigator.userAgent).catch(() => "")).replace(/Headless/g, "");
     if (ua) await cdp.send("Network.setUserAgentOverride", { userAgent: ua }).catch(() => undefined);
+    // drawn at the Browser window's own size and sharpness, so the picture is never stretched (that was the blur)
+    await fit(cdp);
     const t = { page, cdp, url: page.url(), title: "", loading: false };
     tabs.set(id, t);
     const upd = async () => {
@@ -206,15 +233,25 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     return id;
   }
 
+  /** One tab drawn at the Browser window's size, sharpness, and phone-or-not. */
+  async function fit(cdp) {
+    // deviceScaleFactor 0: keep the engine's own (RENDER_SCALE)
+    await cdp.send("Emulation.setDeviceMetricsOverride", { width: view.w, height: view.h, deviceScaleFactor: 0, mobile: view.mobile }).catch(() => undefined);
+    await cdp.send("Emulation.setTouchEmulationEnabled", { enabled: view.mobile }).catch(() => undefined);
+  }
+
   /** Stream this tab's picture (and stop the one before). */
   async function watch(id) {
+    // stopped first even when it's the same tab: a running screencast keeps the size limits it started with, so
+    // after the window changed size every frame was squeezed to the old size and stretched back (the blur)
     const prev = active && tabs.get(active);
-    if (prev && active !== id) await prev.cdp.send("Page.stopScreencast").catch(() => undefined);
+    if (prev) await prev.cdp.send("Page.stopScreencast").catch(() => undefined);
     active = id;
     const t = tabs.get(id);
     if (!t) return;
     await t.page.bringToFront().catch(() => undefined);
-    await t.cdp.send("Page.startScreencast", { format: "jpeg", quality: 72, maxWidth: Math.round(view.w * view.dpr), maxHeight: Math.round(view.h * view.dpr), everyNthFrame: 1 }).catch(() => undefined);
+    // quality 90 keeps text crisp; the picture is sent at the device's own pixels and shown 1:1
+    await t.cdp.send("Page.startScreencast", { format: "jpeg", quality: 90, maxWidth: Math.round(view.w * view.dpr), maxHeight: Math.round(view.h * view.dpr), everyNthFrame: 1 }).catch(() => undefined);
   }
 
   const tab = (id) => {
@@ -257,11 +294,8 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
       const w = Math.max(320, Math.min(3840, Math.round(Number(b.w) || view.w)));
       const h = Math.max(240, Math.min(2400, Math.round(Number(b.h) || view.h)));
       const dpr = Math.max(1, Math.min(3, Number(b.dpr) || 1));
-      view = { w, h, dpr };
-      for (const t of tabs.values()) {
-        await t.cdp.send("Emulation.setDeviceMetricsOverride", { width: w, height: h, deviceScaleFactor: dpr, mobile: Boolean(b.mobile) }).catch(() => undefined);
-        if (b.mobile !== undefined) await t.cdp.send("Emulation.setTouchEmulationEnabled", { enabled: Boolean(b.mobile) }).catch(() => undefined);
-      }
+      view = { w, h, dpr, mobile: Boolean(b.mobile) };
+      for (const t of tabs.values()) await fit(t.cdp);
       if (active) await watch(active);
       return { ok: true };
     }
@@ -304,10 +338,29 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     if (active) void watch(active); // a fresh frame for the newcomer
   }
 
-  const status = () => ({ running: Boolean(ctx), engine: engineName, choice: pick(), installed: installedEngines(), error, tabs: tabList() });
+  const status = () => ({ running: Boolean(ctx), engine: engineName, view, using: pick(), chosen: getChoice()?.path || "", installed: installedEngines(), error, tabs: tabList() });
 
   /** Close the engine (when the desktop's server stops). */
   const close = () => ctx?.close().catch(() => undefined);
 
-  return { cmd, stream, status, installedEngines, close };
+  /** Stop it, so the next use starts the engine now chosen (tabs reopen from scratch). */
+  const restart = async () => {
+    const was = tabList().map((t) => t.url).filter((u) => u && u !== "about:blank");
+    await ctx?.close().catch(() => undefined);
+    ctx = null;
+    return was;
+  };
+
+  /** Stop it and keep it stopped until `release` is called (while its program's files are replaced). */
+  const hold = async () => {
+    let release = () => {};
+    paused = new Promise((r) => (release = r));
+    await restart();
+    return () => {
+      paused = null;
+      release();
+    };
+  };
+
+  return { cmd, stream, status, installedEngines, close, restart, hold };
 }
