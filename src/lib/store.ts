@@ -23,6 +23,7 @@ export type AppId =
   | "explorer"
   | "notes"
   | "music"
+  | "theater"
   | "visualizer"
   | "create"
   | "browser"
@@ -43,6 +44,7 @@ export const APPS: { id: AppId; title: string; hint: string }[] = [
   { id: "cast", title: "Characters", hint: "Who's here, who's available, and their profiles" },
   { id: "notes", title: "Notes", hint: "Your notes: links, tags, tasks, graph" },
   { id: "music", title: "Music", hint: "Your music, internet radio and visualizers" },
+  { id: "theater", title: "Theater", hint: "Your videos, kept on the desktop: back them up from phones and watch them anywhere" },
   { id: "visualizer", title: "Visualizer", hint: "The music's visualizer in its own window" },
   { id: "vector", title: "Vector", hint: "Your Vector messenger: chats, Communities and Mini Apps" },
   { id: "browser", title: "Browser", hint: "Web pages in tabs, with a reader view" },
@@ -62,7 +64,7 @@ export const APPS: { id: AppId; title: string; hint: string }[] = [
 
 /** Toddler mode: the fun things (making and watching media, games, notes, Hangout) with every AI feature off.
  *  The adult passcode turns it off again. Classic is AI too, so it waits as well. */
-export const TODDLER_APPS: string[] = ["notes", "music", "visualizer", "create", "games", "welcome", "hangout"];
+export const TODDLER_APPS: string[] = ["notes", "music", "theater", "visualizer", "create", "games", "welcome", "hangout"];
 export const inToddler = (id: string) => TODDLER_APPS.includes(id);
 
 export type Win = { open: boolean; min: boolean; max: boolean; x: number; y: number; w: number; h: number; z: number };
@@ -417,6 +419,7 @@ export type DockPrefs = {
   browserAdded?: boolean;
   vectorAdded?: boolean;
   explorerAdded?: boolean;
+  theaterAdded?: boolean;
 };
 
 export const DOCK_DEFAULT: DockPrefs = {
@@ -553,7 +556,11 @@ function withNotes(d: DockPrefs): DockPrefs {
     const at = items.indexOf("files");
     items.splice(at < 0 ? items.length : at, 0, "explorer");
   }
-  return { ...d, items, notesAdded: true, musicAdded: true, createAdded: true, browserAdded: true, vectorAdded: true, explorerAdded: true };
+  if (!items.includes("theater") && !d.theaterAdded) {
+    const at = items.indexOf("music");
+    items.splice(at < 0 ? items.length : at + 1, 0, "theater");
+  }
+  return { ...d, items, notesAdded: true, musicAdded: true, createAdded: true, browserAdded: true, vectorAdded: true, explorerAdded: true, theaterAdded: true };
 }
 
 export function defaultWins(): Record<AppId, Win> {
@@ -574,6 +581,7 @@ export function defaultWins(): Record<AppId, Win> {
     explorer: W(120, 40, Math.min(1000, vw - 40), Math.min(640, vh - 10)),
     notes: W(110, 30, Math.min(1080, vw - 40), Math.min(700, vh - 10)),
     music: W(150, 40, Math.min(960, vw - 40), Math.min(620, vh - 10)),
+    theater: W(170, 50, Math.min(980, vw - 40), Math.min(660, vh - 10)),
     visualizer: W(220, 60, Math.min(720, vw - 40), Math.min(440, vh - 10)),
     create: W(100, 30, Math.min(1120, vw - 40), Math.min(720, vh - 10)),
     browser: W(80, 24, Math.min(1180, vw - 40), Math.min(760, vh - 10)),

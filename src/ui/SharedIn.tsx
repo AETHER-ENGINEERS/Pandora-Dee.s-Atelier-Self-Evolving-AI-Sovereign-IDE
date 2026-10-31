@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { desk } from "../lib/store.ts";
 import { fileApi, showInExplorer, sizeOf } from "../lib/explorer.ts";
 import { shareFiles } from "../lib/devshare.ts";
+import { backUp, isVideoFile } from "../lib/theater.ts";
 
 /** Files that came from the phone's own share menu ("Share to PDA SEASIDE", once the desktop is installed as an app):
  *  the service worker keeps them until this page asks, then they're saved on the desktop or shared live from here. */
@@ -58,6 +59,21 @@ export function SharedIn() {
     }
   };
 
+  /** Videos: into Media Theater, in checked pieces that survive a dropped connection, onto this phone's usual shelf. */
+  const videos = files.every(isVideoFile);
+  const toTheater = async () => {
+    let shelf = "";
+    try {
+      shelf = localStorage.getItem("pdd-theater-shelf") ?? "";
+    } catch {
+      /* the Videos folder itself */
+    }
+    const list = files;
+    setFiles(null);
+    desk().openApp("theater");
+    await backUp(list, shelf);
+  };
+
   const live = async () => {
     try {
       const s = await shareFiles(files);
@@ -76,6 +92,20 @@ export function SharedIn() {
           <b>{what}</b> <span className="faint">({sizeOf(total)})</span>
         </p>
         <p className="small muted">
+          {videos ? (
+            <>
+              <b>Back up to Theater</b> keeps them with your videos{" "}
+              {(() => {
+                try {
+                  const s = localStorage.getItem("pdd-theater-shelf");
+                  return s ? `(on the ${s} shelf)` : "";
+                } catch {
+                  return "";
+                }
+              })()}{" "}
+              and tells you when each one is safe, so this phone can let go of it.{" "}
+            </>
+          ) : null}
           <b>Save on the desktop</b> keeps a copy there (Vault › From devices), so this phone can let go of it. <b>Share from this phone</b> lets your
           other devices open it while this page stays open, without copying it.
         </p>
@@ -87,9 +117,14 @@ export function SharedIn() {
           <button className="btn" disabled={Boolean(busy)} onClick={() => void live()}>
             Share from this phone
           </button>
-          <button className="btn primary" disabled={Boolean(busy)} onClick={() => void save()}>
+          <button className={`btn${videos ? "" : " primary"}`} disabled={Boolean(busy)} onClick={() => void save()}>
             Save on the desktop
           </button>
+          {videos ? (
+            <button className="btn primary" disabled={Boolean(busy)} onClick={() => void toTheater()}>
+              Back up to Theater
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

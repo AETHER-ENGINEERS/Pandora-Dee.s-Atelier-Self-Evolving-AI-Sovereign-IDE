@@ -985,3 +985,45 @@ body.dragging-window iframe, body.dragging-window webview { pointer-events: none
 .cats { position: absolute; inset: 0; z-index: 35000; pointer-events: none; overflow: hidden; }
 .cat { position: absolute; left: 0; top: 0; pointer-events: auto; cursor: pointer; will-change: transform; }
 .cat-bubble { position: absolute; left: 0; top: 0; font-size: 11px; font-weight: 600; color: var(--text); text-shadow: 0 1px 3px rgba(0, 0, 0, .7); pointer-events: none; transition: opacity .3s; white-space: nowrap; }
+
+/* Media Theater */
+.good-text { color: var(--good); }
+.bad-text { color: var(--bad); }
+.theater { display: flex; flex-direction: column; height: 100%; min-height: 0; position: relative; }
+.theater-top { display: flex; gap: 8px; align-items: center; padding: 8px 10px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+.theater-search { flex: 1 1 180px; display: flex; align-items: center; gap: 6px; min-width: 140px; }
+.theater-search .input { flex: 1; min-width: 0; }
+.theater-to { display: inline-flex; align-items: center; gap: 6px; }
+.theater-to select { max-width: 160px; }
+.theater-shelves { display: flex; gap: 6px; padding: 8px 10px; overflow-x: auto; scrollbar-width: thin; flex-shrink: 0; }
+.theater-shelves .chip { padding: 5px 12px; white-space: nowrap; cursor: pointer; color: inherit; }
+.theater-list { flex: 1; overflow-y: auto; min-height: 0; padding: 0 10px 14px; }
+.theater-month { font-size: .85em; font-weight: 600; color: var(--muted); margin: 12px 2px 8px; }
+.theater-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.theater.narrow .theater-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.theater-card { display: flex; flex-direction: column; gap: 5px; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; min-width: 0; }
+.theater-thumb { position: relative; aspect-ratio: 16 / 10; border-radius: 10px; overflow: hidden; background: #05040a; border: 1px solid var(--line); display: grid; place-items: center; color: var(--faint); }
+.theater-card:hover .theater-thumb, .theater-card:focus-visible .theater-thumb { border-color: var(--accent); }
+.theater-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.theater-len { position: absolute; right: 6px; bottom: 6px; background: rgba(0, 0, 0, .72); color: #fff; font-size: .75em; padding: 1px 6px; border-radius: 6px; }
+.theater-fav { position: absolute; left: 6px; top: 6px; color: #ffd76a; filter: drop-shadow(0 1px 2px #000); }
+.theater-progress { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--accent); }
+.theater-name { font-size: .88em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
+.theater-empty { text-align: center; max-width: 460px; margin: 40px auto; color: var(--muted); }
+.theater-empty p { margin: 6px 0; }
+.theater-uploads { margin: 0 10px 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255, 255, 255, .03); flex-shrink: 0; max-height: 40%; overflow-y: auto; }
+.theater-bar-total { height: 5px; border-radius: 3px; background: var(--line); margin-top: 6px; overflow: hidden; }
+.theater-bar-total span { display: block; height: 100%; background: var(--accent); transition: width .3s; }
+.theater-jobs { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.theater-jobs li { display: flex; align-items: center; gap: 8px; min-height: 30px; }
+.theater-job-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .88em; }
+.theater-player { position: absolute; inset: 0; z-index: 5; background: #000; display: flex; flex-direction: column; color: #eee; }
+.theater-bar, .theater-nav { display: flex; align-items: center; gap: 4px; padding: 4px 6px; background: rgba(12, 10, 20, .92); }
+.theater-bar .btn, .theater-nav .btn { color: inherit; min-height: 40px; min-width: 40px; }
+.theater-bar .btn.on { color: #ffd76a; }
+.theater-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.theater-video { flex: 1; min-height: 0; width: 100%; background: #000; object-fit: contain; }
+.theater-nav { justify-content: space-between; }
+.theater-nav .btn { display: inline-flex; align-items: center; gap: 4px; max-width: 40%; }
+.theater-nav-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .85em; }
+.theater.narrow .theater-nav-name { display: none; }

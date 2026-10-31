@@ -1,7 +1,7 @@
 // What the desktop offers the rest of the app (its icons, opening Settings, loading a character backup).
 // Kept apart from Desktop.tsx, so that file exports only components and React can update it in place.
 import { useEffect, useState, type ReactNode } from "react";
-import { FolderTree, AudioWaveform, BookOpen, Cable, Code2, FolderOpen, Gamepad2, Globe, HelpCircle, KeyRound, MessageCircleHeart, MessagesSquare, Music2, NotebookPen, Palette, Settings as SettingsIcon, ShieldAlert, SquareTerminal, Users, Video } from "lucide-react";
+import { Clapperboard, FolderTree, AudioWaveform, BookOpen, Cable, Code2, FolderOpen, Gamepad2, Globe, HelpCircle, KeyRound, MessageCircleHeart, MessagesSquare, Music2, NotebookPen, Palette, Settings as SettingsIcon, ShieldAlert, SquareTerminal, Users, Video } from "lucide-react";
 import { desk, type AppId } from "../lib/store.ts";
 import { parseBackup, prefsFromClassic } from "../lib/backup.ts";
 
@@ -13,6 +13,7 @@ export const ICONS: Record<AppId, (size: number) => ReactNode> = {
   explorer: (s) => <FolderTree size={s} />,
   notes: (s) => <NotebookPen size={s} />,
   music: (s) => <Music2 size={s} />,
+  theater: (s) => <Clapperboard size={s} />,
   visualizer: (s) => <AudioWaveform size={s} />,
   create: (s) => <Palette size={s} />,
   browser: (s) => <Globe size={s} />,

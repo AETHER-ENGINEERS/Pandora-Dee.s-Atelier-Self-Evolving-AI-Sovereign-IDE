@@ -21,6 +21,7 @@ import { createTravel } from "./travel.mjs";
 import { createEngine } from "./engine.mjs";
 import { createVecMem } from "./vecmem.mjs";
 import { createMcpStdio } from "./mcpstdio.mjs";
+import { createTheater, PIECE_MAX } from "./theater.mjs";
 import { createHash } from "node:crypto";
 import { checkUpdates, download } from "./upstreams.mjs";
 import * as aicordAuth from "./oauth.mjs";
@@ -55,6 +56,11 @@ const MIME = {
   flac: "audio/flac",
   aac: "audio/aac",
   mp4: "video/mp4",
+  m4v: "video/mp4",
+  mkv: "video/x-matroska",
+  "3gp": "video/3gpp",
+  ogv: "video/ogg",
+  avi: "video/x-msvideo",
   webm: "video/webm",
   ttf: "font/ttf",
   otf: "font/otf",
@@ -120,6 +126,9 @@ export function deskServer() {
   const deskPorts = new Set();
   const vecmem = createVecMem({ dataDir: () => dataDir });
   const stdio = createMcpStdio();
+  // Media Theater: videos kept in the vault (see theater.mjs)
+  const theater = createTheater({ vaultDir: () => path.join(dataDir, "vault") });
+  setTimeout(() => dataDir && theater.sweep(), 30_000).unref?.();
   // the tool-server programs the locksmith allowed, by fingerprint (what runs, never the keys' values)
   const stdioFile = () => path.join(dataDir, "mcp-commands.json");
   const stdioAllowed = () => {
@@ -486,6 +495,34 @@ export function deskServer() {
       }
     }
     // Explorer: the desktop's places, and the computer when that's allowed (see files.mjs)
+    if (parts[0] === "theater") {
+      const p = Object.fromEntries(url.searchParams.entries());
+      try {
+        if (parts[1] === "list" && m === "GET") return send(res, 200, theater.list());
+        if (parts[1] === "thumb" && m === "GET") {
+          const f = theater.thumbFile(p.id);
+          if (!fs.existsSync(f)) return send(res, 404, "No thumbnail yet", "text/plain");
+          res.setHeader("Content-Type", "image/jpeg");
+          res.setHeader("Cache-Control", "max-age=31536000, immutable");
+          return fs.createReadStream(f).pipe(res);
+        }
+        if (parts[1] === "thumb" && m === "POST") return send(res, 200, (theater.setThumb(p.id, await readBody(req, 2_000_000), p.seconds), { ok: true }));
+        if (parts[1] === "upload") {
+          if (m === "GET") return send(res, 200, theater.uploadState(p));
+          if (m === "DELETE") return send(res, 200, (theater.dropUpload(p), { ok: true }));
+          if (m === "POST") return send(res, 200, theater.uploadPiece({ ...p, sha256: req.headers["x-sha256"] }, await readBody(req, PIECE_MAX)));
+        }
+        if (m === "POST") {
+          const b = JSON.parse((await readBody(req, 2_000_000)).toString("utf8") || "{}");
+          if (parts[1] === "have") return send(res, 200, { have: theater.have(b.items) });
+          if (parts[1] === "shelf") return send(res, 200, { shelf: theater.mkShelf(b.name) });
+          if (parts[1] === "fav") return send(res, 200, theater.setFav(b.id, Boolean(b.on)));
+          if (parts[1] === "move") return send(res, 200, { path: theater.moveTo(b.path, b.shelf) });
+        }
+      } catch (e) {
+        return send(res, e?.status ?? 400, { error: e instanceof Error ? e.message : String(e) });
+      }
+    }
     if (parts[0] === "files") {
       const F = files();
       const local = onThisPc(req);

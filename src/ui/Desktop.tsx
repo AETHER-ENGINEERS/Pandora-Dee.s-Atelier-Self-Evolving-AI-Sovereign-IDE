@@ -34,6 +34,7 @@ import { CastApp } from "../apps/Cast.tsx";
 import { FilesApp } from "../apps/Files.tsx";
 import { NotesApp } from "../apps/Notes.tsx";
 import { MusicApp } from "../apps/Music.tsx";
+import { TheaterApp } from "../apps/Theater.tsx";
 import { Visualizer, VisualizerApp } from "../apps/Visualizer.tsx";
 import "../lib/musicTalk.ts";
 import { JournalApp } from "../apps/Journal.tsx";
@@ -62,6 +63,7 @@ const BODIES: Record<AppId, () => ReactNode> = {
   explorer: () => <ExplorerApp />,
   notes: () => <NotesApp />,
   music: () => <MusicApp />,
+  theater: () => <TheaterApp />,
   visualizer: () => <VisualizerApp />,
   create: () => <CreateApp />,
   browser: () => <BrowserApp />,
