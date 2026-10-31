@@ -930,6 +930,11 @@ p { line-height: 1.55; margin: 0 0 10px; }
 .explorer-crumbs .link-btn { background: none; border: 0; padding: 2px 3px; color: inherit; cursor: pointer; border-radius: 4px; }
 .explorer-crumbs .link-btn:hover { background: var(--raise); }
 .explorer-places { width: auto; max-width: 40%; }
+/* narrow windows: the folder path gets its own line under the buttons, instead of a few squeezed letters */
+.explorer.narrow .explorer-bar { flex-wrap: wrap; }
+.explorer.narrow .explorer-crumbs { order: 10; flex-basis: 100%; padding: 2px 4px 0; }
+/* Games & Apps: the search box keeps room to type; the toolbar wraps before squeezing it */
+.lib-search { min-width: 9em; }
 .explorer-body { flex: 1; display: flex; min-height: 0; }
 .explorer-side { width: 200px; }
 .explorer-pc { display: flex; gap: 6px; align-items: flex-start; padding: 8px; border-top: 1px solid var(--line); }

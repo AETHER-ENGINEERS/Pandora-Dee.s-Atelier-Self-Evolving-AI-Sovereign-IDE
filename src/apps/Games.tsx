@@ -291,7 +291,7 @@ function Library() {
       <section className="lib-main">
         <div className="toolbar">
           <Search size={15} className="faint" />
-          <input className="input grow" style={{ maxWidth: 300 }} placeholder={`Search ${items.length}`} value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search" />
+          <input className="input grow lib-search" style={{ maxWidth: 300 }} placeholder={`Search ${items.length}`} value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search" />
           <select className="select" style={{ width: "auto" }} value={s.libSort} onChange={(e) => desk().set({ libSort: e.target.value as LibSort })} aria-label="Sort">
             <option value="name">A to Z</option>
             <option value="played">Recently played</option>
