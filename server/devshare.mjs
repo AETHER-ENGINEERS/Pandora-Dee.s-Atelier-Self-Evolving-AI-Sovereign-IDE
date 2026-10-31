@@ -80,9 +80,9 @@ export function createDevShare() {
     deliver(s);
   }
 
-  function ask(s, op, rel, extra) {
+  function ask(s, op, rel, extra, range) {
     const rid = `r${++seq}`;
-    s.queue.push({ rid, op, path: rel });
+    s.queue.push({ rid, op, path: rel, ...(range ? { range } : {}) });
     deliver(s);
     return { rid, ...extra };
   }
@@ -121,10 +121,10 @@ export function createDevShare() {
     });
   }
 
-  /** A file on the device, streamed through as the page sends it. */
-  function raw(p, res, download) {
+  /** A file on the device, streamed through as the page sends it; a byte range (for seeking in videos) when asked. */
+  function raw(p, res, download, range) {
     const { s, rel } = split(p);
-    const { rid } = ask(s, "raw", rel);
+    const { rid } = ask(s, "raw", rel, undefined, /^bytes=\d*-\d*$/.test(String(range || "")) ? String(range) : undefined);
     const timer = setTimeout(() => fail(rid, `${s.device} didn't send the file. Is its page still open?`), ANSWER_MS);
     pending.set(rid, { res, timer, download, name: rel.split("/").pop() || "file" });
     res.on("close", () => pending.delete(rid));
@@ -140,10 +140,16 @@ export function createDevShare() {
     const problem = req.headers["x-error"] ? decodeURIComponent(String(req.headers["x-error"])) : "";
     if (p.res) {
       if (problem) return req.resume(), p.res.writeHead(404, { "Content-Type": "application/json" }).end(JSON.stringify({ error: problem })), true;
-      const h = { "Content-Type": String(req.headers["content-type"] || "application/octet-stream"), "Cache-Control": "no-store" };
+      const h = { "Content-Type": String(req.headers["content-type"] || "application/octet-stream"), "Cache-Control": "no-store", "Accept-Ranges": "bytes" };
       if (req.headers["content-length"]) h["Content-Length"] = req.headers["content-length"];
       if (p.download) h["Content-Disposition"] = `attachment; filename*=UTF-8''${encodeURIComponent(p.name)}`;
-      p.res.writeHead(200, h);
+      // part of the file: the device says which bytes, out of how many
+      const size = Number(req.headers["x-size"]), start = Number(req.headers["x-start"]), end = Number(req.headers["x-end"]);
+      if (req.headers["x-start"] !== undefined && Number.isFinite(size)) {
+        if (!(start <= end && start < size)) return req.resume(), p.res.writeHead(416, { "Content-Range": `bytes */${size}` }).end(), true;
+        h["Content-Range"] = `bytes ${start}-${end}/${size}`;
+        p.res.writeHead(206, h);
+      } else p.res.writeHead(200, h);
       req.pipe(p.res);
       return new Promise((r) => req.on("end", () => r(true)));
     }

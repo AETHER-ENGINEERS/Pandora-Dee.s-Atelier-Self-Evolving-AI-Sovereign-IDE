@@ -48,13 +48,24 @@ async function walk(src: Source, rel: string): Promise<{ dir?: DirHandle; file?:
   return { dir };
 }
 
-async function answer(s: MyShare & { src: Source }, r: { rid: string; op: string; path: string }) {
+async function answer(s: MyShare & { src: Source }, r: { rid: string; op: string; path: string; range?: string }) {
   const at = `/api/devshare/reply?id=${s.id}&token=${s.token}&rid=${encodeURIComponent(r.rid)}`;
   try {
     const hit = await walk(s.src, r.path);
     if (r.op === "raw") {
       if (!hit.file) throw new Error("That's a folder.");
-      await fetch(at, { method: "POST", headers: { "Content-Type": hit.file.type || "application/octet-stream" }, body: hit.file });
+      const f = hit.file;
+      const type = f.type || "application/octet-stream";
+      // a byte range (a video being sought): just those bytes, and which ones they are
+      const m = r.range ? /^bytes=(\d*)-(\d*)$/.exec(r.range) : null;
+      if (m && f.size) {
+        const start = m[1] ? Number(m[1]) : Math.max(0, f.size - Number(m[2]));
+        const end = m[1] && m[2] ? Math.min(Number(m[2]), f.size - 1) : f.size - 1;
+        const part = start <= end ? f.slice(start, end + 1) : new Blob([]);
+        await fetch(at, { method: "POST", headers: { "Content-Type": type, "X-Size": String(f.size), "X-Start": String(start), "X-End": String(end) }, body: part });
+        return;
+      }
+      await fetch(at, { method: "POST", headers: { "Content-Type": type }, body: f });
       return;
     }
     let entries: { name: string; dir: boolean; size: number; mtime: number }[] = [];

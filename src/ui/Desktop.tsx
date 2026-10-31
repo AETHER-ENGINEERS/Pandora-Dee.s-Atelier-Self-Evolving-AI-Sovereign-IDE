@@ -16,6 +16,7 @@ import { Classic } from "./Classic.tsx";
 import { Dock } from "./Dock.tsx";
 import { VolumeControl } from "./Volume.tsx";
 import { AskHost } from "./Ask.tsx";
+import { SharedIn } from "./SharedIn.tsx";
 import { TooltipHost } from "./Tooltip.tsx";
 import { startBackupSchedule } from "../lib/serverBackup.ts";
 import { applyInbound } from "../lib/inbound.ts";
@@ -221,6 +222,7 @@ export function Desktop() {
       {drop ? <div className="drop-hint">Drop a character backup to bring them in</div> : null}
       <ContextMenuHost />
       <AskHost />
+      <SharedIn />
       <PickerHost />
       <TooltipHost />
       {s.toast ? (

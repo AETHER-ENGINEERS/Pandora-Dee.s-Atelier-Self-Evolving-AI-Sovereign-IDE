@@ -387,7 +387,7 @@ export function deskServer() {
         if (m === "GET" && isDevicePath(asked)) {
           // shared by another device: listed and sent by that device's page
           if (parts[1] === "list") return send(res, 200, await devices.list(asked));
-          if (parts[1] === "raw") return devices.raw(asked, res, Boolean(url.searchParams.get("download")));
+          if (parts[1] === "raw") return devices.raw(asked, res, Boolean(url.searchParams.get("download")), req.headers.range);
           if (parts[1] === "stat") {
             const up = asked.includes("/") ? asked.slice(0, asked.lastIndexOf("/")) : asked;
             if (up === asked) return send(res, 200, { path: asked, name: asked, dir: true, size: 0, mtime: 0, ctime: 0, ext: "" });

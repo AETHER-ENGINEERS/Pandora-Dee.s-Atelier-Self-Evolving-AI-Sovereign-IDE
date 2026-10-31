@@ -11,7 +11,23 @@ const OFFLINE = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name
 <p><button onclick="location.reload()" style="font:inherit;padding:10px 18px;border-radius:10px;border:1px solid #6c5a9c;background:#2a2142;color:inherit">Try again</button></p></div></body></html>`;
 
 self.addEventListener("fetch", (e) => {
+  // "Share to PDA SEASIDE" from the phone's share menu: the files wait here (in this browser only) until the
+  // desktop's page opens and asks what to do with them
+  if (e.request.method === "POST" && new URL(e.request.url).pathname === "/share-target") return e.respondWith(sharedIn(e.request));
   // only page loads: everything else goes straight to the network as usual
   if (e.request.mode !== "navigate") return;
   e.respondWith(fetch(e.request).catch(() => new Response(OFFLINE, { headers: { "Content-Type": "text/html; charset=utf-8" } })));
 });
+
+async function sharedIn(request) {
+  const id = Date.now().toString(36);
+  try {
+    const form = await request.formData();
+    const files = form.getAll("files").filter((f) => typeof f === "object" && f && "name" in f);
+    const box = await caches.open("pdd-shared-in");
+    await Promise.all(files.map((f, i) => box.put(`/__shared-in/${id}/${i}`, new Response(f, { headers: { "Content-Type": f.type || "application/octet-stream", "X-Name": encodeURIComponent(f.name), "X-Modified": String(f.lastModified || Date.now()) } }))));
+  } catch {
+    /* nothing readable came: the page says so */
+  }
+  return Response.redirect(`/?shared-in=${id}`, 303);
+}
