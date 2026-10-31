@@ -327,7 +327,13 @@ p { line-height: 1.55; margin: 0 0 10px; }
 
 /* ---------- settings ---------- */
 .settings-nav .item { padding: 8px 10px; }
-.section { padding: 16px 20px 30px; overflow-y: auto; flex: 1; }
+.section { padding: 16px 20px 30px; overflow-y: auto; flex: 1; min-height: 0; overscroll-behavior: contain; }
+/* narrow windows (phones): the sections become a strip of tabs along the top, and the settings get the full width */
+.settings-split.narrow { flex-direction: column; }
+.settings-split.narrow .settings-nav { width: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+.settings-split.narrow .settings-nav .list { display: flex; gap: 2px; overflow-x: auto; overflow-y: hidden; flex: none; padding: 4px 6px; scrollbar-width: thin; }
+.settings-split.narrow .settings-nav .item { width: auto; flex: none; overflow: visible; }
+.settings-split.narrow .section { padding: 12px 14px 30px; }
 .section > h2 { margin-bottom: 4px; }
 .section > .lead { color: var(--muted); margin-bottom: 18px; }
 .seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 9px; overflow: hidden; }

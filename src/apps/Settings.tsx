@@ -1,7 +1,7 @@
 import { EngineVoicePicker, ListeningSettings, VoiceEnginesEditor } from "../ui/VoiceEngines.tsx";
 import { remoteFor } from "../lib/prefs.ts";
 import { Num } from "../ui/Num.tsx";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { desk, uid, useDesk, type Account } from "../lib/store.ts";
 import { credential, listModels, explainError, pickModel, PRESETS, sampleRequest, scopeOf, SCOPE_LABEL, type Connection } from "../lib/model.ts";
@@ -59,12 +59,24 @@ export function SettingsApp() {
     window.addEventListener("pdd-settings", on);
     return () => window.removeEventListener("pdd-settings", on);
   }, []);
+  // on a narrow window the sections are a strip of tabs: keep the chosen one in view
+  const tabs = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const list = tabs.current;
+    const on = list?.querySelector<HTMLElement>(".item.on");
+    if (!list || !on || width === 0 || width >= 600) return;
+    list.scrollLeft = on.offsetLeft - (list.clientWidth - on.offsetWidth) / 2;
+  }, [section, width]);
   return (
-    <div ref={ref} className={`split${width < 600 ? " narrow" : ""}`}>
+    <div ref={ref} className={`split settings-split${width < 600 ? " narrow" : ""}`}>
       <aside className="side settings-nav">
-        <div className="list">
+        <div className="list" ref={tabs}>
           {SECTIONS.map((x) => (
-            <button key={x.id} className={`item${section === x.id ? " on" : ""}`} onClick={() => (setSection(x.id), sessionStorage.setItem("pdd-settings-section", x.id))}>
+            <button
+              key={x.id}
+              className={`item${section === x.id ? " on" : ""}`}
+              onClick={() => (setSection(x.id), sessionStorage.setItem("pdd-settings-section", x.id))}
+            >
               {x.label}
             </button>
           ))}
