@@ -34,6 +34,8 @@ npm run dev
 
 Then open http://localhost:15693.
 
+**As its own app on the computer** (in progress): `npm run app` opens PDA SEASIDE in its own window, where the Browser holds real browser tabs (real sound, video and scrolling) instead of a picture of the page. It opens the desktop if it's already running, or starts it. Windows may ask about the firewall: allow **Private networks** only.
+
 ## 📱 On your phone (and your other devices)
 
 **As an app:** reach the desktop over https and install it (Help → Install as an app, or the browser's "Install app").

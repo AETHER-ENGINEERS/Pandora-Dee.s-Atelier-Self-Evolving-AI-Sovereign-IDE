@@ -3,8 +3,10 @@
   "private": true,
   "version": "3.16.0",
   "type": "module",
+  "main": "shell/main.mjs",
   "scripts": {
     "dev": "vite",
+    "app": "electron .",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
@@ -39,6 +41,7 @@
     "@types/react-dom": "^19.1.5",
     "@types/three": "0.186.0",
     "@vitejs/plugin-react": "^4.5.0",
+    "electron": "44.9.3",
     "typescript": "^5.8.3",
     "vite": "^6.3.5"
   }

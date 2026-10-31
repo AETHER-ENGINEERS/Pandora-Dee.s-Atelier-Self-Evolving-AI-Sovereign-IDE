@@ -11,6 +11,7 @@ import type { BrowserPrefs, BrowserTab } from "../lib/browserPrefs.ts";
 import { copyText } from "../lib/clipboard.ts";
 import { askText } from "../ui/Ask.tsx";
 import { FullBrowser } from "./FullBrowser.tsx";
+import { appBrowser, NativeBrowser } from "./NativeBrowser.tsx";
 
 /**
  * A tabbed browser. Pages come through the desktop (most sites refuse to be framed directly) into a sandboxed
@@ -54,6 +55,8 @@ export function browse(url: string, newTab = true) {
 export function BrowserApp() {
   const mode = useDesk((s) => s.browser.mode ?? "full");
   const home = useDesk((s) => s.browser.home);
+  // in the PDA SEASIDE app: real browser tabs; in a plain browser tab (phones, other computers): the streamed engine
+  if (mode === "full" && appBrowser()) return <NativeBrowser home={home} onReader={() => setPrefs({ mode: "reader" })} />;
   if (mode === "full") return <FullBrowser home={home} onReader={() => setPrefs({ mode: "reader" })} />;
   return <ReaderBrowser />;
 }

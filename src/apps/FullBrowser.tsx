@@ -2,11 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, BookOpenText, Cpu, Keyboard, Plus, RotateCw, X } from "lucide-react";
 import { desk } from "../lib/store.ts";
 import { EnginePanel } from "./BrowserEngine.tsx";
+import { appBrowser } from "./NativeBrowser.tsx";
 
 /** Open an address in the full browser, in a new tab, and bring the Browser window forward. */
 export async function openInFullBrowser(url: string) {
   desk().set({ browser: { ...desk().browser, mode: "full" } });
   desk().openApp("browser");
+  // the app's own browser when there is one
+  const app = appBrowser();
+  if (app) return void (await app.call({ op: "open", url }));
   await post({ op: "open", url });
 }
 
