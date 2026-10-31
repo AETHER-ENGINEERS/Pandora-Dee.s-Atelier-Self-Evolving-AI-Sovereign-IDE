@@ -4,7 +4,7 @@ import { ViaPicker } from "../ui/Via.tsx";
 import { askUser } from "../ui/Ask.tsx";
 import { VIA_OPTIONS } from "../lib/outbound.ts";
 import { desk, uid, useDesk, type Bridge, type BridgeId, type Exposure, type McpServer, type SshHost } from "../lib/store.ts";
-import { connectServer, disconnect, links } from "../lib/connections.ts";
+import { allowStdio, connectServer, disconnect, links, stdioStatus, type StdioStatus } from "../lib/connections.ts";
 import { startBridge, stopBridge } from "../lib/bridges.ts";
 import { allowed, FEATURES, type Feature } from "../lib/privacy.ts";
 import { scopeOf, SCOPE_LABEL } from "../lib/model.ts";
@@ -348,6 +348,48 @@ const EXPOSURES: { id: Exposure; label: string; detail: string }[] = [
   { id: "hidden", label: "Hidden", detail: "Connected, but not callable" },
 ];
 
+/** A program server: the locksmith allows it (this exact command, folder and settings), sees what it printed lately. */
+function StdioControls({ m }: { m: McpServer }) {
+  const [st, setSt] = useState<StdioStatus | null>(null);
+  const [problem, setProblem] = useState("");
+  const look = () => void stdioStatus(m).then(setSt, (e: Error) => setProblem(e.message));
+  useEffect(look, [m.id, JSON.stringify(m.stdio)]); // eslint-disable-line react-hooks/exhaustive-deps
+  const env = Object.entries(m.stdio?.env ?? {});
+  const act = (allow: boolean) =>
+    void allowStdio(m, allow).then(
+      () => (setProblem(""), look()),
+      (e: Error) => setProblem(e.message),
+    );
+  return (
+    <div className="small" style={{ marginTop: 6 }}>
+      {m.stdio?.cwd ? <div className="mono faint">in {m.stdio.cwd}</div> : null}
+      {env.length ? <div className="mono faint">with {env.map(([k, v]) => `${k}=${/\$\{/.test(v) ? v : "…"}`).join(" ")}</div> : null}
+      <div className="row" style={{ gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+        {st?.allowed ? (
+          <>
+            <span className="muted">Allowed{st.running ? ", running" : st.exited ? `, ${st.exited}` : ""}.</span>
+            <button className="btn small" onClick={() => act(false)}>
+              Stop allowing
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="muted">{m.owner ? `${desk().character(m.owner)?.short ?? m.owner} asks` : "It asks"} to run this program on this computer, with the same access you have.</span>
+            <button className="btn small primary" onClick={() => act(true)}>
+              Allow and start
+            </button>
+          </>
+        )}
+        <button className="btn small" onClick={look}>
+          Refresh
+        </button>
+      </div>
+      {problem ? <div className="small danger-text">{problem}</div> : null}
+      {st?.log.length ? <pre className="mono small faint" style={{ whiteSpace: "pre-wrap", maxHeight: 120, overflow: "auto", margin: "6px 0 0" }}>{st.log.join("\n")}</pre> : null}
+    </div>
+  );
+}
+
 function McpPanel() {
   const s = useDesk();
   useLinks();
@@ -370,7 +412,7 @@ function McpPanel() {
     <>
       <h2>Tool servers (MCP)</h2>
       <p className="lead small">More tools for the characters, from any MCP server that speaks streamable HTTP. Servers on this computer work right away; others need permission. The same mcp.json as Classic can be brought in or saved. A character's own mcp.json (in her files) adds servers only she uses.</p>
-      {s.mcp.some((m) => scopeOf(m.url) !== "device") ? <Permission feature="remote-tools" /> : null}
+      {s.mcp.some((m) => !m.stdio && scopeOf(m.url) !== "device") ? <Permission feature="remote-tools" /> : null}
       <div className="row" style={{ marginBottom: 12 }}>
         <button className="btn small" onClick={() => fileRef.current?.click()}>
           <Upload size={13} /> Bring in mcp.json
@@ -386,7 +428,7 @@ function McpPanel() {
           <div key={m.id} className={`conn${m.enabled ? "" : " off"}`}>
             <div className="row">
               <b>{m.name}</b>
-              <span className="pill">{SCOPE_LABEL[scopeOf(m.url)]}</span>
+              <span className="pill">{m.stdio ? "Program on this computer" : SCOPE_LABEL[scopeOf(m.url)]}</span>
               {m.owner ? (
                 <span className="pill" title="From her mcp.json; only she uses it. Edit her file to change it.">
                   {s.character(m.owner)?.name ?? m.owner}'s own
@@ -426,10 +468,12 @@ function McpPanel() {
               </button>
             </div>
             <div className="small mono muted" style={{ marginTop: 4 }}>
-              {m.url}
+              {m.stdio ? [m.stdio.command, ...(m.stdio.args ?? [])].join(" ") : m.url}
             </div>
             <ErrorLine k={`mcp:${m.id}`} />
-            <div style={{ marginTop: 8 }}>
+            {m.stdio ? <StdioControls m={m} /> : null}
+            {/* a program on this computer is reached directly, not through a connection method */}
+            <div style={{ marginTop: 8, display: m.stdio ? "none" : undefined }}>
               <ViaPicker
                 value={m.via}
                 inherit={`Same as the default (Connections → Web): ${VIA_OPTIONS.find((o) => o.id === s.net.via)?.label}`}

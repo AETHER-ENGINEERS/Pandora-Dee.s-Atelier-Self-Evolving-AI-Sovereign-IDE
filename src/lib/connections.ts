@@ -39,7 +39,56 @@ function emit(key: string, s: LinkState) {
 const keyOf = (name: string) => () => (name ? desk().env[name] ?? "" : "");
 
 export function mcpAllowed(server: McpServer) {
-  return scopeOf(server.url) === "device" || allowed(desk().privacy, "remote-tools");
+  return Boolean(server.stdio) || scopeOf(server.url) === "device" || allowed(desk().privacy, "remote-tools");
+}
+
+/** A program server's spec as the desktop's server sees it, for allowing, starting and asking about it. */
+const stdioBody = (server: McpServer, extra: Record<string, unknown> = {}) => ({
+  id: server.id,
+  name: server.name,
+  owner: server.owner ?? "",
+  command: server.stdio?.command,
+  args: server.stdio?.args ?? [],
+  env: server.stdio?.env ?? {},
+  cwd: server.stdio?.cwd ?? "",
+  ...extra,
+});
+
+async function stdioCall<T>(op: string, body: Record<string, unknown>): Promise<T> {
+  const r = await fetch(`/api/mcp-stdio/${op}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error((j as { error?: string }).error || `The desktop answered ${r.status}.`);
+  return j as T;
+}
+
+export type StdioStatus = { running: boolean; allowed: boolean; exited?: string | null; log: string[] };
+export const stdioStatus = (server: McpServer) => stdioCall<StdioStatus>("status", stdioBody(server));
+
+/** The locksmith allows (or stops allowing) this exact program, from the desktop's own computer. */
+export async function allowStdio(server: McpServer, allow = true) {
+  await stdioCall("allow", stdioBody(server, { allow }));
+  if (allow) await connectServer(server);
+  else {
+    await stdioCall("stop", { id: server.id }).catch(() => undefined);
+    disconnect(`mcp:${server.id}`);
+  }
+}
+
+/** Start the program with its ${KEY}s filled in from Keys, and give back the address to talk to it on. */
+async function startStdio(server: McpServer) {
+  const st = await stdioStatus(server);
+  if (!st.allowed) {
+    // what runs under this name changed (or was never allowed): nothing of it keeps running meanwhile
+    await stdioCall("stop", { id: server.id }).catch(() => undefined);
+    clients.delete(`mcp:${server.id}`);
+  }
+  if (!st.allowed) throw Object.assign(new Error(`Waiting for your OK: it runs ${server.stdio?.command} on this computer. Connections → Tool servers → Allow.`), { waiting: true });
+  const env = desk().env;
+  const names = new Set<string>();
+  for (const v of [...(server.stdio?.args ?? []), ...Object.values(server.stdio?.env ?? {})]) for (const m of v.matchAll(/\$\{([A-Za-z0-9_]+)\}/g)) names.add(m[1]);
+  const values = Object.fromEntries([...names].filter((n) => env[n] != null).map((n) => [n, env[n]]));
+  await stdioCall("start", stdioBody(server, { values }));
+  return `/api/mcp-stdio/rpc/${encodeURIComponent(server.id)}`;
 }
 
 export async function connectServer(server: McpServer) {
@@ -55,7 +104,9 @@ export async function connectServer(server: McpServer) {
       for (const [k, v] of Object.entries(server.headers ?? {})) out[k] = v.replace(/\$\{([A-Za-z0-9_]+)\}/g, (_, n: string) => env[n] ?? "");
       return out;
     };
-    const c = await new McpClient(server.name, server.url, keyOf(server.keyName), (server.timeout ?? 60) * 1000, headers, () => server.via ?? desk().net.via).connect();
+    const url = server.stdio ? await startStdio(server) : server.url;
+    const via = () => (server.stdio ? "browser" : server.via ?? desk().net.via);
+    const c = await new McpClient(server.name, url, keyOf(server.keyName), (server.timeout ?? 60) * 1000, headers, via).connect();
     clients.set(key, c);
     emit(key, { state: "on", error: "", tools: c.tools.length, detail: c.serverName });
   } catch (e) {

@@ -27,7 +27,7 @@ function line(m: McpServer) {
   const st = links.state(`mcp:${m.id}`);
   const state = !m.enabled ? "off" : st.state === "on" ? "connected" : st.state;
   const n = st.state === "on" ? st.tools : 0;
-  return `${m.name.padEnd(16)} ${state.padEnd(10)} ${String(n).padStart(3)} tool${n === 1 ? " " : "s"}  ${(m.exposure || "codemode").padEnd(8)} ${m.url}${m.owner ? "  (yours)" : ""}${st.error ? `\n    ${st.error}` : ""}`;
+  return `${m.name.padEnd(16)} ${state.padEnd(10)} ${String(n).padStart(3)} tool${n === 1 ? " " : "s"}  ${(m.exposure || "codemode").padEnd(8)} ${m.stdio ? [m.stdio.command, ...(m.stdio.args ?? [])].join(" ") : m.url}${m.owner ? "  (yours)" : ""}${st.error ? `\n    ${st.error}` : ""}`;
 }
 
 async function settle(id: string) {

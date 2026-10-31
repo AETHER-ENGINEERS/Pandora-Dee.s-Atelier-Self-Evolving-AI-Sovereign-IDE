@@ -388,7 +388,7 @@ function MenuBar({ onLoad }: { onLoad: () => void }) {
     ...(s.bridges.discord.enabled && allowed(s.privacy, "bridges") ? ["Discord"] : []),
     ...(s.bridges.vector.enabled && allowed(s.privacy, "bridges") ? ["Vector"] : []),
     ...(allowed(s.privacy, "web") ? ["web tools"] : []),
-    ...s.mcp.filter((m) => m.enabled && scopeOf(m.url) !== "device" && allowed(s.privacy, "remote-tools")).map((m) => `${m.name} (MCP)`),
+    ...s.mcp.filter((m) => m.enabled && !m.stdio && scopeOf(m.url) !== "device" && allowed(s.privacy, "remote-tools")).map((m) => `${m.name} (MCP)`),
     ...(s.sshOn && allowed(s.privacy, "ssh") && s.sshHosts.length ? ["SSH"] : []),
     ...(s.api.on && s.api.lan && allowed(s.privacy, "api") ? ["inbound API on Wi-Fi"] : []),
     ...(s.backup.url && allowed(s.privacy, "backup") ? ["backups"] : []),

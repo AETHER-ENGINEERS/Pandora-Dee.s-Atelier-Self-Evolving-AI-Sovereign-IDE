@@ -20,6 +20,8 @@ import { createDevShare, isDevicePath } from "./devshare.mjs";
 import { createTravel } from "./travel.mjs";
 import { createEngine } from "./engine.mjs";
 import { createVecMem } from "./vecmem.mjs";
+import { createMcpStdio } from "./mcpstdio.mjs";
+import { createHash } from "node:crypto";
 import { checkUpdates, download } from "./upstreams.mjs";
 import * as aicordAuth from "./oauth.mjs";
 import { findCurl, findPython, forgetPrograms } from "./programs.mjs";
@@ -117,6 +119,17 @@ export function deskServer() {
   // the full browser: a real Chromium-family engine shown live in the Browser window (see engine.mjs)
   const deskPorts = new Set();
   const vecmem = createVecMem({ dataDir: () => dataDir });
+  const stdio = createMcpStdio();
+  // the tool-server programs the locksmith allowed, by fingerprint (what runs, never the keys' values)
+  const stdioFile = () => path.join(dataDir, "mcp-commands.json");
+  const stdioAllowed = () => {
+    try {
+      return JSON.parse(fs.readFileSync(stdioFile(), "utf8"));
+    } catch {
+      return {};
+    }
+  };
+  const stdioPrint = (b) => createHash("sha256").update(JSON.stringify([String(b.command || ""), (b.args ?? []).map(String), String(b.cwd || ""), Object.entries(b.env ?? {}).map(([k, v]) => [k, String(v)]).sort()])).digest("hex").slice(0, 32);
   const engine = createEngine({ dataDir: () => dataDir, getChoice: () => readConfig().browserEngine, deskPorts: () => [...deskPorts] });
   const withDevices = (o) => ({ ...o, devices: devices.places() });
   const library = () => {
@@ -252,6 +265,42 @@ export function deskServer() {
     const parts = url.pathname.split("/").filter(Boolean).slice(1); // after "api"
     const m = req.method;
     const L = library();
+    if (parts[0] === "mcp-stdio") {
+      try {
+        if (parts[1] === "rpc" && m === "POST") {
+          const msg = JSON.parse((await readBody(req, 20_000_000)).toString("utf8") || "{}");
+          const one = (x) => stdio.send(String(parts[2] || ""), x);
+          const out = Array.isArray(msg) ? (await Promise.all(msg.map(one))).filter(Boolean) : await one(msg);
+          if (out == null || (Array.isArray(out) && !out.length)) return send(res, 202, "", "text/plain");
+          return send(res, 200, out);
+        }
+        if (parts[1] === "rpc") return send(res, 405, { error: "Use POST." });
+        if (m === "GET") return send(res, 200, { running: stdio.list(), allowed: stdioAllowed() });
+        const b = JSON.parse((await readBody(req, 200_000)).toString("utf8") || "{}");
+        // what she asked to run, as she wrote it (${NAME} still in place): that's what gets allowed
+        const asked = { command: b.command, args: b.args ?? [], cwd: b.cwd ?? "", env: b.env ?? {} };
+        const print = stdioPrint(asked);
+        if (parts[1] === "allow" && m === "POST") {
+          if (!onThisPc(req)) return send(res, 403, { error: "Programs are allowed from the desktop's own computer." });
+          const all = stdioAllowed();
+          if (b.allow === false) delete all[print];
+          else all[print] = { ...asked, name: String(b.name || ""), owner: String(b.owner || ""), at: Date.now() };
+          fs.writeFileSync(stdioFile(), JSON.stringify(all, null, 2));
+          return send(res, 200, { print, allowed: b.allow !== false });
+        }
+        if (parts[1] === "start" && m === "POST") {
+          if (!stdioAllowed()[print]) return send(res, 403, { error: "This program hasn't been allowed yet.", print });
+          // the keys' values, filled in by the page from Keys, replace their ${NAME}s only now
+          const values = b.values ?? {};
+          const fill = (v) => String(v).replace(/\$\{([A-Za-z0-9_]+)\}/g, (_, n) => String(values[n] ?? process.env[n] ?? ""));
+          return send(res, 200, stdio.start({ id: String(b.id || ""), command: asked.command, args: asked.args.map(fill), cwd: asked.cwd, env: Object.fromEntries(Object.entries(asked.env).map(([k, v]) => [k, fill(v)])) }));
+        }
+        if (parts[1] === "stop" && m === "POST") return send(res, 200, { stopped: stdio.stop(String(b.id || "")) });
+        if (parts[1] === "status" && m === "POST") return send(res, 200, { ...stdio.status(String(b.id || "")), print, allowed: Boolean(stdioAllowed()[print]) });
+      } catch (e) {
+        return send(res, e?.status ?? 400, { error: e instanceof Error ? e.message : String(e) });
+      }
+    }
     if (parts[0] === "vecmem" && m === "POST") {
       try {
         return send(res, 200, vecmem.run(JSON.parse((await readBody(req, 50_000_000)).toString("utf8") || "{}")));
@@ -824,9 +873,9 @@ export function deskServer() {
     },
     configureServer(server) {
       // the full browser closes with the desktop, so its profile is free next time
-      server.httpServer?.once("close", () => void engine.close());
+      server.httpServer?.once("close", () => (void engine.close(), stdio.closeAll()));
       // (a listener here replaces Node's own exit on Ctrl+C, so it exits itself once the engine is closed)
-      for (const sig of ["SIGINT", "SIGTERM"]) process.once(sig, () => void Promise.resolve(engine.close()).finally(() => process.exit(130)));
+      for (const sig of ["SIGINT", "SIGTERM"]) process.once(sig, () => (stdio.closeAll(), void Promise.resolve(engine.close()).finally(() => process.exit(130))));
       server.middlewares.use(handle);
     },
     configurePreviewServer(server) {

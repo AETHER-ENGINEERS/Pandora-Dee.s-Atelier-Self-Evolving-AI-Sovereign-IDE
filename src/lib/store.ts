@@ -148,7 +148,12 @@ export type McpServer = {
   via?: Via;
   /** A character's own server (from her mcp.json): only she gets its tools. Empty: every character. */
   owner?: string;
+  /** A program the desktop runs and talks to over its stdin/stdout (mcp.json "command"), once the locksmith allows it.
+   *  ${KEY_NAME} in args and env come from Keys. */
+  stdio?: StdioSpec;
 };
+
+export type StdioSpec = { command: string; args?: string[]; env?: Record<string, string>; cwd?: string };
 
 export type WebPrefs = { search: "auto" | "ollama" | "searxng" | "ddg" | "wikipedia"; searx: string };
 
