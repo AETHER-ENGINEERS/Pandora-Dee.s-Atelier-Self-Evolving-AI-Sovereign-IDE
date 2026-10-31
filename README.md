@@ -117,3 +117,5 @@ node vector-host/build.mjs --vector <checkout of github.com/VectorPrivacy/Vector
 It needs Node, Rust, and on Windows Microsoft's C++ build tools. Without Visual Studio (or room on C:), [portable MSVC](https://gist.github.com/mmozeiko/7f3162ec2988e81e56d5c4e22cde9977) unpacks Microsoft's compiler and SDK into any folder: pass it with `--msvc <folder>`. `--target` and `--cargo-home` put the build (5–10 GB) and cargo's downloads on another drive. It builds without Whisper and Tor, with lighter optimization than Vector's releases.
 
 Original characters are shared under the AETHER-ENGINEERS Multiversal License. Jade and Jade Vault are their creator's work. Games by SunkissedButterfly (websim.ai).
+
+## CONTACT US: [![Vector Messenger](https://shields.io)](https://vectorapp.io/profile/npub1vrte0qmajxq7f805h02s2lle9q9czpcnzezasf8eydnz3mk63ansrwzk8p)
