@@ -34,6 +34,8 @@ import { openSongInfo, SongInfoHost } from "../ui/SongInfo.tsx";
 import { copyText } from "../lib/clipboard.ts";
 import { askText } from "../ui/Ask.tsx";
 
+const PAGE = 400;
+
 type View = "songs" | "make" | "albums" | "artists" | "world" | "radio" | "find" | "folders";
 const time = (s: number) => (Number.isFinite(s) && s > 0 ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}` : "–:––");
 const setPrefs = (p: Partial<ReturnType<typeof desk>["music"]>) => desk().set({ music: { ...desk().music, ...p } });
@@ -56,7 +58,18 @@ export function MusicApp() {
     if (!m.loaded) void loadLibrary();
   }, [m.loaded]);
 
-  const songs = useMemo(() => searchLibrary(q, 5000), [q, m.tracks]); // eslint-disable-line react-hooks/exhaustive-deps
+  const songs = useMemo(() => searchLibrary(q, Infinity), [q, m.tracks]); // eslint-disable-line react-hooks/exhaustive-deps
+  // the songs list draws a few hundred at a time and adds more as you scroll near the end
+  const [shown, setShown] = useState(PAGE);
+  useEffect(() => setShown(PAGE), [q]);
+  const more = useRef<HTMLTableRowElement>(null);
+  useEffect(() => {
+    const el = more.current;
+    if (!el) return;
+    const io = new IntersectionObserver((e) => e.some((x) => x.isIntersecting) && setShown((n) => n + PAGE), { rootMargin: "600px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [shown, songs, view]);
   const albums = useMemo(() => {
     const map = new Map<string, Track[]>();
     for (const t of songs) {
@@ -209,7 +222,7 @@ export function MusicApp() {
               songs.length ? (
                 <table className="songs">
                   <tbody>
-                    {songs.map((t, i) => (
+                    {songs.slice(0, shown).map((t, i) => (
                       <tr
                         key={t.id}
                         className={cur?.kind === "track" && cur.id === t.id ? "on" : ""}
@@ -227,6 +240,13 @@ export function MusicApp() {
                         <td className="faint num-cell">{time(t.duration)}</td>
                       </tr>
                     ))}
+                    {shown < songs.length ? (
+                      <tr ref={more}>
+                        <td colSpan={5} className="faint small">
+                          Loading more… ({shown} of {songs.length})
+                        </td>
+                      </tr>
+                    ) : null}
                   </tbody>
                 </table>
               ) : (
