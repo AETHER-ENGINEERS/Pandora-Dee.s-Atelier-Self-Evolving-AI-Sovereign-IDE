@@ -9,6 +9,7 @@ import { scopeOf } from "../lib/model.ts";
 import { allowed } from "../lib/privacy.ts";
 import { resumeBridges } from "../lib/bridges.ts";
 import { connectServer, syncCharacterMcp } from "../lib/connections.ts";
+import { Cats } from "./Cats.tsx";
 import { startTravel } from "../lib/travel.ts";
 import { useSensors } from "./sensors.ts";
 import { LockScreen } from "./LockScreen.tsx";
@@ -221,6 +222,7 @@ export function Desktop() {
           </Window>
         ))}
       </div>
+      <Cats />
       <Dock front={front} phone={phone} />
       {drop ? <div className="drop-hint">Drop a character backup to bring them in</div> : null}
       <ContextMenuHost />

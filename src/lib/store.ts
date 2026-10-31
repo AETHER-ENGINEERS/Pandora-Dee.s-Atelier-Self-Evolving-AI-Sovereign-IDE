@@ -129,6 +129,24 @@ export const BRIDGE_DEFAULT = (id: BridgeId): Bridge => ({
 
 export type Exposure = "codemode" | "deferred" | "direct" | "hidden";
 
+export type Cat = { id: string; name: string; coat: string; marks: string; belly: string; eyes: string };
+
+export const CAT_COATS: { label: string; coat: string; marks: string; belly: string }[] = [
+  { label: "Grey tabby", coat: "#8a8794", marks: "#4e4b57", belly: "#d9d4de" },
+  { label: "Orange tabby", coat: "#e3954a", marks: "#b05f22", belly: "#f6dcc0" },
+  { label: "Black", coat: "#2b2733", marks: "#1a1720", belly: "#3a3542" },
+  { label: "White", coat: "#f3f0f4", marks: "#d8d2dc", belly: "#ffffff" },
+  { label: "Brown tabby", coat: "#9a7656", marks: "#5d4430", belly: "#e2d2c0" },
+  { label: "Cream", coat: "#ecd9b4", marks: "#cfb88d", belly: "#faf1df" },
+  { label: "Blue-grey", coat: "#7d8aa0", marks: "#5f6b80", belly: "#c9d0dc" },
+];
+
+export const CATS_DEFAULT: { on: boolean; size: number; list: Cat[] } = {
+  on: false,
+  size: 1,
+  list: [{ id: "mrrowr-murrr", name: "Mrrowr-murrr", coat: "#8a8794", marks: "#4e4b57", belly: "#d9d4de", eyes: "#a6d96a" }],
+};
+
 export type McpServer = {
   id: string;
   name: string;
@@ -463,6 +481,8 @@ export type State = {
   /** Shortcut bindings the person changed, by action id. */
   keys: Record<string, string>;
   touch: { edgeSwipe: boolean; doubleTapScene: boolean; longPress: boolean };
+  /** Cats on the desktop; the first one listed is the senior cat. */
+  cats: { on: boolean; size: number; list: Cat[] };
   /** Where each character stands in the scene, as shares of the screen (feet position). */
   spots: Record<string, { x: number; y: number }>;
   web: WebPrefs;
@@ -658,6 +678,7 @@ const INITIAL: State = {
   browser: BROWSER_DEFAULT,
   keys: {},
   touch: { edgeSwipe: true, doubleTapScene: true, longPress: true },
+  cats: CATS_DEFAULT,
   spots: {},
   web: { search: "auto", searx: "" },
   net: { via: "desktop" },
@@ -879,6 +900,7 @@ export const useDesk = create<Store>()(
           wins: { ...defaultWins(), ...(p.wins ?? {}) },
           files,
           model: { ...MODEL_DEFAULT, ...(p.model ?? {}) },
+          cats: { ...CATS_DEFAULT, ...(p.cats ?? {}) },
           privacy: { ...PRIVACY_DEFAULT, ...(p.privacy ?? {}), streamer: { ...PRIVACY_DEFAULT.streamer, ...(p.privacy?.streamer ?? {}) } },
           bridges: {
             discord: { ...BRIDGE_DEFAULT("discord"), ...(p.bridges?.discord ?? {}) },

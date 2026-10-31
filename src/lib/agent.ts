@@ -5,6 +5,7 @@ import { desk } from "./store.ts";
 import { credential, explainError, listModels, pickModel, scopeOf, streamOnce, type Connection, type Turn } from "./model.ts";
 import { allowed, blockedBecause } from "./privacy.ts";
 import { memoryForPrompt } from "./vecmem.ts";
+import { catsNote } from "./cats.ts";
 import {
   TURN_NUDGE,
   isPass,
@@ -186,6 +187,7 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
     summary: meta?.summary,
     skillRouter: s.chat.skillRouter,
     memoryFocus: await focusFor(me.id, history),
+    around: catsNote(s.cats.list, s.cats.on),
   });
   const base: Turn[] = [
     { role: "system", content: sys },

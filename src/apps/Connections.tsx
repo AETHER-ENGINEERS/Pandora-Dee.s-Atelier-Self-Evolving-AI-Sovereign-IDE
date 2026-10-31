@@ -591,7 +591,7 @@ function McpPanel() {
         ))}
       </div>
       <p className="small faint" style={{ marginTop: 8 }}>
-        A server that only runs as a command (stdio) can be wrapped for the browser with: npx -y supergateway --stdio "your command" --outputTransport streamableHttp
+        A server that runs as a program (stdio) goes in an mcp.json with "command" (and "args", "env", "cwd"): bring it in above, or put it in a character's own mcp.json. The desktop runs it on this computer once you allow it; {"${KEY_NAME}"} in its settings comes from Keys.
       </p>
       <input
         ref={fileRef}

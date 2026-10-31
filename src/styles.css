@@ -980,3 +980,8 @@ body.dragging-window iframe, body.dragging-window webview { pointer-events: none
 .hangout-on .workspace .win.in-hangout { pointer-events: auto; }
 .explorer-edit { padding: 2px 6px; min-width: 0; flex: 1; font: inherit; }
 .explorer-tile .explorer-edit { width: 100%; text-align: center; }
+
+/* cats: above the windows and the scene, below the dock and menus; only the cats themselves take clicks */
+.cats { position: absolute; inset: 0; z-index: 35000; pointer-events: none; overflow: hidden; }
+.cat { position: absolute; left: 0; top: 0; pointer-events: auto; cursor: pointer; will-change: transform; }
+.cat-bubble { position: absolute; left: 0; top: 0; font-size: 11px; font-weight: 600; color: var(--text); text-shadow: 0 1px 3px rgba(0, 0, 0, .7); pointer-events: none; transition: opacity .3s; white-space: nowrap; }

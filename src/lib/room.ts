@@ -135,6 +135,8 @@ export type PromptContext = {
   skillRouter?: boolean;
   /** Rank memories: only the k MEMORY.md lines that best fit `query` (what's being talked about). */
   memoryFocus?: { query: string; k: number; keep?: string[] };
+  /** What's happening around the desktop (the cats), a line or two. */
+  around?: string;
 };
 
 const STOP = new Set("the and for are but not you your yours with this that what when where which who will would could should have has had was were been being from they them their there here then than into onto about just also very really like some any all can its it's i'm i've don't didn't does did our out".split(" "));
@@ -203,6 +205,7 @@ export function systemPrompt(ctx: PromptContext): string {
   const whole = stripComments(files["MEMORY.md"] ?? "");
   const memory = ctx.memoryFocus ? rankMemory(whole, ctx.memoryFocus.query, ctx.memoryFocus.k, ctx.memoryFocus.keep) : whole;
   if (memory) parts.push(`## My memory\n${memory}`);
+  if (ctx.around) parts.push(`## Around the desktop\n${ctx.around}`);
   const journal = latestJournal(files);
   if (journal) parts.push(`## My latest journal entry\n${journal.slice(0, 2500)}`);
   const skills = skillsNote(files, Boolean(ctx.skillRouter));

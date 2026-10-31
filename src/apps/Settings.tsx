@@ -3,7 +3,7 @@ import { remoteFor } from "../lib/prefs.ts";
 import { Num } from "../ui/Num.tsx";
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Plus, RefreshCw, Trash2 } from "lucide-react";
-import { desk, uid, useDesk, type Account } from "../lib/store.ts";
+import { CAT_COATS, desk, uid, useDesk, type Account, type Cat } from "../lib/store.ts";
 import { credential, listModels, explainError, pickModel, PRESETS, sampleRequest, scopeOf, SCOPE_LABEL, type Connection } from "../lib/model.ts";
 import { AicordSignIn } from "../ui/AicordSignIn.tsx";
 import { ViaPicker } from "../ui/Via.tsx";
@@ -343,6 +343,79 @@ function LookSection() {
       <p className="small faint" style={{ marginTop: 12 }}>
         Window sizes and positions are remembered on this device. The colour follows whoever is in focus.
       </p>
+      <CatsSettings />
+    </>
+  );
+}
+
+function CatsSettings() {
+  const s = useDesk();
+  const c = s.cats;
+  const set = (patch: Partial<typeof c>) => desk().set({ cats: { ...desk().cats, ...patch } });
+  const change = (id: string, patch: Partial<Cat>) => set({ list: desk().cats.list.map((x) => (x.id === id ? { ...x, ...patch } : x)) });
+  return (
+    <>
+      <h4 style={{ marginTop: 18 }}>Cats</h4>
+      <label className="check">
+        <input type="checkbox" checked={c.on} onChange={(e) => set({ on: e.target.checked })} />
+        <span>Cats on the desktop: they wander, sit, wash and nap on top of everything, and never chase the pointer. Click one to pet it. The characters notice them.</span>
+      </label>
+      {c.on ? (
+        <>
+          <label className="field" style={{ maxWidth: 380 }}>
+            <span>Size</span>
+            <Num min={0.6} max={2.5} step={0.1} value={c.size} onChange={(size) => set({ size })} />
+          </label>
+          {c.list.map((cat, i) => (
+            <div key={cat.id} className="row" style={{ gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+              <input className="input" style={{ width: 160 }} value={cat.name} aria-label="Cat's name" onChange={(e) => change(cat.id, { name: e.target.value })} />
+              <select
+                className="select"
+                aria-label={`${cat.name}'s coat`}
+                value={CAT_COATS.find((x) => x.coat === cat.coat)?.label ?? ""}
+                onChange={(e) => {
+                  const k = CAT_COATS.find((x) => x.label === e.target.value);
+                  if (k) change(cat.id, { coat: k.coat, marks: k.marks, belly: k.belly });
+                }}
+              >
+                {CAT_COATS.find((x) => x.coat === cat.coat) ? null : <option value="">Own colours</option>}
+                {CAT_COATS.map((k) => (
+                  <option key={k.label}>{k.label}</option>
+                ))}
+              </select>
+              <label className="row small" style={{ gap: 4 }} title="Coat">
+                <input type="color" value={cat.coat} onChange={(e) => change(cat.id, { coat: e.target.value })} aria-label={`${cat.name}'s coat colour`} />
+                <input type="color" value={cat.marks} onChange={(e) => change(cat.id, { marks: e.target.value })} aria-label={`${cat.name}'s stripes`} />
+                <input type="color" value={cat.eyes} onChange={(e) => change(cat.id, { eyes: e.target.value })} aria-label={`${cat.name}'s eyes`} />
+              </label>
+              {i === 0 ? (
+                <span className="pill" title="The others give way to her, and don't walk past while she sleeps">
+                  senior
+                </span>
+              ) : (
+                <>
+                  <button className="btn small" onClick={() => set({ list: [cat, ...desk().cats.list.filter((x) => x.id !== cat.id)] })}>
+                    Make senior
+                  </button>
+                  <button className="btn small danger-text" aria-label={`Let ${cat.name} go`} onClick={() => set({ list: desk().cats.list.filter((x) => x.id !== cat.id) })}>
+                    <Trash2 size={13} />
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
+          <button
+            className="btn small"
+            disabled={c.list.length >= 8}
+            onClick={() => {
+              const k = CAT_COATS[(c.list.length + 1) % CAT_COATS.length];
+              set({ list: [...c.list, { id: uid(), name: `Cat ${c.list.length + 1}`, coat: k.coat, marks: k.marks, belly: k.belly, eyes: "#e8c34a" }] });
+            }}
+          >
+            <Plus size={13} /> Another cat
+          </button>
+        </>
+      ) : null}
     </>
   );
 }
