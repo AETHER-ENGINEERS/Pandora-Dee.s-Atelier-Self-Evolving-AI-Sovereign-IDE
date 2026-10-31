@@ -3,10 +3,11 @@
 // anywhere; an engine gets the text it speaks.
 
 import { outbound, type Via } from "./outbound.ts";
+import { sampleData } from "./voiceSample.ts";
 import { engineUrl } from "./voiceEngines.ts";
 
 /** A voice engine, resolved for one line: where it is and which model and voice to use. */
-export type Remote = { url: string; key: string; model: string; voice: string; via: Via; name: string };
+export type Remote = { url: string; key: string; model: string; voice: string; via: Via; name: string; sample?: string; sampleText?: string };
 
 /**
  * volume is 0..1 for the voices; appVolume is 0..1 for sound from games and apps. engine is a voice engine's id
@@ -154,10 +155,13 @@ function fetchAudio(job: Job, rate: number): Promise<ArrayBuffer> {
   // Kokoro's voices carry their accent in the name: af_heart is American (a), bf_emma British (b), jf_… Japanese (j)…
   const lang = /^([a-z])[fm]_/.exec(r.voice)?.[1];
   const body = { model: r.model, input: job.text, ...(r.voice ? { voice: r.voice } : {}), speed: rate, response_format: "wav", ...(lang ? { lang_code: lang } : {}) };
-  return (job.audio ??= outbound(engineUrl(r.url, "speech"), { method: "POST", headers: { "Content-Type": "application/json", ...(r.key ? { Authorization: `Bearer ${r.key}` } : {}) }, body: JSON.stringify(body), timeout: 180 }, r.via).then(async (res) => {
+  return (job.audio ??= (async () => {
+    // an engine that clones gets the character's voice sample, and what's said in it
+    const clone = r.sample ? { ref_audio: await sampleData(r.sample), ...(r.sampleText ? { ref_text: r.sampleText } : {}) } : {};
+    const res = await outbound(engineUrl(r.url, "speech"), { method: "POST", headers: { "Content-Type": "application/json", ...(r.key ? { Authorization: `Bearer ${r.key}` } : {}) }, body: JSON.stringify({ ...body, ...clone }), timeout: 180 }, r.via);
     if (!res.ok) throw new Error(`${r.name} answered ${res.status}: ${(await res.text()).replace(/\s+/g, " ").slice(0, 200)}`);
     return res.arrayBuffer();
-  }));
+  })());
 }
 
 let ctx: AudioContext | null = null;

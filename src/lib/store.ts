@@ -306,7 +306,19 @@ export type CharPrefs = {
   /** How much they tend to say. */
   length?: "short" | "normal" | "long";
   /** volume here is relative to the master voice volume, 0..1.5. */
-  voice?: { on?: boolean; voiceName?: string; rate?: number; pitch?: number; volume?: number; engine?: string; engineVoice?: string };
+  voice?: {
+    on?: boolean;
+    voiceName?: string;
+    rate?: number;
+    pitch?: number;
+    volume?: number;
+    engine?: string;
+    engineVoice?: string;
+    /** A recording of how they should sound (a vault path), what's said in it, and how long it is: for engines that clone. */
+    sample?: string;
+    sampleText?: string;
+    sampleSeconds?: number;
+  };
   /** Their full avatar (Live2D, VRM, or an animated picture), kept in the vault. */
   avatar?: AvatarAsset;
   /** Vector memory, as in Classic (Config → Embeddings): her memory, journal and notes searchable by meaning. */

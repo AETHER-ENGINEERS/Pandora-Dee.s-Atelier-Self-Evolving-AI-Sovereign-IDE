@@ -24,13 +24,14 @@ export function aiFor(charId: string) {
  * The voice engine a character speaks through, if any and if the privacy settings let the desktop reach it
  * (an engine on another computer counts like a model there).
  */
-export function remoteFor(engineId: string, voice: string): Remote | undefined {
+export function remoteFor(engineId: string, voice: string, sample?: { entry?: string; text?: string }): Remote | undefined {
   const s = desk();
   const e = engineId ? s.voices.engines.find((x) => x.id === engineId && x.enabled) : undefined;
   if (!e) return undefined;
   const scope = scopeOf(e.url);
   if (scope !== "device" && !allowed(s.privacy, scope === "network" ? "network-models" : "online-models")) return undefined;
-  return { url: e.url, key: e.keyName ? s.env[e.keyName] ?? "" : "", model: e.model || defaultSpeechModel(e.url), voice, via: e.via ?? s.net.via, name: e.name };
+  const clone = e.clones && sample?.entry ? { sample: sample.entry, sampleText: sample.text } : {};
+  return { url: e.url, key: e.keyName ? s.env[e.keyName] ?? "" : "", model: e.model || defaultSpeechModel(e.url), voice, via: e.via ?? s.net.via, name: e.name, ...clone };
 }
 
 /** Voice settings for a character, and the pitch shift to add on top. */
@@ -50,7 +51,7 @@ export function voiceFor(charId: string): { prefs: VoicePrefs; shift: number } {
     appVolume: s.voice.appVolume,
     engine,
     engineVoice,
-    remote: remoteFor(engine, engineVoice),
+    remote: remoteFor(engine, engineVoice, { entry: own.sample, text: own.sampleText }),
   };
   // A character's built-in pitch offset applies only when they haven't picked their own pitch.
   return { prefs, shift: own.pitch === undefined ? c?.pitch ?? 0 : 0 };

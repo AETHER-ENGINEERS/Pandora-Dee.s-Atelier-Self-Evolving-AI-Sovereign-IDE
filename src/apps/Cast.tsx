@@ -14,6 +14,7 @@ import { blankCharacter, type Character, type Look } from "../lib/characters.ts"
 import { download, makeBackup, toClassic } from "../lib/backup.ts";
 import { shrinkPicture } from "../lib/secure.ts";
 import { MAX_IN_ROOM } from "../lib/room.ts";
+import { MAX_SECONDS, removeSample, sampleUrl, toSampleWav, uploadSample } from "../lib/voiceSample.ts";
 import { embedder, memoryStatus, rebuildMemory, syncMemory } from "../lib/vecmem.ts";
 import { CharAvatar, Confirm, Seg } from "../ui/common.tsx";
 import { loadBackupFile } from "../ui/desktopApi.tsx";
@@ -744,6 +745,7 @@ function CharVoice({ c }: { c: Character }) {
       <Own label="Pitch" own={own.pitch !== undefined} shared={sharedPitch.toFixed(2)} onReset={() => unset("pitch")}>
         <Num min={0.3} max={2} step={0.05} value={own.pitch ?? sharedPitch} onChange={(n) => set({ pitch: n })} />
       </Own>
+      <VoiceSample c={c} />
       <button
         className="btn small"
         onClick={() => {
@@ -754,5 +756,77 @@ function CharVoice({ c }: { c: Character }) {
         Hear {c.short}
       </button>
     </>
+  );
+}
+
+/** A recording of how they should sound, for voice engines that clone a voice from a sample. */
+function VoiceSample({ c }: { c: Character }) {
+  const s = useDesk();
+  const own = s.charPrefs[c.id]?.voice ?? {};
+  const [note, setNote] = useState("");
+  const input = useRef<HTMLInputElement>(null);
+  const set = (patch: Partial<NonNullable<CharPrefs["voice"]>>) => desk().setCharPrefs(c.id, { voice: { ...desk().charPrefs[c.id]?.voice, ...patch } });
+  const cloning = s.voices.engines.filter((e) => e.enabled && e.clones);
+  const take = async (f: File) => {
+    setNote("Getting it ready…");
+    try {
+      const { wav, seconds } = await toSampleWav(f);
+      const entry = await uploadSample(c.id, wav);
+      if (own.sample) void removeSample(c.id, own.sample);
+      set({ sample: entry, sampleSeconds: seconds });
+      setNote(seconds >= MAX_SECONDS ? `Kept the first ${MAX_SECONDS} seconds.` : "");
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : String(e));
+    }
+  };
+  return (
+    <div className="field">
+      <span>Voice sample</span>
+      <p className="small faint" style={{ margin: "0 0 4px" }}>
+        A short recording of how {c.short} should sound (5–20 seconds of clear speech), for voice engines that clone a voice from a sample.{" "}
+        {cloning.length ? `Used by: ${cloning.map((e) => e.name).join(", ")}.` : "None of your voice engines is marked as cloning yet (Settings → Voice)."}
+      </p>
+      <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+        {own.sample ? <audio controls src={sampleUrl(own.sample)} style={{ height: 32, maxWidth: "100%" }} /> : null}
+        <button className="btn small" onClick={() => input.current?.click()}>
+          {own.sample ? "Replace…" : "Add a recording…"}
+        </button>
+        {own.sample ? (
+          <button
+            className="btn small danger-text"
+            onClick={() => {
+              void removeSample(c.id, own.sample!);
+              set({ sample: undefined, sampleText: undefined, sampleSeconds: undefined });
+            }}
+          >
+            Remove
+          </button>
+        ) : null}
+        {own.sampleSeconds ? <span className="small faint">{own.sampleSeconds} s</span> : null}
+      </div>
+      {own.sample ? (
+        <textarea
+          className="input"
+          rows={2}
+          style={{ marginTop: 6 }}
+          value={own.sampleText ?? ""}
+          placeholder="What's said in the recording, word for word (most cloning models need it)"
+          aria-label="What's said in the voice sample"
+          onChange={(e) => set({ sampleText: e.target.value || undefined })}
+        />
+      ) : null}
+      {note ? <span className="small">{note}</span> : null}
+      <input
+        ref={input}
+        type="file"
+        accept="audio/*"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void take(f);
+        }}
+      />
+    </div>
   );
 }

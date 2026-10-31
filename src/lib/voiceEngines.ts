@@ -14,6 +14,8 @@ export type VoiceEngine = {
   model?: string;
   via?: Via;
   enabled: boolean;
+  /** It makes a voice from a sample: each character's voice sample goes with every line (ref_audio, ref_text). */
+  clones?: boolean;
 };
 
 export type VoiceEnginePrefs = {

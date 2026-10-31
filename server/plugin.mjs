@@ -344,6 +344,25 @@ export function deskServer() {
         return send(res, 400, { error: e instanceof Error ? e.message : String(e) });
       }
     }
+    // voice samples: a short WAV per character, in the vault under .pandora/voices/<character>/
+    if (parts[0] === "voice-sample") {
+      const char = String(url.searchParams.get("char") || "").replace(/[^\w.-]+/g, "_").slice(0, 80);
+      if (!char) return send(res, 400, { error: "Which character?" });
+      const dir = path.join(vaultDir(), ".pandora", "voices", char);
+      if (m === "POST") {
+        const bytes = await readBody(req, 30_000_000);
+        if (bytes.subarray(0, 4).toString("latin1") !== "RIFF" || bytes.subarray(8, 12).toString("latin1") !== "WAVE") return send(res, 400, { error: "Send the sample as a WAV." });
+        fs.mkdirSync(dir, { recursive: true });
+        const name = `${Date.now().toString(36)}.wav`;
+        fs.writeFileSync(path.join(dir, name), bytes);
+        return send(res, 200, { entry: [".pandora", "voices", char, name].join("/") });
+      }
+      if (m === "DELETE") {
+        const name = path.basename(String(url.searchParams.get("entry") || ""));
+        if (/^[\w.-]+\.wav$/.test(name)) fs.rmSync(path.join(dir, name), { force: true });
+        return send(res, 200, { ok: true });
+      }
+    }
     if (parts[0] === "avatar") {
       const A = createAvatars(vaultDir);
       const charId = String(url.searchParams.get("char") || "");
