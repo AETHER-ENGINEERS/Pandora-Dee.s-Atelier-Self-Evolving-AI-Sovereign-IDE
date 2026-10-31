@@ -83,6 +83,35 @@ export function Desktop() {
   const fileRef = useRef<HTMLInputElement>(null);
   useSensors();
 
+  // Phones: the back gesture (or button) closes what's on top — Classic, then Hangout, then the front window,
+  // which shows the one under it — instead of leaving the page. With nothing open, back leaves as usual.
+  useEffect(() => {
+    if (!phone) return;
+    const shown = () => {
+      const d = desk();
+      return APPS.filter((a) => d.wins[a.id].open && !d.wins[a.id].min).sort((a, b) => d.wins[b.id].z - d.wins[a.id].z);
+    };
+    const closable = () => desk().classic || desk().hangout || shown().length > 0;
+    // one history step of our own stands in front of the page while there's something to close
+    const arm = () => {
+      if (closable() && !(history.state as { pddBack?: boolean } | null)?.pddBack) history.pushState({ pddBack: true }, "");
+    };
+    const back = () => {
+      const d = desk();
+      if (d.classic) d.set({ classic: false });
+      else if (d.hangout) d.set({ hangout: false });
+      else if (shown()[0]) d.closeApp(shown()[0].id);
+      arm();
+    };
+    arm();
+    const unsub = useDesk.subscribe(arm);
+    window.addEventListener("popstate", back);
+    return () => {
+      unsub();
+      window.removeEventListener("popstate", back);
+    };
+  }, [phone]);
+
   const locked = s.accounts.length > 0 && !s.session;
   const focusChar = s.character(s.focus);
   const accent = focusChar?.accent ?? "#b9a4ff";
