@@ -10,6 +10,7 @@ import { openMenu } from "../ui/ContextMenu.tsx";
 import type { BrowserPrefs, BrowserTab } from "../lib/browserPrefs.ts";
 import { copyText } from "../lib/clipboard.ts";
 import { askText } from "../ui/Ask.tsx";
+import { FullBrowser } from "./FullBrowser.tsx";
 
 /**
  * A tabbed browser. Pages come through the desktop (most sites refuse to be framed directly) into a sandboxed
@@ -49,7 +50,16 @@ export function browse(url: string, newTab = true) {
   desk().openApp("browser");
 }
 
+/** The Browser window: the full browser (a real engine on the desktop) by default, or the private Reader. */
 export function BrowserApp() {
+  const mode = useDesk((s) => s.browser.mode ?? "full");
+  const home = useDesk((s) => s.browser.home);
+  if (mode === "full") return <FullBrowser home={home} onReader={() => setPrefs({ mode: "reader" })} />;
+  return <ReaderBrowser />;
+}
+
+/** The private Reader: pages fetched by the desktop into a sandbox that keeps nothing (server/browse.mjs). */
+function ReaderBrowser() {
   const b = useDesk((s) => s.browser);
   const [key, setKey] = useState("");
   useEffect(() => void browseKey().then(setKey, () => setKey("")), []);
@@ -167,6 +177,9 @@ export function BrowserApp() {
         </button>
         <button type="button" className="icon-btn" aria-label="More" onClick={more}>
           <MoreHorizontal size={15} />
+        </button>
+        <button type="button" className="btn small" data-tip="The full browser: a real engine on the desktop that keeps sites' logins" onClick={() => setPrefs({ mode: "full" })}>
+          Full browser
         </button>
       </form>
       {b.bar && b.bookmarks.length ? (

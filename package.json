@@ -24,6 +24,7 @@
     "pdfjs-dist": "^4.10.38",
     "pixi-live2d-display": "0.4.0",
     "pixi.js": "6.5.10",
+    "playwright-core": "1.56.1",
     "qrcode-generator": "2.0.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

@@ -18,6 +18,7 @@ import { createVectorHost } from "./vectorHost.mjs";
 import { createFiles } from "./files.mjs";
 import { createDevShare, isDevicePath } from "./devshare.mjs";
 import { createTravel } from "./travel.mjs";
+import { createEngine } from "./engine.mjs";
 import { checkUpdates, download } from "./upstreams.mjs";
 import * as aicordAuth from "./oauth.mjs";
 import { findCurl, findPython, forgetPrograms } from "./programs.mjs";
@@ -112,6 +113,9 @@ export function deskServer() {
   const devices = createDevShare();
   // accounts that travel between devices (see travel.mjs)
   const travel = createTravel(() => dataDir);
+  // the full browser: a real Chromium-family engine shown live in the Browser window (see engine.mjs)
+  const deskPorts = new Set();
+  const engine = createEngine({ dataDir: () => dataDir, getChoice: () => readConfig().browserEngine, deskPorts: () => [...deskPorts] });
   const withDevices = (o) => ({ ...o, devices: devices.places() });
   const library = () => {
     if (!lib) {
@@ -364,6 +368,17 @@ export function deskServer() {
         }
       } catch (e) {
         return send(res, e?.status || 400, { error: e instanceof Error ? e.message : String(e) });
+      }
+    }
+    // the full browser: its state, its live stream, and everything the Browser window asks of it
+    if (parts[0] === "engine") {
+      deskPorts.add(req.socket.localPort);
+      try {
+        if (parts[1] === "status" && m === "GET") return send(res, 200, engine.status());
+        if (parts[1] === "stream" && m === "GET") return engine.stream(res);
+        if (!parts[1] && m === "POST") return send(res, 200, await engine.cmd(JSON.parse((await readBody(req, 200_000)).toString("utf8") || "{}")));
+      } catch (e) {
+        return send(res, e?.status || 400, { error: e instanceof Error ? e.message.split("\n")[0] : String(e) });
       }
     }
     // accounts that travel: who travels, one account's desktop, keep it, stop keeping it
@@ -799,6 +814,10 @@ export function deskServer() {
       publicDir = config.publicDir || path.join(root, "public");
     },
     configureServer(server) {
+      // the full browser closes with the desktop, so its profile is free next time
+      server.httpServer?.once("close", () => void engine.close());
+      // (a listener here replaces Node's own exit on Ctrl+C, so it exits itself once the engine is closed)
+      for (const sig of ["SIGINT", "SIGTERM"]) process.once(sig, () => void Promise.resolve(engine.close()).finally(() => process.exit(130)));
       server.middlewares.use(handle);
     },
     configurePreviewServer(server) {

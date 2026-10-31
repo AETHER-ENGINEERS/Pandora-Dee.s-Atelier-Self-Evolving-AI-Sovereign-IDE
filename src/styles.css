@@ -847,6 +847,12 @@ body.dragging-window iframe, body.dragging-window webview { pointer-events: none
 .browser-bar .input { min-width: 0; }
 .browser-marks { display: flex; gap: 4px; padding: 4px 8px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: thin; }
 .browser-frame { flex: 1; width: 100%; border: 0; background: #fff; min-height: 0; }
+/* the full browser: the engine's live picture, drawn at exactly this size, taking clicks, touches and keys */
+.full-browser-view { flex: 1; min-height: 0; position: relative; overflow: hidden; background: #fff; outline: none; touch-action: none; cursor: default; }
+.full-browser-view img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; user-select: none; -webkit-user-drag: none; }
+.full-browser-typer { position: absolute; left: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; resize: none; }
+.browser-note { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); background: var(--panel-solid); border: 1px solid var(--line-strong); padding: 6px 12px; border-radius: 8px; z-index: 3; cursor: pointer; }
+.full-browser { position: relative; }
 .browser-reader { flex: 1; overflow: auto; padding: 18px max(16px, calc((100% - 760px) / 2)); line-height: 1.6; font-size: 1.02em; }
 .browser-reader img { max-width: 100%; height: auto; }
 
