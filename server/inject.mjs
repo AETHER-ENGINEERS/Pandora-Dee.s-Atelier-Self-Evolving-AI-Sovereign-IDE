@@ -270,7 +270,14 @@ function classicRelay() {
       try {
         const url = new URL(typeof input === "string" || input instanceof URL ? String(input) : input.url, location.href);
         const outside = (url.protocol === "http:" || url.protocol === "https:") && url.origin !== location.origin;
-        if (outside && P.__pddRelay.via() !== "browser") return P.__pddRelay.fetch(url.href, input, init);
+        if (outside && P.__pddRelay.via(url.href) !== "browser") return P.__pddRelay.fetch(url.href, input, init);
+        // the browser route: if the server blocks the page (CORS), the desktop relay sends it instead, when the
+        // desktop can tell that won't send it twice (older desktops without afterBlock just report the error)
+        if (outside && P.__pddRelay.afterBlock)
+          return own(input, init).catch((e) => {
+            if (init?.signal?.aborted || (input && input.signal?.aborted)) throw e;
+            return P.__pddRelay.afterBlock(url.href, input, init);
+          });
       } catch {
         /* fall through to the browser */
       }

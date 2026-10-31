@@ -8,7 +8,7 @@ import { MAX_IN_ROOM, type Message, type Source } from "./room.ts";
 import { VOICE_DEFAULT, type VoicePrefs } from "./voice.ts";
 import { VOICE_ENGINES_DEFAULT, type VoiceEnginePrefs } from "./voiceEngines.ts";
 import type { Sealed } from "./secure.ts";
-import { pythonFrom, type Via } from "./outbound.ts";
+import { noticesFrom, pythonFrom, type Via } from "./outbound.ts";
 import { MUSIC_DEFAULT, type MusicPrefs } from "./musicPrefs.ts";
 import { MEDIA_DEFAULT, type MediaPrefs } from "./mediaPrefs.ts";
 import { BROWSER_DEFAULT, type BrowserPrefs } from "./browserPrefs.ts";
@@ -953,3 +953,4 @@ export const desk = () => useDesk.getState();
 
 // The relay needs to know where Python is, when it was set in Connections → Web.
 pythonFrom(() => useDesk.getState().net.python);
+noticesFrom((text) => useDesk.getState().say(text));

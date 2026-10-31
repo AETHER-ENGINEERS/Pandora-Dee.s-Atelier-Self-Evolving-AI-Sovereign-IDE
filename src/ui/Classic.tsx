@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, MonitorPlay } from "lucide-react";
 import { desk, useDesk, type ClassicApp } from "../lib/store.ts";
-import { outbound } from "../lib/outbound.ts";
+import { outbound, relayAfterBlock, relaysFor, safeToResend } from "../lib/outbound.ts";
 
 type Build = { version: string; file: string };
 
-/** Classic pages call this (their fetch is hooked as the desktop serves them) to send outside requests. */
-async function classicFetch(url: string, input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+/** Classic pages call this (their fetch is hooked as the desktop serves them) to send outside requests.
+ *  `blocked`: the page sent it itself (the browser route) and was refused, so the relay sends it instead, when
+ *  that can't send it twice. */
+async function classicFetch(url: string, input: RequestInfo | URL, init: RequestInit = {}, blocked = false): Promise<Response> {
   // (the page's objects come from its own window, so instanceof can't be trusted: check their tags)
   const tag = (x: unknown) => Object.prototype.toString.call(x);
   const req = tag(input) === "[object Request]" ? (input as Request) : null;
@@ -26,10 +28,23 @@ async function classicFetch(url: string, input: RequestInfo | URL, init: Request
     const blob = raw as Blob;
     body = new Uint8Array(await blob.arrayBuffer());
     if (blob.type) headers["content-type"] ??= blob.type;
-  } else if (raw != null) return fetch(input, init); // FormData and streams go the browser's way
-  return outbound(url, { method, headers, body, signal: init.signal ?? req?.signal ?? undefined }, desk().classicVia);
+  } else if (raw != null) {
+    if (blocked) throw new TypeError("Failed to fetch"); // FormData and streams can't go by the relay
+    return fetch(input, init); // FormData and streams go the browser's way
+  }
+  const out = { method, headers, body, signal: init.signal ?? req?.signal ?? undefined };
+  if (blocked) {
+    if (!safeToResend(out)) throw new TypeError(`Failed to fetch (${new URL(url).host} may be blocking pages, and this request may already have arrived, so it wasn't sent again)`);
+    return relayAfterBlock(url, out);
+  }
+  return outbound(url, out, relaysFor(url) ? "desktop" : desk().classicVia);
 }
-(window as unknown as { __pddRelay: unknown }).__pddRelay = { via: () => desk().classicVia, fetch: classicFetch };
+(window as unknown as { __pddRelay: unknown }).__pddRelay = {
+  // a site that already blocked the page this session goes by the relay
+  via: (url?: string) => (url && relaysFor(url) ? "desktop" : desk().classicVia),
+  fetch: classicFetch,
+  afterBlock: (url: string, input: RequestInfo | URL, init?: RequestInit) => classicFetch(url, input, init, true),
+};
 type Index = Record<ClassicApp, Build[]>;
 
 const LABEL: Record<ClassicApp, string> = { pandora: "Pandora Dee", jade: "Jade Vault" };

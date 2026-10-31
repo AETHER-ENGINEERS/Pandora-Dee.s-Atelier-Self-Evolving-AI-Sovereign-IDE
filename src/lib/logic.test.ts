@@ -361,3 +361,41 @@ test("the shell hands mcp commands on whole, JSON arguments included", () => {
   assert.deepEqual(r.action, { kind: "mcp", argv: ["call", "mcp__fae__echo", '{"text": "hi there"}'] });
   assert.deepEqual(run("mcp", "", {}, ctx).action, { kind: "mcp", argv: [] });
 });
+
+test("the browser route falls back to the relay only when that can't send a request twice", async () => {
+  const { outbound, safeToResend, relaysFor } = await import("./outbound.ts");
+  // safe: reading, and anything the browser had to ask the server about first (keys, JSON, other methods)
+  assert.equal(safeToResend({}), true);
+  assert.equal(safeToResend({ method: "POST", headers: { Authorization: "Bearer x" }, body: "{}" }), true);
+  assert.equal(safeToResend({ method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }), true);
+  assert.equal(safeToResend({ method: "DELETE" }), true);
+  // not safe: a "simple" POST may have arrived before CORS hid the answer
+  assert.equal(safeToResend({ method: "POST", body: "hello" }), false);
+  assert.equal(safeToResend({ method: "POST", headers: { "content-type": "text/plain;charset=UTF-8" }, body: "hello" }), false);
+
+  const real = globalThis.fetch;
+  const calls: string[] = [];
+  globalThis.fetch = (async (url: string | URL | Request) => {
+    const u = String(url);
+    calls.push(u);
+    if (u === "/api/relay") return new Response("relayed", { status: 200, headers: { "X-Relay-Status": "200" } });
+    throw new TypeError("Failed to fetch");
+  }) as typeof fetch;
+  try {
+    // JSON with a key: refused by the browser, sent by the relay, and the site remembered
+    const r = await outbound("https://api.example.test/v1/chat", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer k" }, body: "{}" }, "browser");
+    assert.equal(await r.text(), "relayed");
+    assert.deepEqual(calls, ["https://api.example.test/v1/chat", "/api/relay"]);
+    assert.equal(relaysFor("https://api.example.test/other"), true);
+    // the same site again: straight to the relay
+    calls.length = 0;
+    await outbound("https://api.example.test/v1/models", {}, "browser");
+    assert.deepEqual(calls, ["/api/relay"]);
+    // a simple POST elsewhere: refused, and NOT sent again
+    calls.length = 0;
+    await assert.rejects(outbound("https://hook.example.test/send", { method: "POST", body: "hi" }, "browser"), /wasn't sent again/);
+    assert.deepEqual(calls, ["https://hook.example.test/send"]);
+  } finally {
+    globalThis.fetch = real;
+  }
+});

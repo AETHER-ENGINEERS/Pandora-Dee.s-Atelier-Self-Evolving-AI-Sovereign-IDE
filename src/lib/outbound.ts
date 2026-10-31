@@ -26,17 +26,75 @@ function b64(bytes: Uint8Array) {
   return btoa(s);
 }
 
-/** Send a request the chosen way. Answers like fetch() does. */
+/** How the desktop says something to the person (the store fills this in). */
+let tell: (text: string) => void = () => {};
+export function noticesFrom(fn: (text: string) => void) {
+  tell = fn;
+}
+
+/** Sites that blocked this page (CORS, or an http site from an https page): this session, they go by the relay. */
+const relayed = new Set<string>();
+
+// headers a browser sends without asking the server first; any other header means it asks first (a "preflight"),
+// so a CORS refusal then means the request itself never left
+const SIMPLE_HEADERS = new Set(["accept", "accept-language", "content-language", "content-type"]);
+const SIMPLE_TYPES = /^(application\/x-www-form-urlencoded|multipart\/form-data|text\/plain)(;|$)/i;
+
+/** May this request be sent again by the relay after the browser was refused? Only when the server can't have
+ *  received it already: reading (GET, HEAD), or a request the browser had to ask permission for first. A plain
+ *  "simple" POST may have arrived before CORS hid the answer, so it's never sent twice. */
+export function safeToResend(init: OutInit): boolean {
+  const method = (init.method ?? "GET").toUpperCase();
+  if (method === "GET" || method === "HEAD" || method === "OPTIONS") return true;
+  if (method !== "POST") return true; // PUT, PATCH, DELETE… always ask first
+  const headers = Object.entries(init.headers ?? {});
+  if (headers.some(([k]) => !SIMPLE_HEADERS.has(k.toLowerCase()))) return true;
+  const type = headers.find(([k]) => k.toLowerCase() === "content-type")?.[1];
+  if (type && !SIMPLE_TYPES.test(type)) return true;
+  // a string body with no type goes as text/plain (simple); bytes go with no type (simple too)
+  return false;
+}
+
+/** Has this site blocked the page this session (so its requests go by the relay)? */
+export const relaysFor = (url: string) => relayed.has(originOf(url));
+
+/** The browser was refused (and resending is safe): the relay sends it, and this site's requests after it. */
+export function relayAfterBlock(url: string, init: OutInit, mixed = false): Promise<Response> {
+  const origin = originOf(url);
+  if (!relayed.has(origin)) {
+    relayed.add(origin);
+    tell(`${hostOf(url)} doesn't let pages read its answers (CORS)${mixed ? " or isn't https" : ""}, so the desktop relay sends its requests for now. "Desktop relay" as the connection method makes that permanent.`);
+  }
+  return outbound(url, init, "desktop");
+}
+
+const originOf = (url: string) => {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return url;
+  }
+};
+
+/** Send a request the chosen way. Answers like fetch() does. "browser" falls back to the desktop relay when the
+ *  server blocks the page and resending can't do anything twice (see safeToResend). */
 export async function outbound(url: string, init: OutInit = {}, via: Via = "desktop"): Promise<Response> {
   if (via === "browser") {
-    try {
-      return await fetch(url, { method: init.method, headers: init.headers, body: init.body as BodyInit | undefined, signal: init.signal });
-    } catch (e) {
-      if (init.signal?.aborted) throw e;
-      throw new Error(
-        `The browser couldn't reach ${hostOf(url)}. If the server is running, it's probably blocking pages from reading its answers (CORS): choose "Desktop relay" as the connection method.`,
-      );
+    const origin = originOf(url);
+    // an http server from an https page is blocked before anything is sent: straight to the relay
+    const mixed = typeof location !== "undefined" && location.protocol === "https:" && url.startsWith("http:");
+    if (!relayed.has(origin) && !mixed) {
+      try {
+        return await fetch(url, { method: init.method, headers: init.headers, body: init.body as BodyInit | undefined, signal: init.signal });
+      } catch (e) {
+        if (init.signal?.aborted) throw e;
+        if (!safeToResend(init))
+          throw new Error(
+            `The browser couldn't read ${hostOf(url)}'s answer. It may be blocking pages (CORS), and this request may already have arrived, so it wasn't sent again. Choose "Desktop relay" as the connection method for it.`,
+          );
+      }
     }
+    return relayAfterBlock(url, init, mixed);
   }
   const job = {
     url,
