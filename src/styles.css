@@ -488,7 +488,6 @@ p { line-height: 1.55; margin: 0 0 10px; }
 .dock-target.top { left: 20%; right: 20%; top: calc(var(--menu-h) + 4px); height: 70px; }
 .dock-target.left { top: 20%; bottom: 20%; left: 4px; width: 70px; }
 .dock-target.right { top: 20%; bottom: 20%; right: 4px; width: 70px; }
-.phone .dock.vertical { flex-direction: row; top: auto; bottom: 0; left: 0; right: 0; transform: none; max-height: none; }
 
 /* ---------- right-click menus ---------- */
 .context-menu { z-index: 99000; max-height: calc(100vh - 8px); overflow-y: auto; min-width: 220px; }
@@ -896,12 +895,22 @@ p { line-height: 1.55; margin: 0 0 10px; }
 .vector-back { align-self: flex-start; margin: 6px 8px 0; }
 .vector-frame { flex: 1; min-height: 0; width: 100%; border: 0; background: #030303; margin-top: 6px; }
 /* touch screens: keep the dock (and its grip) out of the edges where swiping means "back" */
-.phone .dock-grip { display: none; } /* a phone's dock stays at the bottom: nothing to drag */
 .phone .dock { padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); }
 @media (pointer: coarse) {
   .dock.vertical { left: 28px; }
   .dock.right { left: auto; right: 28px; }
 }
+/* a phone's dock: a full row along the bottom or the top, scrolling sideways when it's long. Its grip moves it between
+   the two (the sides are where swiping means "back"; floating would cover a phone's full-screen window). */
+.phone .dock.dock { border-radius: 0; max-width: none; transform: none; justify-content: flex-start; }
+.phone .dock.bottom { top: auto; bottom: 0; left: 0; right: 0; overflow-x: auto; overflow-y: hidden; padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
+.phone .dock.top { top: 0; bottom: auto; left: 0; right: 0; overflow-x: auto; overflow-y: hidden; padding-top: max(6px, env(safe-area-inset-top)); }
+.phone .dock.bottom.hidden { transform: translateY(calc(100% + 20px)); }
+.phone .dock.top.hidden { transform: translateY(calc(-100% - 20px)); }
+.phone.desktop .workspace { top: 0; right: 0; bottom: calc(var(--dock-h) + 4px + env(safe-area-inset-bottom)); left: 0; }
+.phone.dock-top .workspace { top: calc(var(--dock-h) + 4px + env(safe-area-inset-top)); bottom: 0; }
+.phone.dock-auto .workspace { top: 0; right: 0; bottom: 0; left: 0; }
+.phone .dock-target.bottom, .phone .dock-target.top { left: 8%; right: 8%; }
 
 /* ---------- Explorer ---------- */
 .explorer { height: 100%; display: flex; flex-direction: column; min-height: 0; outline: none; }

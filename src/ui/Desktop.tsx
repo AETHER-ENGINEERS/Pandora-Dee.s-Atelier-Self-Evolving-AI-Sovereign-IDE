@@ -138,7 +138,7 @@ export function Desktop() {
 
   return (
     <div
-      className={`desktop${phone ? " phone" : ""}${s.menuBar && !s.bar.autoHide ? "" : " no-menu"}${s.menuBar && s.bar.edge === "bottom" && !s.bar.autoHide ? " bar-bottom" : ""}${s.menuBar && s.bar.autoHide ? " bar-auto" : ""}${s.hangout ? " hangout-on" : ""} dock-${s.dock.edge}${s.dock.autoHide && s.dock.edge !== "float" ? " dock-auto" : ""}`}
+      className={`desktop${phone ? " phone" : ""}${s.menuBar && !s.bar.autoHide ? "" : " no-menu"}${s.menuBar && s.bar.edge === "bottom" && !s.bar.autoHide ? " bar-bottom" : ""}${s.menuBar && s.bar.autoHide ? " bar-auto" : ""}${s.hangout ? " hangout-on" : ""} dock-${phone && s.dock.edge !== "top" ? "bottom" : s.dock.edge}${s.dock.autoHide && (phone || s.dock.edge !== "float") ? " dock-auto" : ""}`}
       style={{ ["--dock-h" as string]: `${s.dock.size + (s.dock.labels ? 14 : 0) + 20}px` }}
       onDragOver={(e) => {
         if ([...e.dataTransfer.types].includes("Files")) {
@@ -188,7 +188,7 @@ export function Desktop() {
           </Window>
         ))}
       </div>
-      <Dock front={front} />
+      <Dock front={front} phone={phone} />
       {drop ? <div className="drop-hint">Drop a character backup to bring them in</div> : null}
       <ContextMenuHost />
       <AskHost />

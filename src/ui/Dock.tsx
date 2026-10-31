@@ -22,9 +22,12 @@ function labelOf(id: string) {
 }
 
 /** The app bar: on any edge, optionally hidden until called, with the apps you choose. */
-export function Dock({ front }: { front?: AppId }) {
+export function Dock({ front, phone }: { front?: AppId; phone?: boolean }) {
   const wins = useDesk((s) => s.wins);
-  const d = useDesk((s) => s.dock);
+  const saved = useDesk((s) => s.dock);
+  // A phone's dock sits along the bottom or the top: its sides are where swiping means "back", and a floating dock
+  // would cover the full-screen window. A dock put on a side or floating (on a bigger screen) shows at the bottom there.
+  const d: DockPrefs = phone && saved.edge !== "top" ? { ...saved, edge: "bottom" } : saved;
   const toddler = useDesk((s) => s.toddler);
   const swipe = useDesk((s) => s.touch.edgeSwipe);
   const [shown, setShown] = useState(!d.autoHide);
@@ -33,7 +36,8 @@ export function Dock({ front }: { front?: AppId }) {
   const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
   const nav = useRef<HTMLElement>(null);
   const hideTimer = useRef(0);
-  const floating = d.edge === "float" || Boolean(drag);
+  // on a phone the dock stays a row while it's dragged; the dashed target shows where it will land
+  const floating = !phone && (d.edge === "float" || Boolean(drag));
   const vertical = floating ? Boolean(d.float?.vertical) : d.edge === "left" || d.edge === "right";
   const autoHide = d.autoHide && d.edge !== "float";
 
@@ -87,9 +91,10 @@ export function Dock({ front }: { front?: AppId }) {
     let moved = false;
     const SNAP = 48;
     const edgeNear = (x: number, y: number): Edge | null => {
-      const dist = { left: x, right: window.innerWidth - x, top: y, bottom: window.innerHeight - y };
+      const dist = phone ? { top: y, bottom: window.innerHeight - y } : { left: x, right: window.innerWidth - x, top: y, bottom: window.innerHeight - y };
       const [edge, gap] = Object.entries(dist).sort((a, b) => a[1] - b[1])[0];
-      return gap <= SNAP ? (edge as Edge) : null;
+      // a phone's dock always lands on the nearest edge
+      return gap <= SNAP || phone ? (edge as Edge) : null;
     };
     // on touch screens, clear of the side edges (swiping there is "back" on phones with gestures)
     const side = window.matchMedia("(pointer: coarse)").matches ? 28 : 4;
@@ -117,7 +122,7 @@ export function Dock({ front }: { front?: AppId }) {
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
   };
-  const at = drag ?? (d.edge === "float" ? d.float : undefined);
+  const at = phone ? undefined : drag ?? (d.edge === "float" ? d.float : undefined);
   const upTips = d.edge === "bottom" || (floating && (at?.y ?? 0) > window.innerHeight / 2);
 
   const icon = Math.round(d.size * 0.46);
