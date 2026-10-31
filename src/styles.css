@@ -361,7 +361,7 @@ p { line-height: 1.55; margin: 0 0 10px; }
 
 /* ---------- classic switcher ---------- */
 .classic-switch { position: fixed; right: 10px; bottom: 10px; z-index: 85001; display: flex; align-items: center; gap: 8px; flex-direction: row-reverse; }
-.classic-handle { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line-strong); background: rgba(10, 8, 18, .7); color: var(--muted); display: grid; place-items: center; opacity: .45; transition: opacity .15s; }
+.classic-handle { touch-action: none; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line-strong); background: rgba(10, 8, 18, .7); color: var(--muted); display: grid; place-items: center; opacity: .45; transition: opacity .15s; }
 .classic-switch.open .classic-handle, .classic-handle:hover, .classic-handle:focus-visible { opacity: 1; color: var(--text); }
 .classic-panel { display: flex; gap: 6px; align-items: center; padding: 6px; border-radius: 12px; background: rgba(10, 8, 18, .92); border: 1px solid var(--line-strong); box-shadow: 0 10px 30px rgba(0, 0, 0, .5); flex-wrap: wrap; max-width: calc(100vw - 70px); }
 .classic-panel .select { width: auto; padding: 4px 8px; }
