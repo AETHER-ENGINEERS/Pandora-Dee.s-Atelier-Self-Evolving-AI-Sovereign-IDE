@@ -197,6 +197,8 @@ p { line-height: 1.55; margin: 0 0 10px; }
 .resize.ne { right: -3px; top: -3px; width: 14px; height: 14px; cursor: nesw-resize; }
 .resize.nw { left: -3px; top: -3px; width: 14px; height: 14px; cursor: nwse-resize; }
 .win.max .resize { display: none; }
+/* while a window is moved or resized, embedded pages don't catch the pointer (see Window.tsx) */
+body.dragging-window iframe, body.dragging-window webview { pointer-events: none; }
 
 /* ---------- phone ---------- */
 .phone .menubar { display: none; }

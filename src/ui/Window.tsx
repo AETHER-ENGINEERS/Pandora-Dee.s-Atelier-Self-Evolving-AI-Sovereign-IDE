@@ -48,6 +48,25 @@ export function Window({
     const maxH = space?.height ?? window.innerHeight;
     const el = ref.current;
     let next = { ...box };
+    // While dragging, embedded pages (Vector, games, the browser) ignore the pointer, and the handle holds on to it:
+    // otherwise a page under the pointer swallows the moves and the release, and the window keeps resizing.
+    const handle = e.currentTarget as HTMLElement;
+    try {
+      handle.setPointerCapture(e.pointerId);
+    } catch {
+      /* already released */
+    }
+    document.body.classList.add("dragging-window");
+    // one update per screen frame: a heavy page inside (Vector's app) re-lays itself out on each one
+    let frame = 0;
+    const apply = () => {
+      frame = 0;
+      if (!el) return;
+      el.style.left = `${next.x}px`;
+      el.style.top = `${next.y}px`;
+      el.style.width = `${next.w}px`;
+      el.style.height = `${next.h}px`;
+    };
     const onMove = (ev: PointerEvent) => {
       const dx = ev.clientX - sx;
       const dy = ev.clientY - sy;
@@ -69,22 +88,24 @@ export function Window({
           next.h = h;
         }
       }
-      if (el) {
-        el.style.left = `${next.x}px`;
-        el.style.top = `${next.y}px`;
-        el.style.width = `${next.w}px`;
-        el.style.height = `${next.h}px`;
-      }
+      if (!frame) frame = requestAnimationFrame(apply);
     };
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      handle.removeEventListener("lostpointercapture", onUp);
+      if (frame) cancelAnimationFrame(frame);
+      apply();
       document.body.style.userSelect = "";
+      document.body.classList.remove("dragging-window");
       moveApp(id, next);
     };
     document.body.style.userSelect = "none";
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    handle.addEventListener("lostpointercapture", onUp);
   };
 
   if (!win.open) return null;
