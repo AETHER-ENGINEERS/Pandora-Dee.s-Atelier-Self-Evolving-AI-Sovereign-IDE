@@ -134,7 +134,7 @@ export type PromptContext = {
   /** Hide a long skills list behind the skill tool's find. */
   skillRouter?: boolean;
   /** Rank memories: only the k MEMORY.md lines that best fit `query` (what's being talked about). */
-  memoryFocus?: { query: string; k: number };
+  memoryFocus?: { query: string; k: number; keep?: string[] };
 };
 
 const STOP = new Set("the and for are but not you your yours with this that what when where which who will would could should have has had was were been being from they them their there here then than into onto about just also very really like some any all can its it's i'm i've don't didn't does did our out".split(" "));
@@ -145,7 +145,7 @@ const wordsOf = (s: string) => new Set(s.toLowerCase().replace(/['’]s\b/g, "")
  * The memory lines that fit what's being talked about, best k, kept in their original order under their
  * headings. A memory with k lines or fewer comes back whole.
  */
-export function rankMemory(memory: string, query: string, k: number): string {
+export function rankMemory(memory: string, query: string, k: number, near?: string[]): string {
   const lines = memory.split("\n");
   const bullets = lines.map((l, i) => ({ l, i })).filter((x) => /^\s*[-*]\s+/.test(x.l));
   if (bullets.length <= k) return memory;
@@ -154,8 +154,9 @@ export function rankMemory(memory: string, query: string, k: number): string {
     const w = wordsOf(b.l);
     let hit = 0;
     for (const x of w) if (q.has(x)) hit++;
-    // a small lean toward newer lines, so ties keep what was learned last
-    return { ...b, score: hit + n / bullets.length / 10 };
+    // lines the vector memory found close in meaning come first; a small lean toward newer lines, so ties keep what was learned last
+    const close = near?.includes(b.l.replace(/^\s*[-*]\s+/, "").trim()) ? 1000 : 0;
+    return { ...b, score: close + hit + n / bullets.length / 10 };
   });
   const keep = new Set(scored.sort((a, b) => b.score - a.score).slice(0, k).map((x) => x.i));
   const out: string[] = [];
@@ -200,7 +201,7 @@ export function systemPrompt(ctx: PromptContext): string {
   parts.push(stripComments(files["SOUL.md"] ?? `# ${me.name}`));
   if (files["AGENTS.md"]) parts.push(stripComments(files["AGENTS.md"]));
   const whole = stripComments(files["MEMORY.md"] ?? "");
-  const memory = ctx.memoryFocus ? rankMemory(whole, ctx.memoryFocus.query, ctx.memoryFocus.k) : whole;
+  const memory = ctx.memoryFocus ? rankMemory(whole, ctx.memoryFocus.query, ctx.memoryFocus.k, ctx.memoryFocus.keep) : whole;
   if (memory) parts.push(`## My memory\n${memory}`);
   const journal = latestJournal(files);
   if (journal) parts.push(`## My latest journal entry\n${journal.slice(0, 2500)}`);

@@ -4,6 +4,7 @@ import type { Character } from "./characters.ts";
 import { desk } from "./store.ts";
 import { credential, explainError, listModels, pickModel, scopeOf, streamOnce, type Connection, type Turn } from "./model.ts";
 import { allowed, blockedBecause } from "./privacy.ts";
+import { memoryForPrompt } from "./vecmem.ts";
 import {
   TURN_NUDGE,
   isPass,
@@ -130,6 +131,16 @@ type TurnOpts = {
   signal?: AbortSignal;
 };
 
+/** Which memory lines go in the prompt: all of them, or the ones that fit (by keywords; by meaning too with her vector memory). */
+async function focusFor(charId: string, history: Message[]) {
+  const s = desk();
+  const mp = s.charPrefs[charId]?.memory;
+  if (!mp?.rag && !s.chat.rankMemory) return undefined;
+  const query = history.filter((m) => !m.pass && !m.quiet).slice(-8).map((m) => m.text).join("\n");
+  const k = mp?.rag ? (mp.ragK ?? 8) : s.chat.memoryTopK;
+  return { query, k, keep: mp?.rag ? await memoryForPrompt(charId, query, k) : undefined };
+}
+
 async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
   const s = desk();
   if (s.toddler) throw new Error("The AI is resting: toddler mode is on.");
@@ -174,9 +185,7 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
     length: aiFor(me.id).length,
     summary: meta?.summary,
     skillRouter: s.chat.skillRouter,
-    memoryFocus: s.chat.rankMemory
-      ? { query: history.filter((m) => !m.pass && !m.quiet).slice(-8).map((m) => m.text).join("\n"), k: s.chat.memoryTopK }
-      : undefined,
+    memoryFocus: await focusFor(me.id, history),
   });
   const base: Turn[] = [
     { role: "system", content: sys },

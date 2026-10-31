@@ -14,6 +14,7 @@ import { blankCharacter, type Character, type Look } from "../lib/characters.ts"
 import { download, makeBackup, toClassic } from "../lib/backup.ts";
 import { shrinkPicture } from "../lib/secure.ts";
 import { MAX_IN_ROOM } from "../lib/room.ts";
+import { embedder, memoryStatus, rebuildMemory, syncMemory } from "../lib/vecmem.ts";
 import { CharAvatar, Confirm, Seg } from "../ui/common.tsx";
 import { loadBackupFile } from "../ui/desktopApi.tsx";
 import { useWidth } from "../ui/hooks.ts";
@@ -197,6 +198,7 @@ function Profile({ c, onBack }: { c: Character; onBack: () => void }) {
         </div>
         <AvatarEditor c={c} />
         <CharAI c={c} />
+        <CharMemory c={c} />
         <CharVoice c={c} />
         {!c.builtIn ? (
           <>
@@ -548,6 +550,125 @@ function CharAI({ c }: { c: Character }) {
           <Num min={1} max={100} typedMax={100000} value={p.maxSteps ?? s.model.maxSteps} onChange={(n) => set({ maxSteps: n })} />
         </Own>
       ) : null}
+    </>
+  );
+}
+
+function CharMemory({ c }: { c: Character }) {
+  const s = useDesk();
+  const mem = s.charPrefs[c.id]?.memory ?? {};
+  const conns = s.model.connections.filter((x) => x.enabled && x.kind !== "aicord");
+  const [status, setStatus] = useState("");
+  const [models, setModels] = useState<string[]>([]);
+  const [working, setWorking] = useState(false);
+  const set = (patch: Partial<NonNullable<CharPrefs["memory"]>>) => desk().setCharPrefs(c.id, { memory: { ...desk().charPrefs[c.id]?.memory, ...patch } });
+  const { conn, model } = embedder(c.id);
+
+  const refresh = async () => {
+    try {
+      const st = await memoryStatus(c.id);
+      const parts = st.collections.map((x) => `${x.name} ${x.chunks}${mem.vectors ? ` (${x.embedded} embedded)` : ""}`);
+      setStatus((parts.length ? `In ${c.short}'s index: ${parts.join(", ")}.` : `${c.short}'s index is empty until they search it or you update it.`) + (st.dim ? ` Made with ${st.model}.` : "") + (st.error ? ` Last problem: ${st.error}` : ""));
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : String(e));
+    }
+  };
+  useEffect(() => {
+    void refresh();
+  }, [c.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const work = async (fn: () => Promise<{ added: number; removed: number; embedded: number; error: string }>) => {
+    setWorking(true);
+    setStatus("Working…");
+    try {
+      const r = await fn();
+      await refresh();
+      if (r.error) setStatus((x) => `${x} (${r.error})`);
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : String(e));
+    } finally {
+      setWorking(false);
+    }
+  };
+  const list = async () => {
+    if (!conn) return;
+    try {
+      const all = await listModels(conn, credential(conn, desk().env));
+      setModels(all.filter((m) => /embed|bge|e5|minilm|gte|nomic|arctic/i.test(m)));
+    } catch (e) {
+      setStatus(explainError(e, conn));
+    }
+  };
+
+  return (
+    <>
+      <div className="divider" />
+      <h4>{c.short}'s memory</h4>
+      <label className="check">
+        <input type="checkbox" checked={Boolean(mem.vectors)} onChange={(e) => set({ vectors: e.target.checked })} />
+        <span>Vector memory: {c.short}'s memory, journal and notes become searchable by meaning, not only by words (Classic's Embeddings). Uses an embedding model.</span>
+      </label>
+      <label className="check">
+        <input type="checkbox" checked={Boolean(mem.rag)} onChange={(e) => set({ rag: e.target.checked })} />
+        <span>Only the memory lines that fit the conversation go in the prompt{mem.vectors ? ", ranked by meaning and words" : ", ranked by words"} (saves context once memories grow long)</span>
+      </label>
+      {mem.rag ? (
+        <label className="field" style={{ maxWidth: 420 }}>
+          <span>How many lines</span>
+          <Num min={1} max={30} value={mem.ragK ?? 8} onChange={(n) => set({ ragK: n })} />
+        </label>
+      ) : null}
+      <label className="check">
+        <input type="checkbox" checked={Boolean(mem.notes)} onChange={(e) => set({ notes: e.target.checked })} />
+        <span>Index {c.short}'s other notes too, not only memory and journal</span>
+      </label>
+      {mem.vectors ? (
+        <>
+          <div className="field">
+            <span>Embeddings from</span>
+            <select className="select" value={mem.connection ?? ""} onChange={(e) => set({ connection: e.target.value || undefined })}>
+              <option value="">{c.short}'s own connection, else Ollama on this computer{conn ? ` (now: ${conn.label})` : ""}</option>
+              {conns.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <span>Embedding model</span>
+            <div className="row">
+              {models.length ? (
+                <select className="select grow" value={mem.model ?? ""} onChange={(e) => set({ model: e.target.value || undefined })}>
+                  <option value="">nomic-embed-text</option>
+                  {models.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input className="input grow mono" value={mem.model ?? ""} placeholder="nomic-embed-text" onChange={(e) => set({ model: e.target.value || undefined })} />
+              )}
+              <button className="btn small" onClick={() => void list()} disabled={!conn}>
+                List models
+              </button>
+            </div>
+            <span className="small faint">With Ollama: ollama pull {model}. Changing the model needs Rebuild.</span>
+          </div>
+        </>
+      ) : null}
+      <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+        <button className="btn small" disabled={working} onClick={() => void work(() => syncMemory(c.id))}>
+          Update the index
+        </button>
+        {mem.vectors ? (
+          <button className="btn small" disabled={working} onClick={() => void work(() => rebuildMemory(c.id))}>
+            Rebuild
+          </button>
+        ) : null}
+      </div>
+      {status ? <p className="small faint">{status}</p> : null}
     </>
   );
 }

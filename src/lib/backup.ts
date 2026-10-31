@@ -220,6 +220,17 @@ export function prefsFromClassic(s: Record<string, unknown>, connections: Connec
   if (typeof s.voiceRate === "number") voice.rate = s.voiceRate;
   if (typeof s.voicePitch === "number") voice.pitch = s.voicePitch;
   if (Object.keys(voice).length) p.voice = voice;
+  // her vector memory (Config → Embeddings), when Classic had it set up
+  if (["embedOn", "embedModel", "embedHost", "memoryRag", "memoryRagK", "embedNotes"].some((k) => k in s)) {
+    const mem: NonNullable<CharPrefs["memory"]> = { vectors: s.memoryOn !== false && s.embedOn !== false, rag: s.memoryRag === true };
+    if (typeof s.memoryRagK === "number" && s.memoryRagK > 0) mem.ragK = s.memoryRagK;
+    if (s.embedNotes === true) mem.notes = true;
+    if (typeof s.embedModel === "string" && s.embedModel) mem.model = s.embedModel;
+    const at = typeof s.embedHost === "string" ? s.embedHost.replace(/\/+$/, "") : "";
+    const host = at && connections.find((c) => c.baseUrl.replace(/\/+$/, "").replace(/\/v1$/, "") === at.replace(/\/v1$/, ""));
+    if (host) mem.connection = host.id;
+    p.memory = mem;
+  }
   return p;
 }
 
@@ -236,6 +247,15 @@ export function classicFromPrefs(s: Record<string, unknown>, p: Partial<CharPref
   if (p.voice?.voiceName) out.voiceName = p.voice.voiceName;
   if (typeof p.voice?.rate === "number") out.voiceRate = p.voice.rate;
   if (typeof p.voice?.pitch === "number") out.voicePitch = p.voice.pitch;
+  if (p.memory) {
+    out.embedOn = Boolean(p.memory.vectors);
+    out.memoryRag = Boolean(p.memory.rag);
+    if (p.memory.ragK) out.memoryRagK = p.memory.ragK;
+    out.embedNotes = Boolean(p.memory.notes);
+    if (p.memory.model) out.embedModel = p.memory.model;
+    const host = connections.find((c) => c.id === p.memory?.connection);
+    if (host?.kind === "ollama") out.embedHost = host.baseUrl;
+  }
   return out;
 }
 

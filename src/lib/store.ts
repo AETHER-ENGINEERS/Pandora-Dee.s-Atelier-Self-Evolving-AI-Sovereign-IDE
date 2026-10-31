@@ -286,6 +286,22 @@ export type CharPrefs = {
   voice?: { on?: boolean; voiceName?: string; rate?: number; pitch?: number; volume?: number; engine?: string; engineVoice?: string };
   /** Their full avatar (Live2D, VRM, or an animated picture), kept in the vault. */
   avatar?: AvatarAsset;
+  /** Vector memory, as in Classic (Config → Embeddings): her memory, journal and notes searchable by meaning. */
+  memory?: MemoryPrefs;
+};
+
+export type MemoryPrefs = {
+  /** Keep her index of memory, journal (and notes) with embeddings. Off: keyword search only. */
+  vectors?: boolean;
+  /** Only the memory lines that fit the conversation go in the prompt, ranked by meaning and keywords. */
+  rag?: boolean;
+  /** How many lines when ranking. */
+  ragK?: number;
+  /** Index her other notes too, not only memory and journal. */
+  notes?: boolean;
+  /** The connection and model that make the embeddings (empty: her own connection, then Ollama on this computer). */
+  connection?: string;
+  model?: string;
 };
 
 export type ClassicApp = "pandora" | "jade";

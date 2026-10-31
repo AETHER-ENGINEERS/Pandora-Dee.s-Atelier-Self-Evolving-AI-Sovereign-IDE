@@ -17,6 +17,7 @@ import { describeRows, library, recentLive, sendLive, sendUpdate } from "./xdc.t
 import { findSkill, searchSkills, skillsOf } from "./skills.ts";
 import { allTasks, baseOf, cleanVaultPath, isNote, loadNotes, noteName, noteTags, resolveNote, searchNotes, tasksIn, toggleTaskText, useNotes, vaultIndex, writeNote } from "./notes.ts";
 import { openNote } from "../ui/noteNav.ts";
+import { addToCollection, AUTO_COLLS, compareTexts, memoryPrefs, memoryStatus, rebuildMemory, removeFromIndex, searchMemory, syncMemory } from "./vecmem.ts";
 
 /** Who is asking: the locksmith (the person who holds the keys: everything), an admin (messenger powers) or the public (their own chat). */
 export type Scope = "locksmith" | "admin" | "public";
@@ -132,6 +133,11 @@ const MEMORY: Tool = {
     const lines = memoryLines(id);
     if (action === "list") return lines.length ? lines.map((l) => `${l.n}. [${l.section || "Memory"}] ${l.text}`).join("\n") : "Your memory has no kept lines yet.";
     if (action === "search") {
+      // with vector memory on, search memory and journal by meaning as well as words (as Classic does)
+      if (memoryPrefs(id).vectors && text.trim()) {
+        const r = await searchMemory(id, text, { k: 10 }).catch(() => undefined);
+        if (r?.hits.length) return (r.note ? `[${r.note}]\n` : "") + r.hits.map((h) => `${h.coll}${h.head ? ` · ${h.head}` : ""}: ${h.text.replace(/\s+/g, " ").slice(0, 300)}`).join("\n");
+      }
       const words = text.toLowerCase().split(/\W+/).filter(Boolean);
       const hits = lines.filter((l) => words.some((w) => l.text.toLowerCase().includes(w)));
       return hits.length ? hits.map((l) => `${l.n}. [${l.section || "Memory"}] ${l.text}`).join("\n") : "Nothing in your memory matches.";
@@ -141,6 +147,91 @@ const MEMORY: Tool = {
       return n ? `Forgot ${n} line${n === 1 ? "" : "s"}.` : "Nothing matched, so nothing was forgotten. Use list to see the numbers.";
     }
     return "Use save, list, search or forget.";
+  },
+};
+
+const EMBEDDINGS: Tool = {
+  name: "embeddings",
+  description:
+    "Your vector memory: memory, journal, notes and your own collections, searched by meaning and keywords together. search: find passages (query; collection: memory, journal, notes, or your own, comma-separated, empty = all; mode: hybrid, semantic or keyword; k); add: store texts in a collection of your own (collection, text or texts); index: embed your notes (path to limit it); remove: by id, source or collection; compare: how close two texts are in meaning (a, b); rebuild: after changing the embedding model; status.",
+  parameters: obj(
+    {
+      action: { type: "string", description: "search, add, index, remove, compare, rebuild or status" },
+      query: { type: "string", description: "search: what to look for" },
+      collection: { type: "string", description: "Collection name(s), comma-separated" },
+      mode: { type: "string", description: "search: hybrid (default), semantic or keyword" },
+      k: { type: "number", description: "search: how many results (1-30)" },
+      text: { type: "string", description: "add: the text to store" },
+      texts: { type: "array", description: "add: several texts to store" },
+      source: { type: "string", description: "add: where it came from · remove: remove everything from this source" },
+      head: { type: "string", description: "add: a short title" },
+      path: { type: "string", description: "index: only notes under this folder" },
+      id: { type: "number", description: "remove: one text by its id" },
+      a: { type: "string", description: "compare: the first text" },
+      b: { type: "string", description: "compare: the second text" },
+    },
+    ["action"],
+  ),
+  run: async (id, a) => {
+    const action = str(a.action, "status").toLowerCase();
+    const colls = a.collection ? str(a.collection).split(/\s*,\s*/).filter(Boolean) : null;
+    const vectors = Boolean(memoryPrefs(id).vectors);
+    if (action === "status") {
+      const s = await memoryStatus(id);
+      return (
+        `Vector memory is ${vectors ? "on" : "off (keyword search only; your locksmith can switch it on in Cast → your AI → Memory)"}. Embedding model: ${s.model || s.want}${s.dim ? ` (${s.dim} numbers per text)` : " (nothing embedded yet)"} via ${s.via}.\n` +
+        (s.collections.length ? s.collections.map((c) => `- ${c.name}: ${c.chunks} texts, ${c.embedded} embedded`).join("\n") : "The index is empty.") +
+        (s.error ? `\nLast problem: ${s.error}` : "")
+      );
+    }
+    if (["search", "find", "query"].includes(action)) {
+      const q = str(a.query ?? a.text);
+      if (!q.trim()) return "search needs a query.";
+      const mode = (["hybrid", "semantic", "keyword"].includes(str(a.mode)) ? str(a.mode) : "hybrid") as "hybrid" | "semantic" | "keyword";
+      const r = await searchMemory(id, q, { colls, k: Math.max(1, Math.min(30, Number(a.k) || 8)), mode });
+      if (!r.hits.length) return `Nothing found${colls ? ` in ${colls.join(", ")}` : ""}${r.note ? ` (${r.note})` : ""}. Use the index action to add your notes first, or store text with add.`;
+      return (
+        (r.note ? `[${r.note}]\n` : "") +
+        r.hits
+          .map((h, i) => `${i + 1}. [${h.coll}${h.src && h.coll !== "memory" ? ` · ${h.src}` : ""}${h.head && h.coll === "notes" ? ` › ${h.head}` : ""}] ${h.text.replace(/\s+/g, " ").slice(0, 400)}  (id ${h.id}${h.distance !== null ? `, similarity ${(1 - h.distance).toFixed(2)}` : ""}${h.kw ? ", keyword match" : ""})`)
+          .join("\n")
+      );
+    }
+    if (["add", "store", "save"].includes(action)) {
+      const coll = str(a.collection).trim();
+      if (!coll) return "add needs a collection name.";
+      if (AUTO_COLLS.includes(coll)) return `"${coll}" is filled from your files by itself; pick another collection name (or use the memory tool to remember a fact).`;
+      const texts = Array.isArray(a.texts) ? a.texts.map((t) => str(t)) : [str(a.text)];
+      let n = 0, err = "";
+      for (const t of texts) {
+        if (!t.trim()) continue;
+        const r = await addToCollection(id, coll, t, str(a.source), str(a.head));
+        if (r.added) n++;
+        if (r.error) err = r.error;
+      }
+      return `Stored ${n} text${n === 1 ? "" : "s"} in "${coll}".` + (err ? ` Not embedded yet (${err}); keyword search still finds ${n === 1 ? "it" : "them"}.` : vectors ? "" : " (Keyword search only while vector memory is off.)");
+    }
+    if (action === "index") {
+      const path = a.path ? cleanPath(str(a.path)) : "";
+      const r = await syncMemory(id, { notes: true, path });
+      const s = await memoryStatus(id);
+      const n = s.collections.find((c) => c.name === "notes");
+      return `Indexed your notes${path ? ` under ${path}` : ""}: ${r.added} new, ${r.removed} removed, ${r.embedded} embedded; "notes" holds ${n?.chunks ?? 0} passages.` + (r.error ? ` Problem: ${r.error}` : "");
+    }
+    if (["remove", "delete", "forget"].includes(action)) {
+      const n = await removeFromIndex(id, { id: a.id ? Number(a.id) : undefined, coll: colls?.[0], src: str(a.source ?? a.path) || undefined });
+      return `Removed ${n} text${n === 1 ? "" : "s"} from the index.`;
+    }
+    if (["compare", "similar", "similarity"].includes(action)) {
+      if (!a.a || !a.b) return "compare needs texts a and b.";
+      const d = await compareTexts(id, str(a.a), str(a.b));
+      return `Cosine similarity ${d.toFixed(3)} (1 = same meaning, near 0 = unrelated).`;
+    }
+    if (action === "rebuild") {
+      const r = await rebuildMemory(id);
+      return `Rebuilt: ${r.added} texts, ${r.embedded} embedded.` + (r.error ? ` Problem: ${r.error}` : "");
+    }
+    return `Unknown action "${action}" (use search, add, index, remove, compare, rebuild or status).`;
   },
 };
 
@@ -912,7 +1003,7 @@ export function toolsFor(ctx: TurnCtx): Tool[] {
     if (web) list.push(WEB[0]);
     return list;
   }
-  const list = [...BASE, BASH, MEMORY, SKILL, ...NOTES_TOOLS, MUSIC_TOOL, APPS, NOTIFY];
+  const list = [...BASE, BASH, MEMORY, EMBEDDINGS, SKILL, ...NOTES_TOOLS, MUSIC_TOOL, APPS, NOTIFY];
   if (web) list.push(...WEB, HTTP);
   if (vector) list.push(VECTOR_TOOL);
   if (discord) list.push(DISCORD_TOOL, DISCORD_HISTORY);

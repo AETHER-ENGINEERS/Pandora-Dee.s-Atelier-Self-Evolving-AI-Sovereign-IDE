@@ -19,6 +19,7 @@ import { createFiles } from "./files.mjs";
 import { createDevShare, isDevicePath } from "./devshare.mjs";
 import { createTravel } from "./travel.mjs";
 import { createEngine } from "./engine.mjs";
+import { createVecMem } from "./vecmem.mjs";
 import { checkUpdates, download } from "./upstreams.mjs";
 import * as aicordAuth from "./oauth.mjs";
 import { findCurl, findPython, forgetPrograms } from "./programs.mjs";
@@ -115,6 +116,7 @@ export function deskServer() {
   const travel = createTravel(() => dataDir);
   // the full browser: a real Chromium-family engine shown live in the Browser window (see engine.mjs)
   const deskPorts = new Set();
+  const vecmem = createVecMem({ dataDir: () => dataDir });
   const engine = createEngine({ dataDir: () => dataDir, getChoice: () => readConfig().browserEngine, deskPorts: () => [...deskPorts] });
   const withDevices = (o) => ({ ...o, devices: devices.places() });
   const library = () => {
@@ -250,6 +252,13 @@ export function deskServer() {
     const parts = url.pathname.split("/").filter(Boolean).slice(1); // after "api"
     const m = req.method;
     const L = library();
+    if (parts[0] === "vecmem" && m === "POST") {
+      try {
+        return send(res, 200, vecmem.run(JSON.parse((await readBody(req, 50_000_000)).toString("utf8") || "{}")));
+      } catch (e) {
+        return send(res, 400, { error: e instanceof Error ? e.message : String(e) });
+      }
+    }
     if (parts[0] === "oauth" && parts[1] === "aicord") {
       if (parts[2] === "start" && m === "POST") {
         const b = JSON.parse((await readBody(req, 20_000)).toString("utf8") || "{}");
