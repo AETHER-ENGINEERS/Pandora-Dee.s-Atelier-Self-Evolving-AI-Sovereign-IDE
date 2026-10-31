@@ -256,8 +256,13 @@ p { line-height: 1.55; margin: 0 0 10px; }
 .msg-actions button:hover { color: var(--text); background: var(--raise); }
 .source { font-size: .72em; padding: 0 6px; border-radius: 99px; border: 1px solid var(--line-strong); color: var(--muted); }
 .composer { display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--line); align-items: flex-end; }
-.composer textarea { flex: 1; min-height: 42px; max-height: 180px; resize: none; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line-strong); background: rgba(0, 0, 0, .3); outline: none; line-height: 1.4; }
+.composer textarea { flex: 1; min-height: 42px; max-height: 40vh; resize: none; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line-strong); background: rgba(0, 0, 0, .3); outline: none; line-height: 1.4; }
 .composer textarea:focus { border-color: var(--accent); }
+.composer textarea.fixed { max-height: none; }
+/* the line between the chat and the message box: drag it to size the box */
+.room-divider { flex: none; height: 9px; margin-top: -4px; margin-bottom: -5px; cursor: ns-resize; touch-action: none; position: relative; z-index: 2; }
+.room-divider::after { content: ""; position: absolute; left: 50%; top: 3px; width: 44px; height: 3px; margin-left: -22px; border-radius: 3px; background: var(--line-strong); transition: background .12s; }
+.room-divider:hover::after, .room-divider:active::after { background: var(--accent); }
 .md p:last-child { margin-bottom: 0; }
 .md pre { background: rgba(0, 0, 0, .4); padding: 10px; border-radius: 8px; overflow: auto; font-family: var(--mono); font-size: .88em; }
 .md code { font-family: var(--mono); font-size: .9em; background: rgba(255, 255, 255, .07); padding: 1px 5px; border-radius: 4px; }
