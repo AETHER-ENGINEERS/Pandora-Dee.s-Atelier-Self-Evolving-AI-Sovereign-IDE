@@ -11,6 +11,15 @@ const AWAY_MS = 25_000; // a device that hasn't reported for this long is away (
 const KINDS = new Set(["phone", "tablet", "laptop", "desktop", "mac", "console", "tv", "handheld", "other"]);
 
 const clip = (s, n) => String(s ?? "").slice(0, n);
+/** What "Send to" may carry: text, an http(s) link, or a picture already kept in a vault (by its path there). */
+export function cleanItem(it) {
+  it = it && typeof it === "object" ? it : {};
+  const title = clip(it.title, 120);
+  if (it.kind === "text" && it.text) return { kind: "text", text: clip(it.text, 20_000), title };
+  if (it.kind === "link" && /^https?:\/\//i.test(String(it.url))) return { kind: "link", url: clip(it.url, 2000), title };
+  if (it.kind === "image" && it.path && !String(it.path).includes("..")) return { kind: "image", path: clip(it.path, 500), title };
+  throw Object.assign(new Error("There's nothing to send."), { status: 400 });
+}
 const num = (v, lo, hi, d = 0) => (Number.isFinite(Number(v)) ? Math.min(hi, Math.max(lo, Number(v))) : d);
 
 export function createPads({ dataDir }) {
@@ -82,18 +91,22 @@ export function createPads({ dataDir }) {
     const from = data.devices[clip(b.from, 40)];
     const to = data.devices[clip(b.to, 40)];
     if (!from || !to) throw Object.assign(new Error("That device isn't in this account's PADS."), { status: 404 });
-    const it = b.item && typeof b.item === "object" ? b.item : {};
-    const title = clip(it.title, 120);
-    let item;
-    if (it.kind === "text" && it.text) item = { kind: "text", text: clip(it.text, 20_000), title };
-    else if (it.kind === "link" && /^https?:\/\//i.test(String(it.url))) item = { kind: "link", url: clip(it.url, 2000), title };
-    else if (it.kind === "image" && it.path && !String(it.path).includes("..")) item = { kind: "image", path: clip(it.path, 500), title };
-    else throw Object.assign(new Error("There's nothing to send."), { status: 400 });
-    const box = mail.get(to.id) ?? [];
-    box.push({ from: from.name, fromId: from.id, at: Date.now(), item });
-    mail.set(to.id, box.slice(-20));
+    return deliver(account, to.id, { from: from.name, fromId: from.id, item: cleanItem(b.item) });
+  }
+
+  /** Into a device's mailbox here (from a device here, or one on a linked server). */
+  function deliver(account, toId, { from, fromId, item }) {
+    if (!read(account).devices[toId]) throw Object.assign(new Error("That device isn't in this account's PADS."), { status: 404 });
+    const box = mail.get(toId) ?? [];
+    box.push({ from: clip(from, 120), fromId: clip(fromId, 40), at: Date.now(), item });
+    mail.set(toId, box.slice(-20));
     return { ok: true };
   }
+
+  /** True when the device is one of this server's. */
+  const has = (account, id) => Boolean(read(account).devices[id]);
+  /** Where this server's room puts a device (its own, or one on a linked server it was arranged with). */
+  const layoutOf = (account, id) => read(account).layout[id] ?? null;
 
   /** Everything the PADS Manager shows for an account. */
   function roster(account) {
@@ -110,7 +123,8 @@ export function createPads({ dataDir }) {
   /** Where each device sits in the room (the Manager's arrangement). */
   function arrange(account, positions) {
     const data = read(account);
-    for (const [id, p] of Object.entries(positions ?? {})) if (data.devices[id]) data.layout[id] = { x: num(p.x, -20000, 20000), y: num(p.y, -20000, 20000) };
+    // devices on linked servers can be arranged here too (their ids are checked like this server's own)
+    for (const [id, p] of Object.entries(positions ?? {})) if (/^[A-Za-z0-9_-]{8,40}$/.test(id)) data.layout[id] = { x: num(p.x, -20000, 20000), y: num(p.y, -20000, 20000) };
     write(account, data);
     return roster(account);
   }
@@ -125,5 +139,5 @@ export function createPads({ dataDir }) {
     return roster(account);
   }
 
-  return { hello, roster, arrange, forget, sendTo };
+  return { hello, roster, arrange, forget, sendTo, deliver, has, layoutOf };
 }

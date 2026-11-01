@@ -3,7 +3,8 @@ import { Gamepad2, Laptop, Monitor, Smartphone, Tablet, Tv, HelpCircle, Music2, 
 import { useDesk } from "../lib/store.ts";
 import { askUser } from "../ui/Ask.tsx";
 import { openMenu } from "../ui/ContextMenu.tsx";
-import { deviceId, KINDS, myName, padsApi, setMe, useMe, type Device, type Kind } from "../lib/pads.ts";
+import { deviceId, KINDS, myName, padsApi, setMe, useMe, type Device, type Kind, type Server } from "../lib/pads.ts";
+import { LinkedServers } from "./PadsServers.tsx";
 
 /** How big a device's card is: its screen, at this scale (so a phone is narrow and tall, a TV wide). */
 const SCALE = 0.13;
@@ -28,12 +29,17 @@ export function PadsApp() {
   const [view, setViewState] = useState<View>({ x: 40, y: 40, k: 1 });
   const viewRef = useRef(view);
   const setView = (v: View) => ((viewRef.current = v), setViewState(v));
-  const fitted = useRef(false);
+  const fitted = useRef(0); // how many devices there were when everything was last fitted in
 
+  const [servers, setServers] = useState<Server[]>([]);
   // the roster, fresh every few seconds while the window is open
   useEffect(() => {
     let alive = true;
-    const load = () => void padsApi.roster().then((d) => alive && setDevices(d), () => undefined);
+    const load = () =>
+      void padsApi.roster().then(
+        (r) => alive && (setDevices(r.devices), setServers(r.servers)),
+        () => undefined,
+      );
     load();
     const t = setInterval(load, 3000);
     return () => ((alive = false), clearInterval(t));
@@ -81,8 +87,9 @@ export function PadsApp() {
     setView({ k, x: (el.clientWidth - bw * k) / 2 - Math.min(...xs) * k, y: (el.clientHeight - bh * k) / 2 - Math.min(...ys) * k });
   };
   useEffect(() => {
-    if (devices.length && !fitted.current) {
-      fitted.current = true;
+    // at first, and whenever a device joins (it may have landed out of sight)
+    if (devices.length > fitted.current) {
+      fitted.current = devices.length;
       fit();
     }
   });
@@ -270,7 +277,7 @@ export function PadsApp() {
               className={`pads-card${d.here ? "" : " away"}${d.id === mine ? " mine" : ""}${drag?.id === d.id ? " dragging" : ""}`}
               data-device={d.id}
               style={{ left: p.x, top: p.y, width: s.w, height: s.h }}
-              title={`${d.name} · ${KINDS.find((k) => k.id === d.kind)?.name} · ${d.browser} · ${d.screen.w}×${d.screen.h}${d.here ? "" : ` · away, last seen ${ago(d.seen)}`}`}
+              title={`${d.name} · ${KINDS.find((k) => k.id === d.kind)?.name} · ${d.browser} · ${d.screen.w}×${d.screen.h}${d.server ? ` · on ${d.server}` : ""}${d.here ? "" : ` · away, last seen ${ago(d.seen)}`}`}
             >
               <div className="pads-screen">
                 {d.state?.hangout ? (
@@ -312,7 +319,8 @@ export function PadsApp() {
               <span className={`pads-dot${d.here ? " on" : ""}`} />
               <b>{d.name}</b>
               <span className="faint">
-                {KINDS.find((k) => k.id === d.kind)?.name} · {d.browser} · {d.here ? "here" : `away, last seen ${ago(d.seen)}`}
+                {KINDS.find((k) => k.id === d.kind)?.name} · {d.browser}
+                {servers.length > 1 && d.server ? ` · on ${d.server}` : ""} · {d.here ? "here" : `away, last seen ${ago(d.seen)}`}
                 {d.id === mine ? " · this device" : ""}
               </span>
               <span style={{ flex: 1 }} />
@@ -332,6 +340,7 @@ export function PadsApp() {
           ))}
         </ul>
       ) : null}
+      <LinkedServers live={servers} />
       {!session ? <p className="small faint" style={{ margin: "6px 10px" }}>Tip: sign into the same account on each device (Settings → Accounts) so they all show here together.</p> : null}
     </div>
   );

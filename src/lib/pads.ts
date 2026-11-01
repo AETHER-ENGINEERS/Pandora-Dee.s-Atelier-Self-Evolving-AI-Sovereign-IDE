@@ -31,7 +31,13 @@ export type Device = {
   here: boolean;
   layout: { x: number; y: number };
   state: { windows: Win[]; hangout: boolean; phone: boolean; playing: string } | null;
+  /** which SEASIDE server it's connected to (this one, or a linked one) */
+  server?: string;
+  serverId?: string;
 };
+/** A SEASIDE server in the account's PADS: this one, or one linked with it. */
+export type Server = { id: string; name: string; here: boolean; me?: boolean; url?: string; error?: string };
+export type ServersInfo = { me: { id: string; name: string }; servers: { id: string; name: string; url: string; created: number; seen: number }[]; canChange: boolean; addresses: string[]; lan: boolean };
 
 type Me = { on: boolean; name: string; kind: Kind };
 const ME_KEY = "pdd-pads-me";
@@ -114,8 +120,9 @@ export async function report(): Promise<Device[] | null> {
     body: JSON.stringify({ id: deviceId(), account: account(), name: myName(), kind: me.kind, browser: browserName(), screen: { w: innerWidth, h: innerHeight, dpr: devicePixelRatio || 1 }, state: state() }),
   }).catch(() => null);
   if (!r?.ok) return null;
-  const j = (await r.json()) as { devices: Device[]; mail?: Mail[] };
+  const j = (await r.json()) as { devices: Device[]; servers?: Server[]; mail?: Mail[] };
   roster = j.devices ?? [];
+  servers = j.servers ?? [];
   if (j.mail?.length) {
     inbox = [...inbox, ...j.mail].slice(-12);
     inboxListeners.forEach((f) => f());
@@ -127,8 +134,11 @@ export async function report(): Promise<Device[] | null> {
 export type Mail = { from: string; fromId: string; at: number; item: { kind: "text"; text: string; title?: string } | { kind: "link"; url: string; title?: string } | { kind: "image"; path: string; title?: string } };
 
 let roster: Device[] = [];
+let servers: Server[] = [];
 /** The account's devices as of the last report (for "Send to" menus). */
 export const lastRoster = () => roster;
+/** This server and the linked ones, as of the last report. */
+export const lastServers = () => servers;
 
 let inbox: Mail[] = [];
 const inboxListeners = new Set<() => void>();
@@ -149,7 +159,18 @@ export function startPads() {
 }
 
 export const padsApi = {
-  roster: async (): Promise<Device[]> => ((await (await fetch(`/api/pads/roster?account=${encodeURIComponent(account())}`)).json()) as { devices: Device[] }).devices ?? [],
+  roster: async (): Promise<{ devices: Device[]; servers: Server[] }> => {
+    const j = (await (await fetch(`/api/pads/roster?account=${encodeURIComponent(account())}`)).json()) as { devices?: Device[]; servers?: Server[] };
+    return { devices: j.devices ?? [], servers: j.servers ?? [] };
+  },
+  servers: async (): Promise<ServersInfo> => (await fetch("/api/pads/servers")).json() as Promise<ServersInfo>,
+  /** Linking, unlinking, renaming (on the server's own computer only). */
+  serverOp: async <T = unknown>(body: Record<string, string>): Promise<T> => {
+    const r = await fetch("/api/pads/servers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((j as { error?: string }).error || `The server answered ${r.status}.`);
+    return j as T;
+  },
   arrange: (positions: Record<string, { x: number; y: number }>) => fetch("/api/pads/arrange", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ account: account(), positions }) }),
   send: (to: string, item: unknown) => fetch("/api/pads/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ account: account(), from: deviceId(), to, item }) }),
   forget: (id: string) => fetch("/api/pads/forget", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ account: account(), id }) }),

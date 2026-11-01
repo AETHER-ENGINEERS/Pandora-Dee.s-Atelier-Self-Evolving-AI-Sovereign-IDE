@@ -26,6 +26,8 @@ import { createTheater, PIECE_MAX } from "./theater.mjs";
 import { createPairs, pairedCors } from "./pairs.mjs";
 import { acceptSocket } from "./wsframes.mjs";
 import { createPads } from "./pads.mjs";
+import { createPeers } from "./peers.mjs";
+import { createPadsLink } from "./padsLink.mjs";
 import os from "node:os";
 import dns from "node:dns";
 import { createHash } from "node:crypto";
@@ -138,6 +140,9 @@ export function deskServer() {
   const pairs = createPairs({ file: () => path.join(dataDir, "classic-pairs.json") });
   // PADS: the account's devices, what's on them, and how they're arranged (see pads.mjs)
   const pads = createPads({ dataDir: () => dataDir });
+  // linked servers (one per device): PADS and "Send to" across all of them (see peers.mjs, padsLink.mjs)
+  const peers = createPeers({ file: () => path.join(dataDir, "pads-servers.json") });
+  let padsLink = null; // made once vaultFile is defined, below
   /** A paired page may use the relay, but never to reach the desktop itself (its own server, by any name that
    *  leads to this computer, after any redirect): that would give it the desktop's controls. */
   const notTheDesktop = (req) => async (u) => {
@@ -212,6 +217,13 @@ export function deskServer() {
     const full = path.resolve(base, String(rel || "").replace(/^\/+/, ""));
     return full === base || full.startsWith(base + path.sep) ? full : null;
   };
+
+  padsLink = createPadsLink({ pads, peers, vaultFile });
+  /** Where other devices can reach this server: this computer, and its home-network (and Tailscale) addresses. */
+  const addressesOf = (port) => [
+    `http://localhost:${port}`,
+    ...Object.values(os.networkInterfaces()).flat().filter((i) => i && i.family === "IPv4" && !i.internal && /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|100\.)/.test(i.address)).map((i) => `http://${i.address}:${port}`),
+  ];
 
   const hostOf = (req) => String(req.headers.host || "").replace(/:\d+$/, "").toLowerCase();
   const isAppHost = (req) => hostOf(req) === "127.0.0.1";
@@ -553,13 +565,28 @@ export function deskServer() {
     // pairings for Classic opened elsewhere: listed here; made and removed only on the desktop's own computer
     if (parts[0] === "pads") {
       try {
-        if (parts[1] === "roster" && m === "GET") return send(res, 200, pads.roster(String(url.searchParams.get("account") || "")));
+        if (parts[1] === "roster" && m === "GET") return send(res, 200, await padsLink.roster(String(url.searchParams.get("account") || "")));
+        // linked servers: this one's name, the others, and (on this computer only) linking, unlinking, renaming
+        if (parts[1] === "servers") {
+          if (m === "GET") return send(res, 200, { me: peers.me(), servers: peers.list(), canChange: onThisPc(req), addresses: addressesOf(req.socket.localPort), lan: lan() });
+          if (!onThisPc(req)) return send(res, 403, { error: "Servers are linked and unlinked on each server's own computer." });
+          const b = JSON.parse((await readBody(req, 10_000)).toString("utf8") || "{}");
+          if (b.op === "invite") return send(res, 200, peers.invite());
+          if (b.op === "link") return send(res, 200, await padsLink.link(String(b.address || ""), String(b.code || ""), { port: req.socket.localPort, url: String(b.url || "") }));
+          if (b.op === "unlink") return send(res, 200, peers.remove(String(b.id || "")));
+          if (b.op === "rename") return send(res, 200, peers.rename(String(b.name || "")));
+          return send(res, 400, { error: "Which change?" });
+        }
         if (m === "POST") {
           const b = JSON.parse((await readBody(req, 200_000)).toString("utf8") || "{}");
-          if (parts[1] === "hello") return send(res, 200, pads.hello(b));
+          // the roster that comes back includes linked servers' devices, as last known (it doesn't wait for them)
+          if (parts[1] === "hello") {
+            const here = pads.hello(b);
+            return send(res, 200, { ...here, ...(await padsLink.roster(String(b.account || ""), { wait: false })) });
+          }
           if (parts[1] === "arrange") return send(res, 200, pads.arrange(String(b.account || ""), b.positions));
           if (parts[1] === "forget") return send(res, 200, pads.forget(String(b.account || ""), String(b.id || "")));
-          if (parts[1] === "send") return send(res, 200, pads.sendTo(String(b.account || ""), b));
+          if (parts[1] === "send") return send(res, 200, await padsLink.send(String(b.account || ""), b));
         }
       } catch (e) {
         return send(res, e?.status ?? 400, { error: e instanceof Error ? e.message : String(e) });
@@ -969,6 +996,11 @@ export function deskServer() {
       }
       // the hidden Vector host's bridge (this computer only, with its run's token; see vectorHost.mjs)
       if (url.pathname === "/vh-bridge/next" || url.pathname === "/vh-bridge/reply") return void (await vectorHost().bridge(req, res, url, readBody));
+      // linked SEASIDE servers asking this one (with their token; joining with an invite code made here)
+      if (url.pathname.startsWith("/pads-peer/")) {
+        deskPorts.add(req.socket.localPort);
+        if (await padsLink.handle(req, res, url, { readBody, send })) return;
+      }
       // paired Classic pages (other origins, with their pairing token): hello, and the relay
       if (url.pathname === "/paired/hello" || url.pathname === "/paired/relay") {
         pairedCors(req, res);

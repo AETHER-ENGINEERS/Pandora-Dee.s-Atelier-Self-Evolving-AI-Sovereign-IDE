@@ -5,7 +5,7 @@ import type { MenuItem } from "../ui/ContextMenu.tsx";
 import { desk } from "./store.ts";
 import { cleanVaultPath, freePath, loadNotes, safeTitle, writeFile, writeNote } from "./notes.ts";
 import { openNote } from "../ui/noteNav.ts";
-import { deviceId, lastRoster, padsApi } from "./pads.ts";
+import { deviceId, lastRoster, lastServers, padsApi } from "./pads.ts";
 
 export type Sendable =
   | { kind: "text"; text: string; title?: string }
@@ -73,8 +73,13 @@ export function sendToItems(item: Sendable): MenuItem[] {
   if (item.kind !== "image") out.push({ label: "Room (into the typing bar)", run: () => toRoom(item) });
   if (item.kind === "image" && !item.path)
     out.push({ label: "The desktop (Vault › Pictures)", run: () => void pathOf(item).then((p) => tell(`Kept on the desktop: ${p}`), failed) });
-  // the other devices of this account that are in PADS right now
+  // the other devices of this account that are in PADS right now (on this server or a linked one)
   const mine = deviceId();
-  for (const d of lastRoster().filter((d) => d.here && d.id !== mine)) out.push({ label: d.name, run: () => void toDevice(d.id, d.name, item).catch(failed) });
+  const myServer = lastServers().find((s) => s.me)?.id;
+  for (const d of lastRoster().filter((d) => d.here && d.id !== mine))
+    out.push({ label: d.name, hint: d.serverId && d.serverId !== myServer ? `on ${d.server}` : undefined, run: () => void toDevice(d.id, d.name, item).catch(failed) });
+  // linked servers themselves: into their vault (a note, or the picture)
+  for (const s of lastServers().filter((s) => !s.me && s.here))
+    out.push({ label: `${s.name}'s vault`, hint: "server", run: () => void toDevice(`server:${s.id}`, s.name, item).catch(failed) });
   return out;
 }
