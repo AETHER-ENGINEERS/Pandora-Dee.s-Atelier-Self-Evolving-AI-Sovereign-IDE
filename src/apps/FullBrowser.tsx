@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, BookOpenText, Cpu, Keyboard, Plus, RotateCw, X } from "lucide-react";
 import { desk } from "../lib/store.ts";
 import { EnginePanel } from "./BrowserEngine.tsx";
+import { LookButton, usePageLook } from "./browserLook.tsx";
 
 /** Open an address in the full browser, in a new tab, and bring the Browser window forward. */
 export async function openInFullBrowser(url: string) {
@@ -40,6 +41,11 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
   const [note, setNote] = useState("");
   const [problem, setProblem] = useState("");
   const [engineOpen, setEngineOpen] = useState(false);
+  // light or dark pages: this device's setting (followed as it changes) or the one chosen
+  const look = usePageLook();
+  useEffect(() => {
+    if (tabs.length) quiet({ op: "look", ...look });
+  }, [look.scheme, look.darken, tabs.length > 0]); // eslint-disable-line react-hooks/exhaustive-deps
   const view = useRef<HTMLDivElement>(null);
   const typer = useRef<HTMLTextAreaElement>(null);
   const opened = useRef(false);
@@ -155,6 +161,7 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
         <button className="icon-btn" aria-label="Reader" data-tip="Reader: the private browser (nothing kept)" onClick={onReader}>
           <BookOpenText size={15} />
         </button>
+        <LookButton />
         <button className="icon-btn" aria-label="Engine" data-tip="The browser's engine (Ungoogled Chromium…)" onClick={() => setEngineOpen(!engineOpen)}>
           <Cpu size={15} />
         </button>
@@ -174,7 +181,7 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
       ) : null}
       <div
         ref={view}
-        className="full-browser-view"
+        className={`full-browser-view${look.scheme === "dark" ? " dark" : ""}`}
         tabIndex={0}
         onPointerDown={(e) => {
           // typing goes through the hidden box (it takes every kind of typing: keys, dictation, emoji, other

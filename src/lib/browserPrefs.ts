@@ -3,8 +3,10 @@
 
 export type BrowserTab = { id: string; history: string[]; at: number; title: string; reader: boolean };
 export type Bookmark = { title: string; url: string };
-/** `mode`: the full browser (a real engine on the desktop; the default) or the private Reader (nothing kept). */
-export type BrowserPrefs = { tabs: BrowserTab[]; active: string; bookmarks: Bookmark[]; home: string; bar: boolean; mode?: "full" | "reader" };
+/** `mode`: the full browser (a real engine on the desktop; the default) or the private Reader (nothing kept).
+ *  `scheme`: the light or dark look pages are asked for: this device's own setting (the default), or always one.
+ *  `darken`: Chromium's automatic darkening for sites with no dark look of their own (off unless chosen). */
+export type BrowserPrefs = { tabs: BrowserTab[]; active: string; bookmarks: Bookmark[]; home: string; bar: boolean; mode?: "full" | "reader"; scheme?: "device" | "dark" | "light"; darken?: boolean };
 
 export const BROWSER_DEFAULT: BrowserPrefs = {
   tabs: [],

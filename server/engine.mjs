@@ -101,6 +101,9 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
   let seq = 0;
   const clients = new Set(); // SSE responses
   let view = { w: 1100, h: 700, dpr: 1, mobile: false };
+  // the look pages are asked for: light or dark (the Browser window sends its device's own, or the one chosen), and
+  // Chromium's automatic darkening for sites without a dark look of their own
+  let look = { scheme: "light", darken: false };
   let error = "";
   let paused = null;
 
@@ -200,6 +203,7 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     if (ua) await cdp.send("Network.setUserAgentOverride", { userAgent: ua }).catch(() => undefined);
     // drawn at the Browser window's own size and sharpness, so the picture is never stretched (that was the blur)
     await fit(cdp);
+    await dress(cdp);
     const t = { page, cdp, url: page.url(), title: "", loading: false };
     tabs.set(id, t);
     const upd = async () => {
@@ -231,6 +235,12 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     if (show || !active) await watch(id);
     pushTabs();
     return id;
+  }
+
+  /** One tab asked for the chosen look (prefers-color-scheme), and darkened when that's chosen. */
+  async function dress(cdp) {
+    await cdp.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: look.scheme }] }).catch(() => undefined);
+    await cdp.send("Emulation.setAutoDarkModeOverride", look.darken ? { enabled: true } : {}).catch(() => undefined);
   }
 
   /** One tab drawn at the Browser window's size, sharpness, and phone-or-not. */
@@ -300,6 +310,11 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
       return { ok: true };
     }
     if (op === "focus") return await watch(String(b.id)), { ok: true };
+    if (op === "look") {
+      look = { scheme: b.scheme === "dark" ? "dark" : "light", darken: Boolean(b.darken) };
+      for (const t of tabs.values()) await dress(t.cdp);
+      return { ok: true };
+    }
     const t = tab(b.id);
     if (op === "go") return go(t, addressOf(b.url)), { ok: true };
     if (op === "back") return void t.page.goBack().catch(() => undefined), { ok: true };
