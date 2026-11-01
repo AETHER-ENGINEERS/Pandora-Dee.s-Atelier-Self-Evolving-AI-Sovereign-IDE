@@ -62,7 +62,9 @@ jobs:
       - name: Show why it stopped
         if: failure()
         run: |
-          tail -n 120 build.log | sed 's/%/%25/g' > tail.log
+          # a configure that gave up says why in its config.log (the newest one is the one that stopped)
+          last=$(find luanti-wasm/build -name config.log -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -n 1 | cut -d' ' -f2-)
+          { [ -n "$last" ] && tail -n 70 "$last" | grep -v '^ac_cv_\|^| ' ; node --version; tail -n 50 build.log; } | sed 's/%/%25/g' | tail -n 120 > tail.log
           for start in 1 41 81; do
             chunk=$(sed -n "${start},$((start + 39))p" tail.log | awk 'BEGIN { ORS = "%0A" } { print }')
             [ -n "$chunk" ] && echo "::error title=Build log (part $(( (start + 39) / 40 )) of 3)::${chunk}"
