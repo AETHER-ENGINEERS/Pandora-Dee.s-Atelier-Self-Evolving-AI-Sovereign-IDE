@@ -1,4 +1,5 @@
 import { viewH, viewW } from "../lib/zoom.ts";
+import { memoryApi, pageMemory, unloadMinimized, type ServerMemory } from "../lib/memory.ts";
 import { EngineVoicePicker, ListeningSettings, VoiceEnginesEditor } from "../ui/VoiceEngines.tsx";
 import { remoteFor } from "../lib/prefs.ts";
 import { Num } from "../ui/Num.tsx";
@@ -30,7 +31,7 @@ import { formatDate } from "../lib/templates.ts";
 import { CLOCK_DEFAULT, formatClock, REGIONS, validLocale, validZone, zones, type ClockPrefs } from "../lib/clock.ts";
 import { FromOtherDevices, TravelSwitch } from "../ui/Travel.tsx";
 
-type Section = "ai" | "chat" | "notes" | "look" | "clock" | "dock" | "hangout" | "voice" | "shortcuts" | "touch" | "classic" | "privacy" | "accounts" | "adult" | "storage" | "backup";
+type Section = "ai" | "chat" | "notes" | "look" | "clock" | "dock" | "hangout" | "voice" | "shortcuts" | "touch" | "classic" | "privacy" | "accounts" | "adult" | "storage" | "memory" | "backup";
 
 const SECTIONS: { id: Section; label: string; sensitive?: boolean }[] = [
   { id: "ai", label: "AI" },
@@ -48,6 +49,7 @@ const SECTIONS: { id: Section; label: string; sensitive?: boolean }[] = [
   { id: "accounts", label: "Accounts" },
   { id: "adult", label: "Adult shelf", sensitive: true },
   { id: "storage", label: "Storage" },
+  { id: "memory", label: "Memory" },
   { id: "backup", label: "Backup and reset" },
 ];
 
@@ -98,6 +100,7 @@ export function SettingsApp() {
         {section === "touch" ? <TouchSection /> : null}
         {section === "classic" ? <ClassicSection /> : null}
         {section === "storage" ? <StorageSection /> : null}
+        {section === "memory" ? <MemorySection /> : null}
         {section === "privacy" ? <PrivacySection /> : null}
         {section === "accounts" ? <AccountsSection /> : null}
         {section === "adult" ? <AdultSection /> : null}
@@ -1628,6 +1631,94 @@ function ClassicPairs() {
       ) : null}
       {err ? <p className="small bad-text">{err}</p> : null}
     </div>
+  );
+}
+
+function MemorySection() {
+  const s = useDesk();
+  const m = s.memory;
+  const set = (patch: Partial<typeof m>) => desk().set({ memory: { ...desk().memory, ...patch } });
+  const [srv, setSrv] = useState<ServerMemory | null>(null);
+  const [page, setPage] = useState(pageMemory());
+  const [note, setNote] = useState("");
+  const load = () => void memoryApi.status().then((x) => setSrv(x?.server ? x : null), () => setSrv(null));
+  useEffect(() => {
+    load();
+    const t = window.setInterval(() => (load(), setPage(pageMemory())), 5000);
+    return () => window.clearInterval(t);
+  }, []);
+  const act = async (body: Record<string, unknown>, said: (x: ServerMemory & { freed?: { mb: number }; slept?: boolean }) => string) => {
+    try {
+      const x = (await memoryApi.post(body)) as ServerMemory & { freed?: { mb: number }; slept?: boolean };
+      setSrv(x);
+      setNote(said(x));
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : String(e));
+    }
+  };
+  const minutes = (n: number) => (n ? `${n} min` : "off");
+  return (
+    <>
+      <h2>Memory</h2>
+      <p className="lead small">Keep SEASIDE light: on this device (each one chooses for itself), and on the desktop's computer. Everything here is off until you switch it on.</p>
+
+      <h4>This device</h4>
+      <p className="small muted">
+        {page !== null ? `This page is using about ${page} MB. ` : ""}
+        Unloading frees a window's contents; it opens again where it was. Windows that are busy are left alone: sound or video playing in them, a game in
+        progress, Vector.
+      </p>
+      <label className="field" style={{ maxWidth: 420 }}>
+        <span>Unload windows minimized for longer than ({minutes(m.unloadMinimizedMin)})</span>
+        <Num min={0} max={240} step={5} value={m.unloadMinimizedMin} onChange={(n) => set({ unloadMinimizedMin: n })} />
+      </label>
+      <label className="field" style={{ maxWidth: 420 }}>
+        <span>Free all minimized windows after this long in the background ({minutes(m.freeHiddenMin)})</span>
+        <Num min={0} max={240} step={5} value={m.freeHiddenMin} onChange={(n) => set({ freeHiddenMin: n })} />
+      </label>
+      <button
+        className="btn"
+        onClick={() => {
+          const n = unloadMinimized();
+          setNote(n ? `${n} minimized window${n === 1 ? "" : "s"} freed.` : "Nothing to free: no minimized windows that aren't busy.");
+        }}
+      >
+        Free minimized windows now
+      </button>
+
+      <h4 style={{ marginTop: 18 }}>The desktop's computer</h4>
+      {srv ? (
+        <>
+          <p className="small muted">
+            The server is using {srv.server.rss} MB ({srv.server.heap} MB of it its own working memory). The computer has {srv.computer.free} MB free of{" "}
+            {srv.computer.total} MB. The full browser is {srv.engine.running ? (srv.engine.viewers ? "running, with someone watching" : `running, unwatched for ${srv.engine.idleMin} min`) : "asleep"}.
+          </p>
+          <label className="field" style={{ maxWidth: 420 }}>
+            <span>Put the full browser to sleep after nobody's watched or used it for ({minutes(srv.settings.engineSleepMin)})</span>
+            <Num min={0} max={240} step={5} value={srv.settings.engineSleepMin} onChange={(n) => void act({ op: "set", engineSleepMin: n }, () => "")} />
+          </label>
+          <p className="small faint" style={{ marginTop: -4 }}>
+            It wakes when it's next opened. Its tabs come back where they were when “Remember where I left off” is on (Browser settings); otherwise they close.
+          </p>
+          <label className="field" style={{ maxWidth: 420 }}>
+            <span>Clean up the server's memory every ({minutes(srv.settings.cleanEveryMin)})</span>
+            <Num min={0} max={240} step={5} value={srv.settings.cleanEveryMin} onChange={(n) => void act({ op: "set", cleanEveryMin: n }, () => "")} />
+          </label>
+          <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+            <button className="btn" disabled={!srv.canClean} onClick={() => void act({ op: "clean" }, (x) => `Cleaned up: ${x.freed?.mb ?? 0} MB given back.`)}>
+              Clean up now
+            </button>
+            <button className="btn" disabled={!srv.canChange || !srv.engine.running} onClick={() => void act({ op: "sleep-engine" }, (x) => (x.slept ? "The full browser is asleep." : "It was already asleep."))}>
+              Put the full browser to sleep now
+            </button>
+          </div>
+          {!srv.canChange ? <p className="small faint">The schedules are set on the desktop's own computer.</p> : null}
+        </>
+      ) : (
+        <p className="small faint">The desktop's server hasn't been restarted since this arrived; restart it to see and change its memory here.</p>
+      )}
+      {note ? <div className="note small" style={{ marginTop: 10 }}>{note}</div> : null}
+    </>
   );
 }
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { startMemory, useUnloaded } from "../lib/memory.ts";
 import { Check, Download, GripVertical, LayoutGrid } from "lucide-react";
 import { APPS, desk, inToddler, useDesk, type AppId } from "../lib/store.ts";
 import { startToddler, ToddlerPill } from "./Toddler.tsx";
@@ -123,6 +124,7 @@ export function Desktop() {
     };
   }, [phone]);
 
+  const unloaded = useUnloaded();
   const locked = s.accounts.length > 0 && !s.session;
   const focusChar = s.character(s.focus);
   const accent = focusChar?.accent ?? "#b9a4ff";
@@ -141,6 +143,8 @@ export function Desktop() {
     resumeBridges();
     // PADS: this device reports in while it's switched on here (it does nothing until then)
     startPads();
+    // memory: minimized windows unloaded after a while, when that's switched on
+    startMemory();
     // pinches zoom SEASIDE, two-finger taps are right-clicks, and right-clicks get SEASIDE's menus
     startGestures();
     const backups = startBackupSchedule();
@@ -229,7 +233,8 @@ export function Desktop() {
             extra={a.id === "games" && s.game ? <GameBar /> : undefined}
             lead={a.id === "games" && s.game ? <GameBack /> : undefined}
           >
-            <Boundary name={a.title}>{BODIES[a.id]()}</Boundary>
+            {/* a window unloaded to save memory (Settings → Memory) is drawn again when it's opened */}
+            <Boundary name={a.title}>{unloaded.has(a.id) ? null : BODIES[a.id]()}</Boundary>
           </Window>
         ))}
       </div>

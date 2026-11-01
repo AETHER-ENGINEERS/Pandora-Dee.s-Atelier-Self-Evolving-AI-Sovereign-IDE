@@ -114,6 +114,7 @@ export function Window({
   return (
     <div
       ref={ref}
+      data-win={id}
       className={`win${front ? " front" : ""}${win.min ? " min" : ""}${win.max ? " max" : ""}${inHangout ? " in-hangout" : ""}`}
       style={{ left: win.x, top: win.y, width: win.w, height: win.h, zIndex: win.z }}
       onPointerDownCapture={() => focusApp(id)}

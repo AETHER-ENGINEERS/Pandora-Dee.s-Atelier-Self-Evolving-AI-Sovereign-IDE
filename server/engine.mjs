@@ -617,8 +617,10 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
   }
 
   /** Everything the Browser window asks for. */
+  let lastUse = 0; // when anything (a window, a character) last asked the engine to do something
   async function cmd(b) {
     const op = String(b.op || "");
+    lastUse = Date.now();
     if (op === "stop") {
       await ctx?.close().catch(() => undefined);
       return { ok: true };
@@ -812,5 +814,8 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     };
   };
 
-  return { cmd, stream, attachSocket, status, installedEngines, downloaded, forgetLast, close, restart, hold };
+  /** For memory.mjs: running or not, how many are watching, and when it was last used. */
+  const activity = () => ({ running: Boolean(ctx), viewers: clients.size + sockets.size, lastUse });
+
+  return { cmd, stream, attachSocket, status, installedEngines, downloaded, forgetLast, close, restart, hold, activity };
 }

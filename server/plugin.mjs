@@ -26,6 +26,7 @@ import { createTheater, PIECE_MAX } from "./theater.mjs";
 import { createPairs, pairedCors } from "./pairs.mjs";
 import { acceptSocket } from "./wsframes.mjs";
 import { createPads } from "./pads.mjs";
+import { createMemory } from "./memory.mjs";
 import { createPeers } from "./peers.mjs";
 import { createPadsLink } from "./padsLink.mjs";
 import os from "node:os";
@@ -165,6 +166,8 @@ export function deskServer() {
   };
   const stdioPrint = (b) => createHash("sha256").update(JSON.stringify([String(b.command || ""), (b.args ?? []).map(String), String(b.cwd || ""), Object.entries(b.env ?? {}).map(([k, v]) => [k, String(v)]).sort()])).digest("hex").slice(0, 32);
   const engine = createEngine({ dataDir: () => dataDir, getChoice: () => readConfig().browserEngine, deskPorts: () => [...deskPorts] });
+  // memory on this computer: what's in use, the browser engine sleeping when idle, regular clean-ups (see memory.mjs)
+  const memory = createMemory({ engine, readConfig, writeConfig });
   // Ungoogled Chromium, downloaded into the data folder when asked (see ungoogled.mjs)
   const downloads = DOWNLOADS.map((entry) => createUngoogled({ browserDir: () => path.join(dataDir, "browser"), hold: () => engine.hold(), entry }));
   const ungoogled = downloads[0];
@@ -730,6 +733,17 @@ export function deskServer() {
     }
     if (parts[0] === "relay" && m === "POST") return relay(req, res, JSON.parse((await readBody(req, 60_000_000)).toString("utf8") || "{}"));
     if (parts[0] === "info") return send(res, 200, { dataDir, xdcDir: L.root, fromEnv: Boolean(process.env.PDD_DATA) });
+    if (parts[0] === "memory") {
+      if (m === "GET") return send(res, 200, { ...memory.status(), canChange: onThisPc(req) });
+      if (m === "POST") {
+        const b = JSON.parse((await readBody(req, 10_000)).toString("utf8") || "{}");
+        // cleaning up is harmless from any device; changing what the computer does on its own is for the computer itself
+        if (b.op === "clean") return send(res, 200, { freed: memory.clean(), ...memory.status() });
+        if (!onThisPc(req)) return send(res, 403, { error: "These are set on the desktop's own computer." });
+        if (b.op === "sleep-engine") return send(res, 200, { slept: await memory.sleepEngine(), ...memory.status() });
+        if (b.op === "set") return send(res, 200, memory.set(b));
+      }
+    }
     if (parts[0] === "storage" && m === "POST") {
       // Move (or just point) the library to another folder, e.g. a roomier drive.
       const body = JSON.parse((await readBody(req)).toString("utf8") || "{}");

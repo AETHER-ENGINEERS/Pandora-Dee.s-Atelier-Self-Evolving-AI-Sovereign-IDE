@@ -502,6 +502,8 @@ export type State = {
   touch: { edgeSwipe: boolean; doubleTapScene: boolean; longPress: boolean };
   /** Cats on the desktop; the first one listed is the senior cat. */
   cats: { on: boolean; size: number; list: Cat[]; follow: boolean };
+  /** Memory on this device (Settings → Memory; off until switched on). */
+  memory: { unloadMinimizedMin: number; freeHiddenMin: number };
   /** Where each character stands in the scene, as shares of the screen (feet position). */
   spots: Record<string, { x: number; y: number }>;
   web: WebPrefs;
@@ -704,6 +706,7 @@ const INITIAL: State = {
   keys: {},
   touch: { edgeSwipe: true, doubleTapScene: true, longPress: true },
   cats: CATS_DEFAULT,
+  memory: { unloadMinimizedMin: 0, freeHiddenMin: 0 },
   spots: {},
   web: { search: "auto", searx: "" },
   net: { via: "desktop" },
@@ -926,6 +929,7 @@ export const useDesk = create<Store>()(
           files,
           model: { ...MODEL_DEFAULT, ...(p.model ?? {}) },
           cats: { ...CATS_DEFAULT, ...(p.cats ?? {}) },
+          memory: { unloadMinimizedMin: 0, freeHiddenMin: 0, ...(p.memory ?? {}) },
           privacy: { ...PRIVACY_DEFAULT, ...(p.privacy ?? {}), streamer: { ...PRIVACY_DEFAULT.streamer, ...(p.privacy?.streamer ?? {}) } },
           bridges: {
             discord: { ...BRIDGE_DEFAULT("discord"), ...(p.bridges?.discord ?? {}) },
