@@ -37,6 +37,7 @@ import { NotesApp } from "../apps/Notes.tsx";
 import { MusicApp } from "../apps/Music.tsx";
 import { TheaterApp } from "../apps/Theater.tsx";
 import { PadsApp } from "../apps/Pads.tsx";
+import { LuantiApp } from "../apps/Luanti.tsx";
 import { startPads } from "../lib/pads.ts";
 import { startGestures } from "./gestures.ts";
 import { PadsMail } from "./PadsMail.tsx";
@@ -70,6 +71,7 @@ const BODIES: Record<AppId, () => ReactNode> = {
   music: () => <MusicApp />,
   theater: () => <TheaterApp />,
   pads: () => <PadsApp />,
+  luanti: () => <LuantiApp />,
   visualizer: () => <VisualizerApp />,
   create: () => <CreateApp />,
   browser: () => <BrowserApp />,

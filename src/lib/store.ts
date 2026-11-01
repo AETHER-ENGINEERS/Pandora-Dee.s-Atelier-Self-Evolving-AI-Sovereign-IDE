@@ -26,6 +26,7 @@ export type AppId =
   | "music"
   | "theater"
   | "pads"
+  | "luanti"
   | "visualizer"
   | "create"
   | "browser"
@@ -57,6 +58,7 @@ export const APPS: { id: AppId; title: string; hint: string }[] = [
   { id: "terminal", title: "Terminal", hint: "A shell over a character's files" },
   { id: "games", title: "Games & Apps", hint: "Games and Vector apps (webxdc) to play together" },
   { id: "studio", title: "XDC Studio", hint: "Open, edit and version webxdc apps" },
+  { id: "luanti", title: "Luanti", hint: "Cryptechtest and other Luanti servers: play on the real Luanti" },
   { id: "pads", title: "PADS", hint: "Your devices, arranged like monitors: Pandora's Atelier's Distributed Systems" },
   { id: "connections", title: "Connections", hint: "Discord, Vector and tool servers" },
   { id: "sentry", title: "Sentry", hint: "Flood gate and device watch" },
@@ -598,6 +600,7 @@ export function defaultWins(): Record<AppId, Win> {
     studio: W(120, 50, Math.min(980, vw - 40), Math.min(640, vh - 10)),
     connections: W(200, 70, 660, 580),
     pads: W(140, 50, Math.min(1000, vw - 40), Math.min(640, vh - 10)),
+    luanti: W(180, 60, Math.min(760, vw - 40), Math.min(640, vh - 10)),
     sentry: W(220, 80, 620, 560),
     keys: W(240, 90, 520, 460),
     settings: W(180, 60, 760, 600),

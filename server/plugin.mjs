@@ -27,6 +27,7 @@ import { createPairs, pairedCors } from "./pairs.mjs";
 import { acceptSocket } from "./wsframes.mjs";
 import { createPads } from "./pads.mjs";
 import { createMemory } from "./memory.mjs";
+import { createLuanti } from "./luanti.mjs";
 import { createPeers } from "./peers.mjs";
 import { createPadsLink } from "./padsLink.mjs";
 import os from "node:os";
@@ -168,6 +169,8 @@ export function deskServer() {
   const engine = createEngine({ dataDir: () => dataDir, getChoice: () => readConfig().browserEngine, deskPorts: () => [...deskPorts] });
   // memory on this computer: what's in use, the browser engine sleeping when idle, regular clean-ups (see memory.mjs)
   const memory = createMemory({ engine, readConfig, writeConfig });
+  // Luanti: the family's servers, the public list, and the real Luanti program on this computer (see luanti.mjs)
+  const luanti = createLuanti({ readConfig, writeConfig });
   // Ungoogled Chromium, downloaded into the data folder when asked (see ungoogled.mjs)
   const downloads = DOWNLOADS.map((entry) => createUngoogled({ browserDir: () => path.join(dataDir, "browser"), hold: () => engine.hold(), entry }));
   const ungoogled = downloads[0];
@@ -733,6 +736,24 @@ export function deskServer() {
     }
     if (parts[0] === "relay" && m === "POST") return relay(req, res, JSON.parse((await readBody(req, 60_000_000)).toString("utf8") || "{}"));
     if (parts[0] === "info") return send(res, 200, { dataDir, xdcDir: L.root, fromEnv: Boolean(process.env.PDD_DATA) });
+    if (parts[0] === "luanti") {
+      try {
+        if (parts[1] === "public" && m === "GET") return send(res, 200, { servers: await luanti.publicList() });
+        if (!parts[1] && m === "GET") return send(res, 200, { ...luanti.status(), canLaunch: onThisPc(req) });
+        if (!parts[1] && m === "POST") {
+          const b = JSON.parse((await readBody(req, 20_000)).toString("utf8") || "{}");
+          // the server list is the family's (any device); the program, and starting it, belong to this computer
+          if (b.op === "save-server") return send(res, 200, luanti.saveServer(b));
+          if (b.op === "remove-server") return send(res, 200, luanti.removeServer(String(b.id || "")));
+          if (!onThisPc(req)) return send(res, 403, { error: "Luanti is started on the desktop's own computer. On this device, use the Luanti app with the server's address." });
+          if (b.op === "set-program") return send(res, 200, luanti.setProgram(String(b.path || "")));
+          if (b.op === "launch") return send(res, 200, luanti.launch(b));
+          return send(res, 400, { error: "Which change?" });
+        }
+      } catch (e) {
+        return send(res, e?.status ?? 400, { error: e instanceof Error ? e.message : String(e) });
+      }
+    }
     if (parts[0] === "memory") {
       if (m === "GET") return send(res, 200, { ...memory.status(), canChange: onThisPc(req) });
       if (m === "POST") {
