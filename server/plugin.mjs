@@ -28,6 +28,9 @@ import { acceptSocket } from "./wsframes.mjs";
 import { createPads } from "./pads.mjs";
 import { createMemory } from "./memory.mjs";
 import { createLuanti } from "./luanti.mjs";
+import { createLuantiWeb } from "./luantiWeb.mjs";
+import { createLuantiRelay } from "./luantiRelay.mjs";
+import { openDuplex } from "./wsduplex.mjs";
 import { createPeers } from "./peers.mjs";
 import { createPadsLink } from "./padsLink.mjs";
 import os from "node:os";
@@ -171,6 +174,9 @@ export function deskServer() {
   const memory = createMemory({ engine, readConfig, writeConfig });
   // Luanti: the family's servers, the public list, and the real Luanti program on this computer (see luanti.mjs)
   const luanti = createLuanti({ readConfig, writeConfig });
+  // Luanti in the browser: the real client built for WebAssembly, served here, its connections relayed here
+  const luantiWeb = createLuantiWeb({ dataDir: () => dataDir });
+  const luantiRelay = createLuantiRelay();
   // Ungoogled Chromium, downloaded into the data folder when asked (see ungoogled.mjs)
   const downloads = DOWNLOADS.map((entry) => createUngoogled({ browserDir: () => path.join(dataDir, "browser"), hold: () => engine.hold(), entry }));
   const ungoogled = downloads[0];
@@ -739,6 +745,12 @@ export function deskServer() {
     if (parts[0] === "luanti") {
       try {
         if (parts[1] === "public" && m === "GET") return send(res, 200, { servers: await luanti.publicList() });
+        // the in-browser client: whether it's here, and the newest build (asked only when wanted)
+        if (parts[1] === "web" && m === "GET") return send(res, 200, { ...luantiWeb.status(), latest: url.searchParams.get("check") ? await luantiWeb.latest().catch(() => null) : undefined, canInstall: onThisPc(req) });
+        if (parts[1] === "web" && m === "POST") {
+          if (!onThisPc(req)) return send(res, 403, { error: "It's set up on the desktop's own computer." });
+          return send(res, 200, await luantiWeb.install());
+        }
         if (!parts[1] && m === "GET") return send(res, 200, { ...luanti.status(), canLaunch: onThisPc(req) });
         if (!parts[1] && m === "POST") {
           const b = JSON.parse((await readBody(req, 20_000)).toString("utf8") || "{}");
@@ -993,7 +1005,14 @@ export function deskServer() {
   /** The full browser's pictures as binary (wsframes.mjs): the desktop's own page only, as with /api. Other
    *  upgrades (Vite's own live reload) are left alone. */
   function pictureSocket(req, socket) {
-    if (new URL(req.url || "/", "http://x").pathname !== "/api/engine/ws") return;
+    const where = new URL(req.url || "/", "http://x").pathname;
+    // Luanti in the browser: its game traffic, name lookups and web fetches, relayed (luantiRelay.mjs)
+    if (where === "/api/luanti/relay") {
+      if (fromElsewhere(req)) return void socket.destroy();
+      const conn = openDuplex(req, socket);
+      return void (conn ? luantiRelay.attach(conn) : socket.destroy());
+    }
+    if (where !== "/api/engine/ws") return;
     if (fromElsewhere(req)) return void socket.destroy();
     deskPorts.add(socket.localPort);
     if (acceptSocket(req, socket)) engine.attachSocket(socket);
@@ -1032,6 +1051,8 @@ export function deskServer() {
       // the hidden Vector host's bridge (this computer only, with its run's token; see vectorHost.mjs)
       if (url.pathname === "/vh-bridge/next" || url.pathname === "/vh-bridge/reply") return void (await vectorHost().bridge(req, res, url, readBody));
       // linked SEASIDE servers asking this one (with their token; joining with an invite code made here)
+      // Luanti in the browser: SEASIDE's play page and the build's own files, cross-origin isolated
+      if (url.pathname.startsWith("/luanti-web/")) return void luantiWeb.serve(req, res, url, send);
       if (url.pathname.startsWith("/pads-peer/")) {
         deskPorts.add(req.socket.localPort);
         if (await padsLink.handle(req, res, url, { readBody, send })) return;
