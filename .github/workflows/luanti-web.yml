@@ -64,7 +64,14 @@ jobs:
         run: |
           # a configure that gave up says why in its config.log (the newest one is the one that stopped)
           last=$(find luanti-wasm/build -name config.log -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -n 1 | cut -d' ' -f2-)
-          { [ -n "$last" ] && tail -n 70 "$last" | grep -v '^ac_cv_\|^| ' ; node --version; tail -n 50 build.log; } | sed 's/%/%25/g' | tail -n 120 > tail.log
+          # and a one-line program built with the build's own flags, run the way configure runs its checks
+          probe() {
+            cd luanti-wasm && source emsdk/emsdk_env.sh >/dev/null 2>&1
+            echo 'int main(void) { return (int)sizeof(wchar_t); }' > /tmp/probe.c
+            emcc -O2 -pthread -fwasm-exceptions -sJSPI /tmp/probe.c -o /tmp/probe.js 2>&1 | tail -n 15
+            node /tmp/probe.js 2>&1 | tail -n 15; echo "probe exit: $?"; node --version
+          }
+          { [ -n "$last" ] && grep -n -A30 'checking size of wchar_t' "$last" | head -n 45; probe; tail -n 20 build.log; } | sed 's/%/%25/g' | tail -n 120 > tail.log
           for start in 1 41 81; do
             chunk=$(sed -n "${start},$((start + 39))p" tail.log | awk 'BEGIN { ORS = "%0A" } { print }')
             [ -n "$chunk" ] && echo "::error title=Build log (part $(( (start + 39) / 40 )) of 3)::${chunk}"
