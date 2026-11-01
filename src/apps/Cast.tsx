@@ -200,6 +200,7 @@ function Profile({ c, onBack }: { c: Character; onBack: () => void }) {
         <AvatarEditor c={c} />
         <CharAI c={c} />
         <CharMemory c={c} />
+        <CharWays c={c} />
         <CharVoice c={c} />
         {!c.builtIn ? (
           <>
@@ -550,6 +551,111 @@ function CharAI({ c }: { c: Character }) {
         <Own label="Most tool steps in one reply" own={p.maxSteps !== undefined} shared={String(s.model.maxSteps)} onReset={() => unset("maxSteps")}>
           <Num min={1} max={100} typedMax={100000} value={p.maxSteps ?? s.model.maxSteps} onChange={(n) => set({ maxSteps: n })} />
         </Own>
+      ) : null}
+    </>
+  );
+}
+
+/** What Classic calls her thinking, helpers and heartbeat: her own switches, each falling back to everyone's. */
+function CharWays({ c }: { c: Character }) {
+  const s = useDesk();
+  const p = s.charPrefs[c.id] ?? { look: "talking" as Look };
+  const set = (patch: Partial<CharPrefs>) => desk().setCharPrefs(c.id, patch);
+  const unset = (key: keyof CharPrefs) => {
+    const next = { ...desk().charPrefs[c.id] } as CharPrefs;
+    delete next[key];
+    desk().set({ charPrefs: { ...desk().charPrefs, [c.id]: next } });
+  };
+  const conns = s.model.connections.filter((x) => x.enabled);
+  const hb = p.heartbeat ?? { on: false, everyMin: 30, from: "08:00", to: "22:00", prompt: "" };
+  const setHb = (patch: Partial<typeof hb>) => set({ heartbeat: { ...hb, ...patch } });
+  const hasFile = Boolean((s.filesOf(c.id)["HEARTBEAT.md"] ?? "").trim());
+  const onOff = (v: boolean) => (v ? "on" : "off");
+  return (
+    <>
+      <div className="divider" />
+      <h4>{c.short}'s own way of working</h4>
+      <p className="small muted" style={{ marginTop: 0 }}>
+        As in Classic: whether {c.short} thinks first, what {c.short} does after a chat, what the background work runs on, and a heartbeat. Each one is
+        everyone's setting until it's set here.
+      </p>
+      <Own label="Thinking first" own={p.think !== undefined} shared={onOff(s.chat.askThink)} onReset={() => unset("think")}>
+        <label className="check" style={{ padding: 0 }}>
+          <input type="checkbox" checked={p.think ?? s.chat.askThink} onChange={(e) => set({ think: e.target.checked })} />
+          <span>{c.short} thinks before answering (models that can, on Ollama)</span>
+        </label>
+      </Own>
+      <Own label="After a chat: the journal" own={p.journal !== undefined} shared={onOff(s.chat.autoJournal)} onReset={() => unset("journal")}>
+        <label className="check" style={{ padding: 0 }}>
+          <input type="checkbox" checked={p.journal ?? s.chat.autoJournal} onChange={(e) => set({ journal: e.target.checked })} />
+          <span>{c.short} writes a journal entry about it</span>
+        </label>
+      </Own>
+      <Own label="After a chat: memory" own={p.learn !== undefined} shared={onOff(s.chat.learnFacts)} onReset={() => unset("learn")}>
+        <label className="check" style={{ padding: 0 }}>
+          <input type="checkbox" checked={p.learn ?? s.chat.learnFacts} onChange={(e) => set({ learn: e.target.checked })} />
+          <span>{c.short} keeps what was learned</span>
+        </label>
+      </Own>
+      <Own label="Helper model (journal, memory, heartbeat)" own={Boolean(p.helper?.connection)} shared={`${c.short}'s own AI`} onReset={() => unset("helper")}>
+        <div className="row" style={{ gap: 6 }}>
+          <select className="select" value={p.helper?.connection ?? ""} onChange={(e) => (e.target.value ? set({ helper: { connection: e.target.value } }) : unset("helper"))}>
+            <option value="">{c.short}'s own AI</option>
+            {conns.map((x) => (
+              <option key={x.id} value={x.id}>
+                {x.label}
+              </option>
+            ))}
+          </select>
+          {p.helper?.connection ? (
+            <input
+              className="input mono grow"
+              value={p.helper.model ?? ""}
+              placeholder={conns.find((x) => x.id === p.helper?.connection)?.model || "that connection's model"}
+              onChange={(e) => set({ helper: { ...p.helper, model: e.target.value.trim() || undefined } })}
+              aria-label="Helper model"
+            />
+          ) : null}
+        </div>
+        <span className="small faint">A smaller, cheaper model can do the background work; {c.short}'s own AI is still tried if it can't be reached.</span>
+      </Own>
+      <div className="field">
+        <span>Heartbeat</span>
+        <label className="check" style={{ padding: 0 }}>
+          <input type="checkbox" checked={hb.on} onChange={(e) => setHb({ on: e.target.checked })} />
+          <span>
+            {c.short} checks in every so often, within these hours, unprompted, and does or says something worth it (or passes). Each check-in is a
+            turn on the AI.
+          </span>
+        </label>
+      </div>
+      {hb.on ? (
+        <>
+          <div className="row" style={{ gap: 8, flexWrap: "wrap", alignItems: "end" }}>
+            <label className="field" style={{ maxWidth: 220 }}>
+              <span>Every (minutes)</span>
+              <Num min={5} max={1440} step={5} value={hb.everyMin} onChange={(n) => setHb({ everyMin: n })} />
+            </label>
+            <label className="field" style={{ width: "auto" }}>
+              <span>From</span>
+              <input className="input" type="time" style={{ width: 130 }} value={hb.from} onChange={(e) => setHb({ from: e.target.value })} />
+            </label>
+            <label className="field" style={{ width: "auto" }}>
+              <span>Until</span>
+              <input className="input" type="time" style={{ width: 130 }} value={hb.to} onChange={(e) => setHb({ to: e.target.value })} />
+            </label>
+          </div>
+          <label className="field">
+            <span>What {c.short} is asked each time</span>
+            <textarea
+              className="input"
+              rows={3}
+              value={hb.prompt}
+              placeholder={hasFile ? `Blank: ${c.short}'s HEARTBEAT.md` : "Blank: look at what's open in the journal, memory and notes, and do or say what's worth it"}
+              onChange={(e) => setHb({ prompt: e.target.value })}
+            />
+          </label>
+        </>
       ) : null}
     </>
   );

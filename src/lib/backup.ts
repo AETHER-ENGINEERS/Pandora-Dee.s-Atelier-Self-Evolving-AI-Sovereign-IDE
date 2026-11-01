@@ -220,6 +220,23 @@ export function prefsFromClassic(s: Record<string, unknown>, connections: Connec
   if (typeof s.voiceRate === "number") voice.rate = s.voiceRate;
   if (typeof s.voicePitch === "number") voice.pitch = s.voicePitch;
   if (Object.keys(voice).length) p.voice = voice;
+  // her own switches: thinking first, journal and memory after a chat
+  if (typeof s.thinkOn === "boolean") p.think = s.thinkOn;
+  if (typeof s.journalOn === "boolean") p.journal = s.journalOn;
+  if (typeof s.memoryOn === "boolean") p.learn = s.memoryOn;
+  // her helper model (journal, memory, heartbeat)
+  const aux = PROVIDER_AT.find(([name]) => name === s.auxProv)?.[1];
+  const auxConn = aux && connections.find(aux);
+  if (auxConn) p.helper = { connection: auxConn.id, ...(typeof s.auxModel === "string" && s.auxModel ? { model: s.auxModel } : {}) };
+  // her heartbeat
+  if (["hbOn", "hbEvery", "hbStart", "hbEnd", "hbPrompt"].some((k) => k in s))
+    p.heartbeat = {
+      on: s.hbOn === true,
+      everyMin: typeof s.hbEvery === "number" && s.hbEvery > 0 ? s.hbEvery : 30,
+      from: typeof s.hbStart === "string" ? s.hbStart : "08:00",
+      to: typeof s.hbEnd === "string" ? s.hbEnd : "22:00",
+      prompt: typeof s.hbPrompt === "string" ? s.hbPrompt : "",
+    };
   // her vector memory (Config → Embeddings), when Classic had it set up
   if (["embedOn", "embedModel", "embedHost", "memoryRag", "memoryRagK", "embedNotes"].some((k) => k in s)) {
     const mem: NonNullable<CharPrefs["memory"]> = { vectors: s.memoryOn !== false && s.embedOn !== false, rag: s.memoryRag === true };
@@ -247,6 +264,22 @@ export function classicFromPrefs(s: Record<string, unknown>, p: Partial<CharPref
   if (p.voice?.voiceName) out.voiceName = p.voice.voiceName;
   if (typeof p.voice?.rate === "number") out.voiceRate = p.voice.rate;
   if (typeof p.voice?.pitch === "number") out.voicePitch = p.voice.pitch;
+  if (typeof p.think === "boolean") out.thinkOn = p.think;
+  if (typeof p.journal === "boolean") out.journalOn = p.journal;
+  if (typeof p.learn === "boolean") out.memoryOn = p.learn;
+  const helper = p.helper?.connection && connections.find((c) => c.id === p.helper?.connection);
+  const auxProv = helper && PROVIDER_AT.find(([, test]) => test(helper))?.[0];
+  if (auxProv) {
+    out.auxProv = auxProv;
+    if (p.helper?.model) out.auxModel = p.helper.model;
+  }
+  if (p.heartbeat) {
+    out.hbOn = p.heartbeat.on;
+    out.hbEvery = p.heartbeat.everyMin;
+    out.hbStart = p.heartbeat.from;
+    out.hbEnd = p.heartbeat.to;
+    out.hbPrompt = p.heartbeat.prompt;
+  }
   if (p.memory) {
     out.embedOn = Boolean(p.memory.vectors);
     out.memoryRag = Boolean(p.memory.rag);

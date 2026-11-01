@@ -172,6 +172,7 @@ export function deskServer() {
   const engine = createEngine({ dataDir: () => dataDir, getChoice: () => readConfig().browserEngine, deskPorts: () => [...deskPorts] });
   // memory on this computer: what's in use, the browser engine sleeping when idle, regular clean-ups (see memory.mjs)
   const memory = createMemory({ engine, readConfig, writeConfig });
+  const beats = new Map(); // character heartbeats: when each was last taken (account|character → time)
   // Luanti: the family's servers, the public list, and the real Luanti program on this computer (see luanti.mjs)
   const luanti = createLuanti({ readConfig, writeConfig });
   // Luanti in the browser: the real client built for WebAssembly, served here, its connections relayed here
@@ -766,6 +767,16 @@ export function deskServer() {
       } catch (e) {
         return send(res, e?.status ?? 400, { error: e instanceof Error ? e.message : String(e) });
       }
+    }
+    // heartbeats: each character's beat goes to the first device that asks for it (several can be open at once)
+    if (parts[0] === "heartbeat" && parts[1] === "claim" && m === "POST") {
+      const b = JSON.parse((await readBody(req, 4000)).toString("utf8") || "{}");
+      const key = `${String(b.account || "").toLowerCase()}|${String(b.id || "")}`;
+      const every = Math.max(60_000, Number(b.every) || 30 * 60_000);
+      const was = beats.get(key) ?? 0;
+      if (Date.now() - was < every - 30_000) return send(res, 200, { ok: false });
+      beats.set(key, Date.now());
+      return send(res, 200, { ok: true });
     }
     if (parts[0] === "memory") {
       if (m === "GET") return send(res, 200, { ...memory.status(), canChange: onThisPc(req) });

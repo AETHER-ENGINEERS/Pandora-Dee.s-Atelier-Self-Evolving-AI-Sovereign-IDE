@@ -73,7 +73,7 @@ const resting = new Map<string, number>();
 const isResting = (id: string) => (resting.get(id) ?? 0) > Date.now();
 
 /** Connections to try for this character, in order, with the reason any were skipped. */
-export function chainFor(charId: string): { list: { conn: Connection; model: string }[]; skipped: string[] } {
+export function chainFor(charId: string, helper = false): { list: { conn: Connection; model: string }[]; skipped: string[] } {
   const s = desk();
   const pref = s.charPrefs[charId];
   const conns = s.model.connections;
@@ -88,6 +88,13 @@ export function chainFor(charId: string): { list: { conn: Connection; model: str
       if (c) picked.push({ conn: c, model: c.model });
     }
     for (const c of conns) if (c.enabled && !picked.some((p) => p.conn.id === c.id)) picked.push({ conn: c, model: c.model });
+  }
+  // her background work (journal, memory, heartbeat) goes to her helper model first, when she has one; her usual
+  // ones stay behind it in case it can't be reached
+  const help = helper && pref?.helper?.connection ? conns.find((x) => x.id === pref.helper!.connection && x.enabled) : undefined;
+  if (help) {
+    const first = { conn: help, model: pref!.helper!.model || help.model };
+    picked.splice(0, picked.length, first, ...picked.filter((p) => !(p.conn.id === first.conn.id && p.model === first.model)));
   }
   const skipped: string[] = [];
   const list = picked.filter(({ conn }) => {
@@ -130,6 +137,8 @@ type TurnOpts = {
   history?: Message[];
   /** Runs alongside the room with its own stop signal. */
   signal?: AbortSignal;
+  /** Background work (journal, memory, heartbeat): her helper model first. */
+  helper?: boolean;
 };
 
 /** Which memory lines go in the prompt: all of them, or the ones that fit (by keywords; by meaning too with her vector memory). */
@@ -207,7 +216,7 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
   if (opts.nudge) base.push({ role: "user", content: TURN_NUDGE });
   if (opts.instruction) base.push({ role: "user", content: opts.instruction });
 
-  const { list, skipped } = chainFor(me.id);
+  const { list, skipped } = chainFor(me.id, opts.helper);
   if (!list.length) {
     const why = skipped.length ? skipped.join(" ") : "No AI connection is set up yet. Open Settings → AI.";
     if (!opts.silent) s.post({ kind: "notice", who: "desk", name: "Desk", text: `${me.short} can't answer. ${why}`, source: "desk", error: true });
@@ -241,7 +250,7 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
             patch({ text: tidyReply(me, shown + streamed, room), thinking: [thought, reasoning, parts.thinking].filter(Boolean).join("\n\n") || undefined });
           }, signal, {
             numCtx: s.chat.numCtx || undefined,
-            think: s.chat.askThink && conn.kind === "ollama",
+            think: (s.charPrefs[me.id]?.think ?? s.chat.askThink) && conn.kind === "ollama",
             onThink: (piece) => {
               reasoning += piece;
               setBusy(me.id, "thinking");
@@ -479,6 +488,18 @@ export async function remark(instruction: string): Promise<boolean> {
   return true;
 }
 
+/** Her heartbeat (lib/heartbeat.ts): she checks in on her own, in the room, on her helper model when she has one.
+ *  Skipped (false) while someone else is mid-turn or the flood gate is shut. */
+export async function heartbeat(charId: string, instruction: string): Promise<boolean> {
+  const s = desk();
+  const c = s.character(charId);
+  if (!c || running || s.flood.shut || s.toddler) return false;
+  await withRun(async () => {
+    await takeTurn(c, { scope: "locksmith", instruction, helper: true });
+  });
+  return true;
+}
+
 export async function letThemTalk() {
   const s = desk();
   if (s.flood.shut) {
@@ -543,12 +564,12 @@ export async function privately(charId: string, instruction: string, history?: M
   const c = desk().character(charId);
   if (!c) return "";
   if (history) {
-    const r = await takeTurn(c, { scope: "locksmith", instruction, silent: true, history, signal: new AbortController().signal });
+    const r = await takeTurn(c, { scope: "locksmith", instruction, silent: true, history, signal: new AbortController().signal, helper: true });
     return r.text;
   }
   let out = "";
   await withRun(async () => {
-    const r = await takeTurn(c, { scope: "locksmith", instruction, silent: true });
+    const r = await takeTurn(c, { scope: "locksmith", instruction, silent: true, helper: true });
     out = r.text;
   });
   return out;
@@ -591,16 +612,18 @@ let endings: Promise<unknown> = Promise.resolve();
 /** A chat ended (new chat, or switched away): journal it and keep what was learned, when those are on. */
 export function endOfChat(history: Message[]) {
   const s = desk();
-  if (!s.chat.autoJournal && !s.chat.learnFacts) return;
-  const spoke = [...new Set(history.filter((m) => m.kind === "character" && !m.pass && m.text).map((m) => m.who))].filter((id) => s.character(id));
+  // each character's own choice (from Classic's journalOn / memoryOn), else everyone's
+  const journalFor = (id: string) => desk().charPrefs[id]?.journal ?? desk().chat.autoJournal;
+  const learnFor = (id: string) => desk().charPrefs[id]?.learn ?? desk().chat.learnFacts;
+  const spoke = [...new Set(history.filter((m) => m.kind === "character" && !m.pass && m.text).map((m) => m.who))].filter((id) => s.character(id) && (journalFor(id) || learnFor(id)));
   if (!spoke.length || !history.some((m) => m.kind === "human")) return;
   endings = endings
     .then(async () => {
       for (const id of spoke) {
         const name = desk().character(id)?.short ?? id;
         const done: string[] = [];
-        if (desk().chat.autoJournal && (await writeJournal(id, history)) === "Journal entry written.") done.push("journal");
-        if (desk().chat.learnFacts && (await reflect(id, history)) === "Memory updated.") done.push("memory");
+        if (journalFor(id) && (await writeJournal(id, history)) === "Journal entry written.") done.push("journal");
+        if (learnFor(id) && (await reflect(id, history)) === "Memory updated.") done.push("memory");
         if (done.length) desk().log(`${name} wrote up the last chat (${done.join(" and ")}).`);
       }
     })

@@ -331,6 +331,15 @@ export type CharPrefs = {
   avatar?: AvatarAsset;
   /** Vector memory, as in Classic (Config → Embeddings): her memory, journal and notes searchable by meaning. */
   memory?: MemoryPrefs;
+  /** Classic's thinkOn: she thinks before answering (models that can). Unset: everyone's setting. */
+  think?: boolean;
+  /** Classic's journalOn and memoryOn: after a chat, she writes in her journal / keeps what she learned. Unset: everyone's. */
+  journal?: boolean;
+  learn?: boolean;
+  /** Classic's helper model (auxProv/auxModel): what her background work runs on (journal, memory, heartbeat). */
+  helper?: { connection?: string; model?: string };
+  /** Classic's heartbeat: she checks in on her own, every so often, within her hours (lib/heartbeat.ts). */
+  heartbeat?: { on: boolean; everyMin: number; from: string; to: string; prompt: string };
 };
 
 export type MemoryPrefs = {

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { startHeartbeat } from "../lib/heartbeat.ts";
 import { startMemory, useUnloaded } from "../lib/memory.ts";
 import { Check, Download, GripVertical, LayoutGrid } from "lucide-react";
 import { APPS, desk, inToddler, useDesk, type AppId } from "../lib/store.ts";
@@ -147,6 +148,8 @@ export function Desktop() {
     startPads();
     // memory: minimized windows unloaded after a while, when that's switched on
     startMemory();
+    // characters with a heartbeat check in on their own (each beat taken by one device)
+    startHeartbeat();
     // pinches zoom SEASIDE, two-finger taps are right-clicks, and right-clicks get SEASIDE's menus
     startGestures();
     const backups = startBackupSchedule();

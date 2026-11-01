@@ -355,6 +355,32 @@ test("her Classic vector memory settings come along, and go back", () => {
   assert.equal(out.settings.embedHost, "http://192.168.3.9:11434");
 });
 
+test("her Classic thinking, journal, memory, helper model and heartbeat come along, and go back", () => {
+  const conns = [
+    { id: "local", label: "Ollama here", kind: "ollama", baseUrl: "http://localhost:11434", keyName: "", model: "qwen3:8b", enabled: true },
+    { id: "groq", label: "Groq", kind: "openai", baseUrl: "https://api.groq.com/openai/v1", keyName: "GROQ", model: "", enabled: true },
+  ] as Parameters<typeof prefsFromClassic>[1];
+  const p = prefsFromClassic({ thinkOn: false, journalOn: true, memoryOn: false, auxProv: "groq", auxModel: "llama-3.1-8b-instant", hbOn: true, hbEvery: 45, hbStart: "09:00", hbEnd: "21:30", hbPrompt: "Tend the garden notes." }, conns);
+  assert.equal(p.think, false);
+  assert.equal(p.journal, true);
+  assert.equal(p.learn, false);
+  assert.deepEqual(p.helper, { connection: "groq", model: "llama-3.1-8b-instant" });
+  assert.deepEqual(p.heartbeat, { on: true, everyMin: 45, from: "09:00", to: "21:30", prompt: "Tend the garden notes." });
+  // nothing about these in her settings: nothing set (everyone's settings apply)
+  const none = prefsFromClassic({ model: "x" }, conns);
+  assert.equal(none.heartbeat, undefined);
+  assert.equal(none.helper, undefined);
+  const c = { id: "fae", name: "Fae", classic: { app: "pandora-dee", root: "Pandora", settings: {} } } as unknown as Parameters<typeof toClassic>[0];
+  const out = toClassic(c, {}, { ...p, heartbeat: { ...p.heartbeat!, everyMin: 60 } }, conns);
+  assert.equal(out.settings.thinkOn, false);
+  assert.equal(out.settings.memoryOn, false);
+  assert.equal(out.settings.auxProv, "groq");
+  assert.equal(out.settings.auxModel, "llama-3.1-8b-instant");
+  assert.equal(out.settings.hbOn, true);
+  assert.equal(out.settings.hbEvery, 60);
+  assert.equal(out.settings.hbPrompt, "Tend the garden notes.");
+});
+
 test("the shell hands mcp commands on whole, JSON arguments included", () => {
   const ctx = { who: "Dee", host: "seaside", room: [], env: {}, model: "", characters: [] };
   const r = run(`mcp call mcp__fae__echo '{"text": "hi there"}'`, "", {}, ctx);
