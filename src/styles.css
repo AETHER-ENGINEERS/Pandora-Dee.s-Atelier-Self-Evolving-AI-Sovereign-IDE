@@ -851,6 +851,7 @@ body.dragging-window iframe, body.dragging-window webview { pointer-events: none
 .full-browser-view { flex: 1; min-height: 0; position: relative; overflow: hidden; background: #fff; outline: none; touch-action: none; cursor: default; }
 /* no white flash behind dark pages while they load */
 .full-browser-view.dark { background: #1b1b1f; }
+.full-browser-canvas { position: absolute; left: 0; top: 0; user-select: none; pointer-events: none; }
 .full-browser-view img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: fill; user-select: none; -webkit-user-drag: none; image-rendering: auto; }
 .full-browser-typer { position: absolute; left: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; resize: none; }
 .browser-note { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); background: var(--panel-solid); border: 1px solid var(--line-strong); padding: 6px 12px; border-radius: 8px; z-index: 3; cursor: pointer; }

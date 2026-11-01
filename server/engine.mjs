@@ -12,8 +12,9 @@ import os from "node:os";
 import { execFileSync } from "node:child_process";
 
 const win = process.platform === "win32";
-/** How many pixels the engine draws per page pixel. */
-const RENDER_SCALE = 2;
+/** How many pixels the engine draws per page pixel: the Browser window's own screen sharpness when the engine starts
+ *  (1:1, so the least work for the sharpest picture), between 1 and 2. */
+const renderScaleFor = (dpr) => Math.min(2, Math.max(1, Math.round((Number(dpr) || 1) * 20) / 20));
 const mac = process.platform === "darwin";
 
 /** Chromium-family browsers already on this computer, best for privacy first. */
@@ -109,11 +110,33 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
 
   const send = (res, type, data) => {
     try {
-      res.write(`event: ${type}\ndata: ${JSON.stringify(data)}\n\n`);
+      return res.write(`event: ${type}\ndata: ${JSON.stringify(data)}\n\n`);
     } catch {
       clients.delete(res);
+      return true;
     }
   };
+  // Frames go to each viewer only as fast as its connection takes them: while one is still on its way, only the
+  // newest waits (older ones are dropped), so a slow phone or Wi-Fi never falls further and further behind.
+  const waiting = new Map(); // viewer → the newest frame not sent yet
+  const draining = new Set(); // viewers with a drain listener already
+  function whenDrained(res) {
+    if (draining.has(res)) return;
+    draining.add(res);
+    res.once("drain", () => {
+      draining.delete(res);
+      const next = waiting.get(res);
+      waiting.delete(res);
+      if (next && clients.has(res)) sendFrame(res, next);
+    });
+  }
+  function sendFrame(res, frame) {
+    if (res.writableNeedDrain) {
+      waiting.set(res, frame);
+      return whenDrained(res);
+    }
+    if (!send(res, "frame", frame)) whenDrained(res);
+  }
   const broadcast = (type, data) => clients.forEach((c) => send(c, type, data));
   const tabList = () => [...tabs.entries()].map(([id, t]) => ({ id, url: t.url, title: t.title, loading: t.loading, active: id === active }));
   const pushTabs = () => broadcast("tabs", { tabs: tabList(), engine: engineName });
@@ -151,8 +174,10 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
         downloadsPath: path.join(dataDir(), "vault", "Downloads"),
         // drawn at twice the pixels, then scaled down to each screen's own sharpness by the stream: crisp text on any
         // screen up to 2× (a page can't be made sharper from inside, the screencast ignores that)
-        args: ["--no-first-run", "--no-default-browser-check", "--disable-features=Translate,MediaRouter", "--hide-scrollbars=false", `--force-device-scale-factor=${RENDER_SCALE}`],
+        args: ["--no-first-run", "--no-default-browser-check", "--disable-features=Translate,MediaRouter", "--hide-scrollbars=false", `--force-device-scale-factor=${renderScaleFor(view.dpr)}`],
         ignoreDefaultArgs: ["--enable-automation"],
+        // Chromium's own sandbox stays on: this engine opens any site (Playwright turns it off unless asked)
+        chromiumSandbox: true,
       });
       let c;
       try {
@@ -230,7 +255,7 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     });
     cdp.on("Page.screencastFrame", (f) => {
       void cdp.send("Page.screencastFrameAck", { sessionId: f.sessionId }).catch(() => undefined);
-      if (active === id) broadcast("frame", { id, data: f.data, w: f.metadata.deviceWidth, h: f.metadata.deviceHeight });
+      if (active === id) for (const c of clients) sendFrame(c, { id, data: f.data, w: f.metadata.deviceWidth, h: f.metadata.deviceHeight });
     });
     if (show || !active) await watch(id);
     pushTabs();
@@ -245,7 +270,7 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
 
   /** One tab drawn at the Browser window's size, sharpness, and phone-or-not. */
   async function fit(cdp) {
-    // deviceScaleFactor 0: keep the engine's own (RENDER_SCALE)
+    // deviceScaleFactor 0: keep the engine's own (the render scale it started with)
     await cdp.send("Emulation.setDeviceMetricsOverride", { width: view.w, height: view.h, deviceScaleFactor: 0, mobile: view.mobile }).catch(() => undefined);
     await cdp.send("Emulation.setTouchEmulationEnabled", { enabled: view.mobile }).catch(() => undefined);
   }
@@ -261,7 +286,7 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     if (!t) return;
     await t.page.bringToFront().catch(() => undefined);
     // quality 90 keeps text crisp; the picture is sent at the device's own pixels and shown 1:1
-    await t.cdp.send("Page.startScreencast", { format: "jpeg", quality: 90, maxWidth: Math.round(view.w * view.dpr), maxHeight: Math.round(view.h * view.dpr), everyNthFrame: 1 }).catch(() => undefined);
+    await t.cdp.send("Page.startScreencast", { format: "jpeg", quality: 85, maxWidth: Math.round(view.w * view.dpr), maxHeight: Math.round(view.h * view.dpr), everyNthFrame: 1 }).catch(() => undefined);
   }
 
   const tab = (id) => {
@@ -291,6 +316,8 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
       await ctx?.close().catch(() => undefined);
       return { ok: true };
     }
+    // the window's sharpness rides along with its requests, so the engine starts at the right scale whichever comes first
+    if (!ctx && b.dpr) view = { ...view, dpr: Math.max(1, Math.min(3, Number(b.dpr) || 1)) };
     await start();
     if (op === "open") {
       // the empty tab the engine starts with is used first, rather than left behind
@@ -349,6 +376,8 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     res.on("close", () => {
       clearInterval(ping);
       clients.delete(res);
+      waiting.delete(res);
+      draining.delete(res);
     });
     if (active) void watch(active); // a fresh frame for the newcomer
   }

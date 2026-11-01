@@ -17,15 +17,39 @@ export async function openInFullBrowser(url: string) {
 type Tab = { id: string; url: string; title: string; loading: boolean; active: boolean };
 
 async function post<T = { ok: boolean }>(body: Record<string, unknown>): Promise<T> {
-  const r = await fetch("/api/engine", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const r = await fetch("/api/engine", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dpr: Math.min(3, window.devicePixelRatio || 1), ...body }) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error((j as { error?: string }).error || `The desktop answered ${r.status}.`);
   return j as T;
 }
 // input goes one request after another, so fast typing arrives in order
 let line: Promise<unknown> = Promise.resolve();
+// a pointer move or scroll still waiting its turn: later ones merge into it (moves: the newest position; scrolls: added
+// up), so a slow connection never builds a queue of stale movements. Anything else starts a new one after it.
+let waitingMove: Record<string, unknown> | null = null;
+let waitingWheel: Record<string, unknown> | null = null;
 const quiet = (body: Record<string, unknown>) => {
+  waitingMove = waitingWheel = null;
   line = line.then(() => post(body)).catch(() => undefined);
+};
+const moveTo = (body: Record<string, unknown>) => {
+  if (waitingMove) return void Object.assign(waitingMove, body);
+  const job = (waitingMove = { ...body });
+  line = line.then(() => (waitingMove === job && (waitingMove = null), post(job))).catch(() => undefined);
+};
+const scrollBy = (body: Record<string, unknown> & { dx: number; dy: number }) => {
+  if (waitingWheel) {
+    const w = waitingWheel as typeof body;
+    return void Object.assign(w, body, { dx: w.dx + body.dx, dy: w.dy + body.dy });
+  }
+  const job = (waitingWheel = { ...body });
+  line = line.then(() => (waitingWheel === job && (waitingWheel = null), post(job))).catch(() => undefined);
+};
+/** Scroll amounts in pixels, as Chromium counts them: Firefox reports a mouse wheel in lines (3 per notch), which
+ *  passed on as pixels scrolled 3 pixels a notch. */
+const wheelPx = (e: { deltaX: number; deltaY: number; deltaMode: number }, pageH: number) => {
+  const k = e.deltaMode === 1 ? 100 / 3 : e.deltaMode === 2 ? pageH : 1;
+  return { dx: e.deltaX * k, dy: e.deltaY * k };
 };
 
 // the modifier bits Chromium expects: Alt 1, Ctrl 2, Meta 4, Shift 8
@@ -35,7 +59,10 @@ const BUTTON = ["left", "middle", "right"] as const;
 export function FullBrowser({ home, onReader }: { home: string; onReader: () => void }) {
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [engine, setEngine] = useState("");
-  const [frame, setFrame] = useState<{ data: string; w: number; h: number } | null>(null);
+  // the page's picture: drawn straight onto a canvas, decoded off the main thread; the window only re-renders when
+  // the picture's size changes (once per resize, not 20 times a second)
+  const [frame, setFrame] = useState<{ w: number; h: number } | null>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
   const [address, setAddress] = useState("");
   const [editing, setEditing] = useState(false);
   const [note, setNote] = useState("");
@@ -64,7 +91,37 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
         void post({ op: "open", url: home }).catch((err: Error) => setProblem(err.message));
       }
     });
-    es.addEventListener("frame", (e) => setFrame(JSON.parse((e as MessageEvent).data) as { data: string; w: number; h: number }));
+    // frames decode one at a time; one that arrives meanwhile waits, replaced by any newer one
+    let decoding = false;
+    let next: { data: string; w: number; h: number } | null = null;
+    const draw = async (f: { data: string; w: number; h: number }) => {
+      decoding = true;
+      try {
+        const bin = atob(f.data);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const bmp = await createImageBitmap(new Blob([bytes], { type: "image/jpeg" }));
+        const c = canvas.current;
+        if (c) {
+          if (c.width !== bmp.width || c.height !== bmp.height) (c.width = bmp.width), (c.height = bmp.height);
+          c.getContext("2d")?.drawImage(bmp, 0, 0);
+        }
+        bmp.close();
+        setFrame((old) => (old && old.w === f.w && old.h === f.h ? old : { w: f.w, h: f.h }));
+      } catch {
+        /* a damaged frame: the next one replaces it */
+      } finally {
+        decoding = false;
+        const n = next;
+        next = null;
+        if (n) void draw(n);
+      }
+    };
+    es.addEventListener("frame", (e) => {
+      const f = JSON.parse((e as MessageEvent).data) as { data: string; w: number; h: number };
+      if (decoding) next = f;
+      else void draw(f);
+    });
     es.addEventListener("note", (e) => setNote((JSON.parse((e as MessageEvent).data) as { text: string }).text));
     return () => es.close();
   }, [home]);
@@ -102,7 +159,7 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
   const flush = () => {
     const p = pending.current;
     pending.current = null;
-    if (p) quiet(p);
+    if (p) moveTo(p);
   };
   const id = active?.id;
 
@@ -196,7 +253,7 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
           if (!pending.current) requestAnimationFrame(flush);
           pending.current = { op: "mouse", id, type: "move", ...at(e), button: e.buttons & 1 ? "left" : "none", buttons: e.buttons, mods: mods(e) };
         }}
-        onWheel={(e) => quiet({ op: "wheel", id, ...at(e), dx: e.deltaX, dy: e.deltaY, mods: mods(e) })}
+        onWheel={(e) => scrollBy({ op: "wheel", id, ...at(e), ...wheelPx(e, view.current?.clientHeight || 600), mods: mods(e) })}
         onContextMenu={(e) => e.preventDefault()}
         onKeyDown={(e) => {
           if (e.target !== view.current) return;
@@ -210,15 +267,9 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
           if (text) (e.preventDefault(), quiet({ op: "text", id, text }));
         }}
       >
-        {frame ? (
-          <img
-            src={`data:image/jpeg;base64,${frame.data}`}
-            alt={active?.title || "The page"}
-            draggable={false}
-            // shown at the page's own size, never stretched: while the window is being resized it's cut off for a moment rather than blurred
-            style={frame.w && frame.h ? { width: frame.w, height: frame.h } : undefined}
-          />
-        ) : <div className="muted small" style={{ padding: 16 }}>{engine ? `Starting ${engine}…` : "Starting the browser…"}</div>}
+        {/* shown at the page's own size, never stretched: while the window is being resized it's cut off for a moment rather than blurred */}
+        <canvas ref={canvas} className="full-browser-canvas" role="img" aria-label={active?.title || "The page"} hidden={!frame} style={frame?.w && frame.h ? { width: frame.w, height: frame.h } : undefined} />
+        {frame ? null : <div className="muted small" style={{ padding: 16 }}>{engine ? `Starting ${engine}…` : "Starting the browser…"}</div>}
         {/* phones: a box the on-screen keyboard types into, passed on to the page */}
         <textarea
           ref={typer}
