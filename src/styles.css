@@ -1036,3 +1036,8 @@ body.dragging-window iframe, body.dragging-window webview { pointer-events: none
 .engine-own { padding: 8px; border: 1px solid var(--line); border-radius: 10px; }
 .browser-settings section { padding: 8px 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; }
 .browser-settings h4 { margin: 0 0 2px; font-size: .9em; }
+
+/* the full browser's privacy shield: trackers stopped on this page */
+.shield-btn { position: relative; }
+.shield-btn.off { color: var(--bad); }
+.shield-count { position: absolute; right: -3px; bottom: -2px; min-width: 14px; padding: 0 3px; border-radius: 7px; background: var(--accent); color: #120c22; font-size: 9px; font-weight: 700; line-height: 13px; text-align: center; }

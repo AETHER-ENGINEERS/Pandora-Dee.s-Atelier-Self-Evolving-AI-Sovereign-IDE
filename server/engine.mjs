@@ -9,9 +9,46 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { frameMessage } from "./wsframes.mjs";
 import { DOWNLOADS, exeIn } from "./ungoogled.mjs";
+import { createTrackerList } from "./trackers.mjs";
+
+// DuckDuckGo's autoconsent (MPL-2.0): says no to cookie banners. Its script for this kind of engine, and its rules.
+const AUTOCONSENT = (() => {
+  try {
+    const dir = path.dirname(fileURLToPath(import.meta.resolve("@duckduckgo/autoconsent")));
+    return {
+      script: fs.readFileSync(path.join(dir, "autoconsent.playwright.js"), "utf8"),
+      rules: JSON.parse(fs.readFileSync(fileURLToPath(import.meta.resolve("@duckduckgo/autoconsent/rules/compact-rules.json")), "utf8")),
+    };
+  } catch {
+    return null; // not installed: banners are left alone
+  }
+})();
+const AUTOCONSENT_CONFIG = {
+  autoAction: "optOut",
+  disabledCmps: [],
+  enablePrehide: true,
+  enableCosmeticRules: true,
+  enableGeneratedRules: true,
+  detectRetries: 20,
+  isMainWorld: false,
+  prehideTimeout: 2000,
+  enableHeuristicDetection: true,
+  heuristicMode: "tier2",
+  logs: { lifecycle: false, rulesteps: false, detectionsteps: false, evals: false, errors: false, messages: false, waits: false },
+};
+
+/** A page's site: its host without "www.". */
+const siteOf = (url) => {
+  try {
+    return new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+};
 
 const win = process.platform === "win32";
 /** How many pixels the engine draws per page pixel: the Browser window's own screen sharpness when the engine starts
@@ -132,7 +169,7 @@ function freeProfile(profile) {
 /** The engine starts with an empty tab, not the last session: a session coming back after the desktop had already
  *  opened a page would replace that page (a blank first tab) or open it twice. Also marks the last run as a clean
  *  exit, so no "restore pages?" bar appears inside the page. */
-function startFresh(profile) {
+function startFresh(profile, keepHistory = true) {
   const file = path.join(profile, "Default", "Preferences");
   try {
     const prefs = JSON.parse(fs.readFileSync(file, "utf8"));
@@ -147,6 +184,11 @@ function startFresh(profile) {
   for (const name of ["Sessions", "Sessions_Encrypted", "Current Session", "Current Tabs", "Last Session", "Last Tabs"]) {
     fs.rmSync(path.join(profile, "Default", name), { recursive: true, force: true });
   }
+  // no browsing history kept (unless chosen): the pages visited, the address bar's suggestions, links shown as visited
+  if (!keepHistory)
+    for (const name of ["History", "History-journal", "Visited Links", "Top Sites", "Top Sites-journal", "Shortcuts", "Shortcuts-journal", "Network Action Predictor", "Network Action Predictor-journal"]) {
+      fs.rmSync(path.join(profile, "Default", name), { recursive: true, force: true });
+    }
 }
 
 export function createEngine({ dataDir, getChoice, deskPorts }) {
@@ -199,7 +241,25 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     if (!send(res, "frame", frame)) whenDrained(res);
   }
   const broadcast = (type, data) => clients.forEach((c) => send(c, type, data));
-  const tabList = () => [...tabs.entries()].map(([id, t]) => ({ id, url: t.url, title: t.title, loading: t.loading, active: id === active }));
+  const tabList = () =>
+    [...tabs.entries()].map(([id, t]) => ({
+      id,
+      url: t.url,
+      title: t.title,
+      loading: t.loading,
+      active: id === active,
+      // privacy on this page: trackers stopped (and which), whether a cookie banner was answered "no", protection off here
+      blocked: t.blocked?.n ?? 0,
+      trackers: t.blocked ? [...t.blocked.list].slice(0, 12) : [],
+      banner: t.banner ?? "",
+      consent: t.consent ?? "",
+      unprotected: privacy().allow.includes(siteOf(t.url)),
+    }));
+  let pushSoonTimer = null;
+  const pushTabsSoon = () => {
+    if (pushSoonTimer) return;
+    pushSoonTimer = setTimeout(() => ((pushSoonTimer = null), broadcast("tabs", { tabs: tabList(), engine: engineName })), 400);
+  };
   const pushTabs = () => {
     broadcast("tabs", { tabs: tabList(), engine: engineName });
     saveSoon();
@@ -222,6 +282,13 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     fs.renameSync(`${f}.tmp`, f);
   };
   const remembering = () => readJson(settingsFile(), {}).remember !== false;
+  /** The privacy layer: trackers blocked, cookie banners answered "no", Global Privacy Control, no history kept;
+   *  and the sites where protection is off (a site that broke). */
+  const privacy = () => {
+    const p = readJson(settingsFile(), {}).privacy ?? {};
+    return { trackers: p.trackers !== false, banners: p.banners !== false, gpc: p.gpc !== false, history: p.history === true, allow: Array.isArray(p.allow) ? p.allow : [] };
+  };
+  const trackerList = createTrackerList({ dir: () => path.join(browserDir(), "privacy") });
   let saveTimer = null;
   function saveSoon() {
     clearTimeout(saveTimer);
@@ -307,7 +374,7 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
       // a profile of its own per engine (two brands or versions of Chromium mustn't share one; Edge keeps its old one)
       const profile = path.join(dataDir(), "browser", "profiles", profileFor(eng.name));
       fs.mkdirSync(profile, { recursive: true });
-      startFresh(profile);
+      startFresh(profile, privacy().history);
       const launch = () => chromium.launchPersistentContext(profile, {
         executablePath: eng.path,
         headless: true,
@@ -329,13 +396,76 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
         // most often: a previous run's engine still has the profile open
         freeProfile(profile);
         await new Promise((r) => setTimeout(r, 800));
-        startFresh(profile);
+        startFresh(profile, privacy().history);
         c = await launch();
       }
       engineName = eng.name;
       writeJson(settingsFile(), { ...readJson(settingsFile(), {}), lastUsed: { name: eng.name, path: eng.path } });
-      // pages can't reach the desktop's controls, or anything else on this computer
-      await c.route("**/*", (route) => (forbidden(route.request().url(), deskPorts) ? route.abort("blockedbyclient") : route.continue()));
+      // pages can't reach the desktop's controls, or anything else on this computer; trackers are stopped (privacy)
+      await c.route("**/*", (route) => {
+        const req = route.request();
+        const url = req.url();
+        if (forbidden(url, deskPorts)) return route.abort("blockedbyclient");
+        let page = null, frame = null;
+        try {
+          frame = req.frame();
+          page = frame.page();
+        } catch {
+          return route.continue(); // a service worker's own request
+        }
+        const t = [...tabs.values()].find((x) => x.page === page);
+        // the page itself, going somewhere new: its counts start again
+        if (req.isNavigationRequest() && frame === page.mainFrame()) {
+          if (t) (t.blocked = { n: 0, list: new Set() }), (t.banner = "");
+          return route.continue();
+        }
+        const p = privacy();
+        const pageUrl = page.url();
+        if (p.trackers && !p.allow.includes(siteOf(pageUrl))) {
+          const d = trackerList.get()?.decide(url, pageUrl, req.resourceType());
+          if (d?.block) {
+            if (t) {
+              t.blocked ??= { n: 0, list: new Set() };
+              t.blocked.n++;
+              t.blocked.list.add(d.tracker);
+              pushTabsSoon();
+            }
+            return route.abort("blockedbyclient");
+          }
+        }
+        return route.continue();
+      });
+      // Global Privacy Control: asked of every site, with each request and to its scripts
+      if (privacy().gpc) {
+        await c.setExtraHTTPHeaders({ "Sec-GPC": "1" }).catch(() => undefined);
+        await c.addInitScript(() => Object.defineProperty(Navigator.prototype, "globalPrivacyControl", { get: () => true, configurable: true })).catch(() => undefined);
+      }
+      // cookie banners answered "no" (DuckDuckGo's autoconsent), unless switched off or off for the site
+      if (AUTOCONSENT) {
+        const reply = (frame, msg) => frame.evaluate((m) => window.autoconsentReceiveMessage?.(m), msg).catch(() => undefined);
+        await c
+          .exposeBinding("autoconsentSendMessage", async (source, msg) => {
+            if (!msg || typeof msg !== "object") return;
+            const p = privacy();
+            // what autoconsent last reported on the page (for "why did that banner get through?")
+            if (source.frame === source.page?.mainFrame() && msg.type !== "eval") {
+              const t = [...tabs.values()].find((x) => x.page === source.page);
+              if (t) t.consent = msg.type === "cmpDetected" || msg.type === "popupFound" ? `${msg.type}: ${msg.cmp}` : msg.type;
+            }
+            const site = siteOf(source.page?.url() ?? "");
+            if (msg.type === "init") return reply(source.frame, { type: "initResp", config: { ...AUTOCONSENT_CONFIG, enabled: p.banners && !p.allow.includes(site) }, rules: AUTOCONSENT.rules });
+            if (msg.type === "eval") {
+              const result = await source.frame.evaluate(msg.code).catch(() => false);
+              return reply(source.frame, { type: "evalResp", id: msg.id, result });
+            }
+            if ((msg.type === "optOutResult" && msg.result) || msg.type === "autoconsentDone") {
+              const t = [...tabs.values()].find((x) => x.page === source.page);
+              if (t && !t.banner) (t.banner = msg.cmp || "a cookie banner"), pushTabsSoon();
+            }
+          })
+          .catch(() => undefined);
+        await c.addInitScript({ content: AUTOCONSENT.script }).catch(() => undefined);
+      }
       // some browsers (Brave, Opera, Opera GX) open their own welcome pages as they start: pages a browser opens by
       // itself in its first seconds are closed; our own new tabs and pages' real pop-ups stay
       startupUntil = Date.now() + 10_000;
@@ -509,6 +639,33 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
       return { ok: true };
     }
     if (op === "forget") return fs.rmSync(sessionFile(), { force: true }), { ok: true };
+    if (op === "privacy") {
+      const now = privacy();
+      const next = { ...now };
+      for (const k of ["trackers", "banners", "gpc", "history"]) if (typeof b[k] === "boolean") next[k] = b[k];
+      // protection off (or back on) for one site
+      if (b.site) {
+        const site = String(b.site).toLowerCase().replace(/^www\./, "");
+        next.allow = b.protect === false ? [...new Set([...now.allow, site])] : now.allow.filter((x) => x !== site);
+      }
+      writeJson(settingsFile(), { ...readJson(settingsFile(), {}), privacy: next });
+      if (next.trackers) trackerList.get(); // fetched now, ready for the next page
+      pushTabs();
+      // the privacy signal pages read, and the history setting, take effect when the engine next starts
+      return { privacy: next, restartNeeded: now.gpc !== next.gpc || now.history !== next.history };
+    }
+    // forget this site: its cookies (signed out) and everything it stored, then the page again
+    if (op === "forget-site") {
+      const t = tab(b.id);
+      const site = siteOf(t.page.url());
+      if (!site) return { ok: false };
+      const esc = site.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      await ctx.clearCookies({ domain: new RegExp(`(^|\\.)${esc}$`) }).catch(() => undefined);
+      for (const origin of [`https://${site}`, `https://www.${site}`, `http://${site}`, `http://www.${site}`])
+        await t.cdp.send("Storage.clearDataForOrigin", { origin, storageTypes: "all" }).catch(() => undefined);
+      void t.page.reload().catch(() => undefined);
+      return { ok: true, site };
+    }
     // cookies (signed-in sites sign out), the cache, and the open sites' stored data
     if (op === "clear-data") {
       await ctx.clearCookies().catch(() => undefined);
@@ -627,7 +784,7 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     if (active) void watch(active); // a fresh frame for the newcomer
   }
 
-  const status = () => ({ running: Boolean(ctx), engine: engineName, view, picture, platform: process.platform, remember: remembering(), saved: (readJson(sessionFile(), null)?.tabs ?? []).length, using: pick(), chosen: getChoice()?.path && fs.existsSync(getChoice().path) ? getChoice().path : "" /* a download that never finished isn't a choice */, installed: installedEngines(), error, tabs: tabList() });
+  const status = () => ({ running: Boolean(ctx), engine: engineName, view, picture, privacy: privacy(), trackerList: trackerList.status(), platform: process.platform, remember: remembering(), saved: (readJson(sessionFile(), null)?.tabs ?? []).length, using: pick(), chosen: getChoice()?.path && fs.existsSync(getChoice().path) ? getChoice().path : "" /* a download that never finished isn't a choice */, installed: installedEngines(), error, tabs: tabList() });
 
   /** Close the engine (when the desktop's server stops), noting where everything was first. */
   const close = async () => {

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, BookOpenText, Keyboard, Plus, RotateCw, Settings2, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpenText, Keyboard, Plus, RotateCw, Settings2, Shield, ShieldOff, X } from "lucide-react";
+import { openMenuAt } from "../ui/ContextMenu.tsx";
+import { askUser } from "../ui/Ask.tsx";
 import { desk, useDesk } from "../lib/store.ts";
 import { addressFor } from "../lib/browserPrefs.ts";
 import { BrowserSettings } from "./BrowserSettings.tsx";
@@ -15,7 +17,8 @@ export async function openInFullBrowser(url: string) {
 /** The full browser: a real Chromium-family engine on the computer with the desktop (server/engine.mjs), shown live here
  *  on any device. Clicks, touches, scrolling and typing go to it; it keeps its own sites' logins and caches. */
 
-type Tab = { id: string; url: string; title: string; loading: boolean; active: boolean };
+/** `blocked`, `trackers`, `banner`, `unprotected`: the privacy layer on this page (server/engine.mjs). */
+type Tab = { id: string; url: string; title: string; loading: boolean; active: boolean; blocked?: number; trackers?: string[]; banner?: string; unprotected?: boolean };
 
 async function post<T = { ok: boolean }>(body: Record<string, unknown>): Promise<T> {
   const r = await fetch("/api/engine", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dpr: Math.min(3, window.devicePixelRatio || 1), ...body }) });
@@ -209,6 +212,34 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
     if (p) moveTo(p);
   };
   const id = active?.id;
+  const siteOf = (url: string) => {
+    try {
+      return new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      return "";
+    }
+  };
+  /** The shield's menu: what was stopped here, protection on or off for this site, forget this site. */
+  const shieldMenu = (t: Tab) => {
+    const site = siteOf(t.url);
+    return [
+      { heading: t.unprotected ? `Protection is off for ${site}` : `${t.blocked ?? 0} tracker${t.blocked === 1 ? "" : "s"} blocked on this page` },
+      ...(t.trackers ?? []).slice(0, 8).map((d) => ({ label: d, disabled: true, run: () => {} })),
+      ...(t.banner ? [{ heading: `Cookie banner: said no (${t.banner})` }] : []),
+      { sep: true as const },
+      t.unprotected
+        ? { label: `Protect ${site} again`, run: () => void post({ op: "privacy", site, protect: true }).then(() => quiet({ op: "reload", id: t.id })) }
+        : { label: `Turn protection off for ${site} (if it broke)`, run: () => void post({ op: "privacy", site, protect: false }).then(() => quiet({ op: "reload", id: t.id })) },
+      {
+        label: `Forget ${site}…`,
+        danger: true,
+        run: () =>
+          void askUser(`Forget ${site}?`, `Its cookies and everything it stored in this browser are removed: you'll be signed out of it, and its settings there forgotten. The page then loads again.`, "Forget it", "Keep it").then(
+            (yes) => void (yes && post<{ site?: string }>({ op: "forget-site", id: t.id }).then((r) => setNote(`${r.site ?? site} forgotten.`))),
+          ),
+      },
+    ];
+  };
 
   if (problem && !tabs.length)
     return (
@@ -266,6 +297,17 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
         <button className="icon-btn" aria-label="Reader" data-tip="Reader: the private browser (nothing kept)" onClick={onReader}>
           <BookOpenText size={15} />
         </button>
+        {active && /^https?:/.test(active.url) ? (
+          <button
+            className={`icon-btn shield-btn${active.unprotected ? " off" : ""}`}
+            aria-label={active.unprotected ? "Protection is off for this site" : `Privacy: ${active.blocked ?? 0} trackers blocked`}
+            data-tip={active.unprotected ? "Protection is off for this site" : `${active.blocked ?? 0} trackers blocked${active.banner ? " · cookie banner: said no" : ""}`}
+            onClick={(e) => openMenuAt(e.currentTarget, shieldMenu(active))}
+          >
+            {active.unprotected ? <ShieldOff size={15} /> : <Shield size={15} />}
+            {!active.unprotected && active.blocked ? <span className="shield-count">{active.blocked > 99 ? "99+" : active.blocked}</span> : null}
+          </button>
+        ) : null}
         <LookButton />
         <button className="icon-btn" aria-label="Browser settings" data-tip="Browser settings: start, search, colours, privacy, engine" onClick={() => setEngineOpen(!engineOpen)}>
           <Settings2 size={15} />

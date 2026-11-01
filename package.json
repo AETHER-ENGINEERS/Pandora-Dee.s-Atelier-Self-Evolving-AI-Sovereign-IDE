@@ -8,10 +8,11 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/lib/logic.test.ts server/xdc.test.mjs server/vecmem.test.mjs server/mcpstdio.test.mjs server/theater.test.mjs server/ungoogled.test.mjs server/pairs.test.mjs",
+    "test": "node --experimental-strip-types --test src/lib/logic.test.ts server/xdc.test.mjs server/vecmem.test.mjs server/mcpstdio.test.mjs server/theater.test.mjs server/ungoogled.test.mjs server/pairs.test.mjs server/trackers.test.mjs",
     "check-upstreams": "node scripts/check-upstreams.mjs"
   },
   "dependencies": {
+    "@duckduckgo/autoconsent": "16.56.0",
     "@pixiv/three-vrm": "3.5.5",
     "butterchurn": "2.6.7",
     "butterchurn-presets": "2.4.7",

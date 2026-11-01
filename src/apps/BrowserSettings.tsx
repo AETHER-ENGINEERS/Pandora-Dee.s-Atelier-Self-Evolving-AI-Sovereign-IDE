@@ -6,6 +6,8 @@ import { EnginePanel } from "./BrowserEngine.tsx";
 
 const setPrefs = (p: Partial<BrowserPrefs>) => desk().set({ browser: { ...desk().browser, ...p } });
 
+export type Privacy = { trackers: boolean; banners: boolean; gpc: boolean; history: boolean; allow: string[] };
+
 async function engine<T = { ok: boolean }>(body: Record<string, unknown>): Promise<T> {
   const r = await fetch("/api/engine", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const j = await r.json().catch(() => ({}));
@@ -19,14 +21,29 @@ export function BrowserSettings({ onClose, onRestarted }: { onClose: () => void;
   const searx = useDesk((s) => s.web.searx?.trim() ?? "");
   const [saved, setSaved] = useState(0);
   const [note, setNote] = useState("");
+  const [priv, setPriv] = useState<Privacy | null>(null);
+  const [list, setList] = useState<{ ready: boolean; trackers: number; error: string } | null>(null);
   const reopen = b.reopen !== false;
 
   useEffect(() => {
     void fetch("/api/engine/status")
       .then((r) => r.json())
-      .then((s: { saved?: number }) => setSaved(s.saved ?? 0))
+      .then((s: { saved?: number; privacy?: Privacy; trackerList?: { ready: boolean; trackers: number; error: string } }) => {
+        setSaved(s.saved ?? 0);
+        setPriv(s.privacy ?? null);
+        setList(s.trackerList ?? null);
+      })
       .catch(() => undefined);
   }, []);
+
+  const setPrivacy = (patch: Record<string, unknown>) =>
+    void engine<{ privacy: Privacy; restartNeeded: boolean }>({ op: "privacy", ...patch }).then(
+      (r) => {
+        setPriv(r.privacy);
+        setNote(r.restartNeeded ? "Saved. It applies from the next time the browser starts (the engine section's Use, or a desktop restart)." : "");
+      },
+      (e: Error) => setNote(e.message),
+    );
 
   const act = (fn: () => Promise<unknown>, said: string) => () =>
     void fn().then(
@@ -129,7 +146,43 @@ export function BrowserSettings({ onClose, onRestarted }: { onClose: () => void;
 
       <section>
         <h4>Privacy</h4>
-        <p className="small faint" style={{ margin: "0 0 6px" }}>
+        {priv ? (
+          <>
+            <label className="check small">
+              <input type="checkbox" checked={priv.trackers} onChange={(e) => setPrivacy({ trackers: e.target.checked })} />
+              <span>
+                Block trackers (DuckDuckGo's open tracker list
+                {list?.ready ? `, ${list.trackers} trackers` : list?.error ? `: ${list.error}` : ", fetched when first needed"})
+              </span>
+            </label>
+            <label className="check small">
+              <input type="checkbox" checked={priv.banners} onChange={(e) => setPrivacy({ banners: e.target.checked })} />
+              <span>Say no to cookie banners (DuckDuckGo's autoconsent picks "reject" for you)</span>
+            </label>
+            <label className="check small">
+              <input type="checkbox" checked={priv.gpc} onChange={(e) => setPrivacy({ gpc: e.target.checked })} />
+              <span>Ask sites not to sell or share my data (Global Privacy Control)</span>
+            </label>
+            <label className="check small">
+              <input type="checkbox" checked={priv.history} onChange={(e) => setPrivacy({ history: e.target.checked })} />
+              <span>Keep browsing history (off: nothing of where you went is kept between starts)</span>
+            </label>
+            {priv.allow.length ? (
+              <div className="small" style={{ marginTop: 4 }}>
+                <span className="faint">Protection off for: </span>
+                {priv.allow.map((site) => (
+                  <span key={site} className="pill" style={{ marginRight: 4 }}>
+                    {site}{" "}
+                    <button className="icon-btn" aria-label={`Protect ${site} again`} title="Protect it again" onClick={() => setPrivacy({ site, protect: true })}>
+                      <X size={11} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </>
+        ) : null}
+        <p className="small faint" style={{ margin: "4px 0 6px" }}>
           The browser keeps its own sign-ins, cookies and cache on the desktop, apart from your other browsers. Downloads go to Vault › Downloads.
         </p>
         <button className="btn small" onClick={act(() => engine<{ sites: number }>({ op: "clear-data" }), "Cookies and cache cleared (sites you were signed into have signed you out), with the open sites' stored data.")}>

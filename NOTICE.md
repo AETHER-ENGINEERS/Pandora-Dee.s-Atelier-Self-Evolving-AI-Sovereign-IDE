@@ -104,6 +104,10 @@ Commercial games (RuneScape, Jazz Jackrabbit, Half-Life) are never included: peo
 | three.js, @pixiv/three-vrm (VRM avatars) | MIT |
 | Live2D Cubism Core for Web (`public/vendor/live2dcubismcore.min.js`) | **Live2D Proprietary Software License**: the "Redistributable Code", allowed inside apps under Live2D's terms (https://www.live2d.com/eula/live2d-proprietary-software-license-agreement_en.html). Publishers above Live2D's revenue threshold need a Live2D publication license. Copied unchanged from the Classic build by `scripts/extract-cubism.mjs`. |
 | Vite, TypeScript (build tools) | MIT, Apache-2.0 |
+| @duckduckgo/autoconsent (the browser says no to cookie banners), with its rules | MPL-2.0 |
+| Playwright (playwright-core: drives the browser's engine) | Apache-2.0 |
+
+The browser's tracker blocking uses DuckDuckGo's tracker list (Tracker Radar, https://github.com/duckduckgo/tracker-blocklists, CC BY-NC-SA 4.0). It isn't included here: the desktop fetches it from DuckDuckGo when blocking is on, and uses it unchanged.
 
 ## Avatars
 
