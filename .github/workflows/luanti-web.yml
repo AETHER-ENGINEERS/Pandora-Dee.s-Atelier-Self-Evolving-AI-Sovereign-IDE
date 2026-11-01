@@ -64,8 +64,7 @@ jobs:
         run: |
           tail -n 120 build.log | sed 's/%/%25/g' > tail.log
           for start in 1 41 81; do
-            chunk=$(sed -n "${start},$((start + 39))p" tail.log | sed ':a;N;$!ba;s/
-/%0A/g')
+            chunk=$(sed -n "${start},$((start + 39))p" tail.log | awk 'BEGIN { ORS = "%0A" } { print }')
             [ -n "$chunk" ] && echo "::error title=Build log (part $(( (start + 39) / 40 )) of 3)::${chunk}"
           done
 
