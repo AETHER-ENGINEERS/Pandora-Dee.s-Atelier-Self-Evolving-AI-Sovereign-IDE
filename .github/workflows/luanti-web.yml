@@ -48,11 +48,26 @@ jobs:
 
       - name: Emscripten
         working-directory: luanti-wasm
-        run: ./install_emsdk.sh
+        run: |
+          set -o pipefail
+          ./install_emsdk.sh 2>&1 | tee "$GITHUB_WORKSPACE/build.log"
 
       - name: Build Luanti for the browser
         working-directory: luanti-wasm
-        run: ./build_all.sh
+        run: |
+          set -o pipefail
+          ./build_all.sh 2>&1 | tee -a "$GITHUB_WORKSPACE/build.log"
+
+      # the job's own log needs a sign-in to read; its annotations don't, so the end of the build log goes there
+      - name: Show why it stopped
+        if: failure()
+        run: |
+          tail -n 120 build.log | sed 's/%/%25/g' > tail.log
+          for start in 1 41 81; do
+            chunk=$(sed -n "${start},$((start + 39))p" tail.log | sed ':a;N;$!ba;s/
+/%0A/g')
+            [ -n "$chunk" ] && echo "::error title=Build log (part $(( (start + 39) / 40 )) of 3)::${chunk}"
+          done
 
       - name: Package
         id: pack
