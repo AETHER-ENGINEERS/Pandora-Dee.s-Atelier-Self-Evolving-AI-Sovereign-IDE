@@ -15,6 +15,8 @@ export type Track = { id: string; title: string; artist: string; album: string; 
 type Runtime = {
   tracks: Track[];
   own: string;
+  /** The music folders, as the desktop's server keeps them (the same for every device). */
+  folders: string[];
   loaded: boolean;
   scanning: string;
   queue: Item[];
@@ -25,7 +27,7 @@ type Runtime = {
   error: string;
 };
 
-export const useMusic = create<Runtime>(() => ({ tracks: [], own: "", loaded: false, scanning: "", queue: [], index: -1, playing: false, position: 0, duration: 0, error: "" }));
+export const useMusic = create<Runtime>(() => ({ tracks: [], own: "", folders: [], loaded: false, scanning: "", queue: [], index: -1, playing: false, position: 0, duration: 0, error: "" }));
 const mu = () => useMusic.getState();
 const prefs = () => desk().music;
 const setPrefs = (p: Partial<import("./musicPrefs.ts").MusicPrefs>) => desk().set({ music: { ...desk().music, ...p } });
@@ -203,14 +205,17 @@ useDesk.subscribe((s, p) => {
 
 export async function loadLibrary() {
   const r = await fetch("/api/music/library");
-  const j = (await r.json()) as { tracks: Track[]; own: string };
-  useMusic.setState({ tracks: j.tracks.sort(byAlbum), own: j.own, loaded: true });
+  const j = (await r.json()) as { tracks: Track[]; own: string; folders?: string[] };
+  useMusic.setState({ tracks: j.tracks.sort(byAlbum), own: j.own, folders: j.folders ?? [], loaded: true });
 }
 
-export async function scan(folders = prefs().folders) {
+/** Read the music folders again. The folders are the server's own list (the same on every device): pass `folders`
+ *  only to change that list (adding or removing one). Sending a device's own idea of them once wiped the library
+ *  down to the one song just made, on a device that had never had the folders added. */
+export async function scan(folders?: string[]) {
   useMusic.setState({ scanning: "Reading your music…" });
   try {
-    const r = await fetch("/api/music/scan", { method: "POST", body: JSON.stringify({ folders }) });
+    const r = await fetch("/api/music/scan", { method: "POST", body: JSON.stringify(folders ? { folders } : {}) });
     const j = (await r.json()) as { tracks: number; read: number; failed: number; walked?: number; unreadable?: string[] };
     await loadLibrary();
     return j;

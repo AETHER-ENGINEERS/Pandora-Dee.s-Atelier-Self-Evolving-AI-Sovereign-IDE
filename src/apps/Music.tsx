@@ -522,17 +522,18 @@ function FindStations() {
 }
 
 function Folders({ onFiles }: { onFiles: () => void }) {
-  const prefs = useDesk((s) => s.music);
   const own = useMusic((s) => s.own);
+  // the server's list, shared by every device (this device's own copy is kept in step with it)
+  const serverFolders = useMusic((s) => s.folders);
   const scanning = useMusic((s) => s.scanning);
   const [path, setPath] = useState("");
   const [browse, setBrowse] = useState(false);
   const addFolder = (f: string) => {
-    const folders = [...new Set([...prefs.folders, f])];
+    const folders = [...new Set([...serverFolders, f])];
     desk().set({ music: { ...desk().music, folders } });
     void rescan(folders);
   };
-  const rescan = async (folders: string[]) => {
+  const rescan = async (folders?: string[]) => {
     const r = await scan(folders);
     desk().say(
       `${r.tracks} songs in your library, from ${r.walked ?? "?"} folders${r.failed ? ` (${r.failed} files couldn't be read)` : ""}.${r.unreadable?.length ? ` Couldn't open: ${r.unreadable.join(", ")}` : ""}`,
@@ -542,7 +543,7 @@ function Folders({ onFiles }: { onFiles: () => void }) {
     <div style={{ padding: 10 }}>
       <h3 style={{ marginTop: 0 }}>Where your music is</h3>
       <p className="small muted">Folders on the computer running the desktop. They're read where they are (nothing is copied), including folders inside them.</p>
-      {[own, ...prefs.folders].filter(Boolean).map((f) => (
+      {[own, ...serverFolders].filter(Boolean).map((f) => (
         <div key={f} className="kv" style={{ gridTemplateColumns: "1fr auto" }}>
           <span className="mono small">
             {f}
@@ -553,7 +554,7 @@ function Folders({ onFiles }: { onFiles: () => void }) {
               className="icon-btn"
               aria-label={`Remove ${f}`}
               onClick={() => {
-                const folders = prefs.folders.filter((x) => x !== f);
+                const folders = serverFolders.filter((x) => x !== f);
                 desk().set({ music: { ...desk().music, folders } });
                 void rescan(folders);
               }}
@@ -572,7 +573,7 @@ function Folders({ onFiles }: { onFiles: () => void }) {
           e.preventDefault();
           const f = path.trim().replace(/^"|"$/g, "");
           if (!f) return;
-          const folders = [...new Set([...prefs.folders, f])];
+          const folders = [...new Set([...serverFolders, f])];
           desk().set({ music: { ...desk().music, folders } });
           setPath("");
           void rescan(folders);
@@ -591,7 +592,7 @@ function Folders({ onFiles }: { onFiles: () => void }) {
         <button className="btn" onClick={onFiles}>
           <Upload size={14} /> Add files…
         </button>
-        <button className="btn" disabled={Boolean(scanning)} onClick={() => void rescan(prefs.folders)}>
+        <button className="btn" disabled={Boolean(scanning)} onClick={() => void rescan()}>
           Read the folders again
         </button>
       </div>
