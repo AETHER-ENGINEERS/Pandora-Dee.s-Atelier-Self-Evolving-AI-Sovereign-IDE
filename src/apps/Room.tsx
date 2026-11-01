@@ -39,6 +39,7 @@ import { CharAvatar, Markdown, PersonAvatar, timeOf } from "../ui/common.tsx";
 import { openSettings } from "../ui/desktopApi.tsx";
 import { copyText } from "../lib/clipboard.ts";
 import { askText } from "../ui/Ask.tsx";
+import { takeRoomDraft } from "../lib/sendTo.ts";
 
 /** The latest character reply that Retry would replace. */
 function retryTarget(messages: Message[]) {
@@ -105,6 +106,16 @@ export function RoomApp() {
   const s = useDesk();
   const room = s.roomCharacters();
   const [draft, setDraft] = useState("");
+  // "Send to → Room" puts things into the typing bar (here when it's open, or when it opens)
+  useEffect(() => {
+    const take = () => {
+      const t = takeRoomDraft();
+      if (t) setDraft((d) => (d ? `${d}\n${t}` : t));
+    };
+    take();
+    window.addEventListener("pdd-room-draft", take);
+    return () => window.removeEventListener("pdd-room-draft", take);
+  }, []);
   const [files, setFiles] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(0);
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);

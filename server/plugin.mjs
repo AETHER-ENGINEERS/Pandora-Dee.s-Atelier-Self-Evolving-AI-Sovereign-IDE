@@ -559,6 +559,7 @@ export function deskServer() {
           if (parts[1] === "hello") return send(res, 200, pads.hello(b));
           if (parts[1] === "arrange") return send(res, 200, pads.arrange(String(b.account || ""), b.positions));
           if (parts[1] === "forget") return send(res, 200, pads.forget(String(b.account || ""), String(b.id || "")));
+          if (parts[1] === "send") return send(res, 200, pads.sendTo(String(b.account || ""), b));
         }
       } catch (e) {
         return send(res, e?.status ?? 400, { error: e instanceof Error ? e.message : String(e) });

@@ -3,6 +3,8 @@
 // don't walk past while she sleeps. Pet one by clicking it. The characters hear what the cats are up to (catsNote).
 // Drawn here with shapes, until proper art is ready.
 
+import { openMenu } from "./ContextMenu.tsx";
+import { poseItems, snapDrawing } from "../lib/poses.ts";
 import { useEffect, useRef } from "react";
 import { useDesk, type Cat } from "../lib/store.ts";
 import { live, type Live, type Pose } from "../lib/cats.ts";
@@ -205,6 +207,16 @@ function drawCat(g: CanvasRenderingContext2D, cat: Cat, c: Live) {
   g.restore();
 }
 
+function pet(id: string) {
+  const c = live.get(id);
+  if (!c) return;
+  c.petted++;
+  c.pettedAt = performance.now();
+  // a sleeping cat wakes slowly; an awake one sits for it
+  if (c.pose === "sleep") set(c, "stretch", performance.now(), 1800);
+  else if (c.pose === "walk") set(c, "sit", performance.now(), rnd(4000, 8000));
+}
+
 // ---------- the layer ----------
 
 export function Cats() {
@@ -299,14 +311,24 @@ export function Cats() {
             height={Math.round(H * scale * dpr)}
             style={{ width: W * scale, height: H * scale }}
             title={cat.name}
-            onClick={() => {
+            onClick={() => pet(cat.id)}
+            onContextMenu={(e) => {
               const c = live.get(cat.id);
               if (!c) return;
-              c.petted++;
-              c.pettedAt = performance.now();
-              // a sleeping cat wakes slowly; an awake one sits for it
-              if (c.pose === "sleep") set(c, "stretch", performance.now(), 1800);
-              else if (c.pose === "walk") set(c, "sit", performance.now(), rnd(4000, 8000));
+              // the pose as it is at the moment of the right-click, drawn four times larger than the cat walks
+              const still = { ...c };
+              const big = 4;
+              openMenu(e, [
+                { heading: cat.name },
+                { label: "Pet", run: () => pet(cat.id) },
+                { sep: true },
+                ...poseItems(cat.name, () =>
+                  snapDrawing(W * big, H * big, (g) => {
+                    g.setTransform(big, 0, 0, big, 0, 0);
+                    drawCat(g, cat, still);
+                  }),
+                ),
+              ]);
             }}
           />
           <div ref={(el) => void (el ? bubbles.current.set(cat.id, el) : bubbles.current.delete(cat.id))} className="cat-bubble" />

@@ -18,6 +18,7 @@ export function createPads({ dataDir }) {
   const fileOf = (account) => path.join(dir(), `${crypto.createHash("sha256").update(String(account || "").toLowerCase()).digest("hex").slice(0, 24)}.json`);
   /** account → { devices: { id → card }, layout: { id → { x, y } } } kept on disk; live state in memory */
   const live = new Map(); // device id → { at, state }
+  const mail = new Map(); // device id → things sent to it from the account's other devices, until it next reports in
 
   function read(account) {
     try {
@@ -69,7 +70,29 @@ export function createPads({ dataDir }) {
         playing: clip(st.playing, 80),
       },
     });
-    return roster(account);
+    // anything sent to it since it last reported in goes back with the roster, once
+    const got = mail.get(id) ?? [];
+    mail.delete(id);
+    return { ...roster(account), mail: got };
+  }
+
+  /** "Send to": one device of the account hands another a piece of text, a link or a picture kept in the vault. */
+  function sendTo(account, b) {
+    const data = read(account);
+    const from = data.devices[clip(b.from, 40)];
+    const to = data.devices[clip(b.to, 40)];
+    if (!from || !to) throw Object.assign(new Error("That device isn't in this account's PADS."), { status: 404 });
+    const it = b.item && typeof b.item === "object" ? b.item : {};
+    const title = clip(it.title, 120);
+    let item;
+    if (it.kind === "text" && it.text) item = { kind: "text", text: clip(it.text, 20_000), title };
+    else if (it.kind === "link" && /^https?:\/\//i.test(String(it.url))) item = { kind: "link", url: clip(it.url, 2000), title };
+    else if (it.kind === "image" && it.path && !String(it.path).includes("..")) item = { kind: "image", path: clip(it.path, 500), title };
+    else throw Object.assign(new Error("There's nothing to send."), { status: 400 });
+    const box = mail.get(to.id) ?? [];
+    box.push({ from: from.name, fromId: from.id, at: Date.now(), item });
+    mail.set(to.id, box.slice(-20));
+    return { ok: true };
   }
 
   /** Everything the PADS Manager shows for an account. */
@@ -102,5 +125,5 @@ export function createPads({ dataDir }) {
     return roster(account);
   }
 
-  return { hello, roster, arrange, forget };
+  return { hello, roster, arrange, forget, sendTo };
 }

@@ -37,6 +37,8 @@ import { MusicApp } from "../apps/Music.tsx";
 import { TheaterApp } from "../apps/Theater.tsx";
 import { PadsApp } from "../apps/Pads.tsx";
 import { startPads } from "../lib/pads.ts";
+import { startGestures } from "./gestures.ts";
+import { PadsMail } from "./PadsMail.tsx";
 import { Visualizer, VisualizerApp } from "../apps/Visualizer.tsx";
 import "../lib/musicTalk.ts";
 import { JournalApp } from "../apps/Journal.tsx";
@@ -139,6 +141,8 @@ export function Desktop() {
     resumeBridges();
     // PADS: this device reports in while it's switched on here (it does nothing until then)
     startPads();
+    // pinches zoom SEASIDE, two-finger taps are right-clicks, and right-clicks get SEASIDE's menus
+    startGestures();
     const backups = startBackupSchedule();
     startChatSync();
     void loadNotes();
@@ -235,6 +239,7 @@ export function Desktop() {
       <ContextMenuHost />
       <AskHost />
       <SharedIn />
+      <PadsMail />
       <PickerHost />
       <TooltipHost />
       {s.toast ? (

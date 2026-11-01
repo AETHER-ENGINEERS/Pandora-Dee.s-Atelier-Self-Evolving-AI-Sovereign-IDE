@@ -114,7 +114,28 @@ export async function report(): Promise<Device[] | null> {
     body: JSON.stringify({ id: deviceId(), account: account(), name: myName(), kind: me.kind, browser: browserName(), screen: { w: innerWidth, h: innerHeight, dpr: devicePixelRatio || 1 }, state: state() }),
   }).catch(() => null);
   if (!r?.ok) return null;
-  return ((await r.json()) as { devices: Device[] }).devices;
+  const j = (await r.json()) as { devices: Device[]; mail?: Mail[] };
+  roster = j.devices ?? [];
+  if (j.mail?.length) {
+    inbox = [...inbox, ...j.mail].slice(-12);
+    inboxListeners.forEach((f) => f());
+  }
+  return roster;
+}
+
+/** Something another device of this account sent here ("Send to" in its right-click menus). */
+export type Mail = { from: string; fromId: string; at: number; item: { kind: "text"; text: string; title?: string } | { kind: "link"; url: string; title?: string } | { kind: "image"; path: string; title?: string } };
+
+let roster: Device[] = [];
+/** The account's devices as of the last report (for "Send to" menus). */
+export const lastRoster = () => roster;
+
+let inbox: Mail[] = [];
+const inboxListeners = new Set<() => void>();
+export const useInbox = () => useSyncExternalStore((f) => (inboxListeners.add(f), () => inboxListeners.delete(f)), () => inbox);
+export function dismissMail(m: Mail) {
+  inbox = inbox.filter((x) => x !== m);
+  inboxListeners.forEach((f) => f());
 }
 
 let started = false;
@@ -130,5 +151,6 @@ export function startPads() {
 export const padsApi = {
   roster: async (): Promise<Device[]> => ((await (await fetch(`/api/pads/roster?account=${encodeURIComponent(account())}`)).json()) as { devices: Device[] }).devices ?? [],
   arrange: (positions: Record<string, { x: number; y: number }>) => fetch("/api/pads/arrange", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ account: account(), positions }) }),
+  send: (to: string, item: unknown) => fetch("/api/pads/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ account: account(), from: deviceId(), to, item }) }),
   forget: (id: string) => fetch("/api/pads/forget", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ account: account(), id }) }),
 };

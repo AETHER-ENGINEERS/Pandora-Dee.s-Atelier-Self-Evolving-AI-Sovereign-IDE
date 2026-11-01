@@ -32,6 +32,19 @@ test("the arrangement is kept; forgetting a device removes its card", () => {
   assert.deepEqual(r.devices.map((d) => d.id), ["laptop-0001"]);
 });
 
+test("send to: a device gets what another sent it, once, the next time it reports in", () => {
+  P.hello({ id: "tablet-0001", account: me, name: "Tab", kind: "tablet" });
+  P.sendTo(me, { from: "laptop-0001", to: "tablet-0001", item: { kind: "link", url: "https://example.org/x", title: "X" } });
+  assert.throws(() => P.sendTo(me, { from: "laptop-0001", to: "tablet-0001", item: { kind: "link", url: "javascript:alert(1)" } }), /nothing to send/);
+  assert.throws(() => P.sendTo("someone else", { from: "laptop-0001", to: "tablet-0001", item: { kind: "text", text: "hi" } }), /isn't in/);
+  let r = P.hello({ id: "tablet-0001", account: me, name: "Tab", kind: "tablet" });
+  assert.equal(r.mail.length, 1);
+  assert.equal(r.mail[0].from, "ROG laptop");
+  assert.equal(r.mail[0].item.url, "https://example.org/x");
+  r = P.hello({ id: "tablet-0001", account: me, name: "Tab", kind: "tablet" });
+  assert.equal(r.mail.length, 0);
+});
+
 test("odd input is refused or tidied", () => {
   assert.throws(() => P.hello({ id: "../x", account: me }), /Which device/);
   const r = P.hello({ id: "odd-device-1", account: me, kind: "toaster", name: "x".repeat(500), screen: { w: -5 } });

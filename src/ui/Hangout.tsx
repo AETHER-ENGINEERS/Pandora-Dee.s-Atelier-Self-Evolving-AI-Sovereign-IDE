@@ -1,3 +1,4 @@
+import { poseItems, snapPictures } from "../lib/poses.ts";
 import { useEffect, useRef, useState } from "react";
 import { FullAvatar } from "./FullAvatar.tsx";
 import { runSlash } from "./slash.ts";
@@ -117,6 +118,11 @@ export function Stage({ interactive = true }: { interactive?: boolean }) {
               openMenu({ clientX: px + (box?.left ?? 0), clientY: py + (box?.top ?? 0), preventDefault() {}, stopPropagation() {} }, [
                 ...characterMenu(c.id),
                 { sep: true },
+                ...poseItems(c.short, () => {
+                  const body = ref.current?.querySelector<HTMLElement>(`[data-char="${CSS.escape(c.id)}"] .sprite-body`);
+                  return body ? snapPictures(body) : Promise.reject(new Error(`${c.short} isn't on the scene.`));
+                }),
+                { sep: true },
                 {
                   label: "Back to their spot",
                   run: () => {
@@ -207,6 +213,7 @@ function Avatar({
   return (
     <div
       ref={el}
+      data-char={c.id}
       className={`avatar-sprite ${style === "avatar" ? "full-look" : style}${talking ? " speaking" : ""}${focus ? " focus" : ""}${framed ? " framed" : ""}`}
       style={{ left: `${x * 100}%`, top: `${y * 100}%`, height: `${hang.size * 100}vh`, ...(style === "avatar" ? { width: `${hang.size * 75 * ((avatar?.scale ?? 1) > 1 ? avatar!.scale : 1)}vh` } : {}), ["--c" as string]: c.accent }}
       onPointerDown={down}

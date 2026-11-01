@@ -314,7 +314,7 @@ function LookSection() {
       </label>
       <label className="field" style={{ maxWidth: 380 }}>
         <span>Everything bigger or smaller</span>
-        <Num min={0.75} max={1.5} step={0.05} value={s.uiScale} onChange={(n) => desk().set({ uiScale: n })} percent />
+        <Num min={0.5} max={2} step={0.05} value={s.uiScale} onChange={(n) => desk().set({ uiScale: n })} percent />
       </label>
       <label className="check">
         <input type="checkbox" checked={s.wallpaper} onChange={(e) => desk().set({ wallpaper: e.target.checked })} />
