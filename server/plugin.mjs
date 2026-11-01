@@ -19,7 +19,7 @@ import { createFiles } from "./files.mjs";
 import { createDevShare, isDevicePath } from "./devshare.mjs";
 import { createTravel } from "./travel.mjs";
 import { createEngine } from "./engine.mjs";
-import { createUngoogled } from "./ungoogled.mjs";
+import { createUngoogled, DOWNLOADS } from "./ungoogled.mjs";
 import { createVecMem } from "./vecmem.mjs";
 import { createMcpStdio } from "./mcpstdio.mjs";
 import { createTheater, PIECE_MAX } from "./theater.mjs";
@@ -158,7 +158,8 @@ export function deskServer() {
   const stdioPrint = (b) => createHash("sha256").update(JSON.stringify([String(b.command || ""), (b.args ?? []).map(String), String(b.cwd || ""), Object.entries(b.env ?? {}).map(([k, v]) => [k, String(v)]).sort()])).digest("hex").slice(0, 32);
   const engine = createEngine({ dataDir: () => dataDir, getChoice: () => readConfig().browserEngine, deskPorts: () => [...deskPorts] });
   // Ungoogled Chromium, downloaded into the data folder when asked (see ungoogled.mjs)
-  const ungoogled = createUngoogled({ browserDir: () => path.join(dataDir, "browser"), hold: () => engine.hold() });
+  const downloads = DOWNLOADS.map((entry) => createUngoogled({ browserDir: () => path.join(dataDir, "browser"), hold: () => engine.hold(), entry }));
+  const ungoogled = downloads[0];
   const withDevices = (o) => ({ ...o, devices: devices.places() });
   const library = () => {
     if (!lib) {
@@ -479,27 +480,38 @@ export function deskServer() {
     if (parts[0] === "engine") {
       deskPorts.add(req.socket.localPort);
       try {
-        if (parts[1] === "status" && m === "GET") return send(res, 200, { ...engine.status(), ungoogled: ungoogled.status(), canChange: onThisPc(req) });
+        if (parts[1] === "status" && m === "GET")
+          return send(res, 200, { ...engine.status(), ungoogled: ungoogled.status(), downloads: downloads.map((d) => d.status()), downloaded: engine.downloaded(), canChange: onThisPc(req) });
         // which engine, and fetching Ungoogled Chromium: only from the computer itself
-        if ((parts[1] === "choose" || parts[1] === "ungoogled") && m === "POST") {
+        if ((parts[1] === "choose" || parts[1] === "ungoogled" || parts[1] === "download") && m === "POST") {
           if (!onThisPc(req)) return send(res, 403, { error: "The browser's engine can only be changed on the desktop's own computer." });
           const b = JSON.parse((await readBody(req, 10_000)).toString("utf8") || "{}");
           if (parts[1] === "choose") {
-            // "" = automatic: Ungoogled Chromium if it's here, else the most private browser installed
+            // "" = automatic; else a browser found on this computer, a downloaded engine, or a program the person
+            // picked themselves (b.custom: any Chromium-family browser's program file)
             const p = String(b.path || "");
-            const found = engine.installedEngines().find((e) => e.path === p);
-            if (p && !found) return send(res, 400, { error: "That isn't one of the browsers found on this computer." });
-            writeConfig({ browserEngine: found ? { name: found.name, path: found.path } : null });
+            const found = [...engine.installedEngines(), ...engine.downloaded()].find((e) => e.path === p);
+            const custom = !found && b.custom && p && fs.existsSync(p) && fs.statSync(p).isFile() ? { name: String(b.name || path.basename(p).replace(/\.(exe|app)$/i, "")).slice(0, 60), path: path.resolve(p) } : null;
+            if (p && !found && !custom) return send(res, 400, { error: b.custom ? "There's no program at that path." : "That isn't one of the browsers found on this computer." });
+            const pickedEngine = found ?? custom;
+            writeConfig({ browserEngine: pickedEngine ? { name: pickedEngine.name, path: pickedEngine.path } : null });
+            engine.forgetLast();
             const reopen = await engine.restart();
             return send(res, 200, { ...engine.status(), reopen });
           }
-          if (b.op === "check") return send(res, 200, { ...ungoogled.status(), latest: await ungoogled.latest() });
+          const d = parts[1] === "ungoogled" ? ungoogled : downloads.find((x) => x.id === String(b.id || ""));
+          if (!d) return send(res, 404, { error: "There's no such download." });
+          if (b.op === "check") return send(res, 200, { ...d.status(), latest: await d.latest() });
           if (b.op === "install") {
-            // automatic again, so the new engine is the one used
-            if (readConfig().browserEngine) writeConfig({ browserEngine: null });
-            return send(res, 200, ungoogled.install());
+            // this one is used next (chosen, so a newer download of another doesn't take over)
+            writeConfig({ browserEngine: { name: d.name, path: d.program() } });
+            engine.forgetLast();
+            return send(res, 200, d.install());
           }
-          if (b.op === "remove") return send(res, 200, await ungoogled.remove());
+          if (b.op === "remove") {
+            if (readConfig().browserEngine?.path === d.program()) writeConfig({ browserEngine: null });
+            return send(res, 200, await d.remove());
+          }
         }
         if (parts[1] === "stream" && m === "GET") return engine.stream(res, url.searchParams.get("frames") !== "0");
         if (!parts[1] && m === "POST") return send(res, 200, await engine.cmd(JSON.parse((await readBody(req, 200_000)).toString("utf8") || "{}")));

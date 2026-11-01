@@ -11,6 +11,7 @@ import path from "node:path";
 import os from "node:os";
 import { execFileSync } from "node:child_process";
 import { frameMessage } from "./wsframes.mjs";
+import { DOWNLOADS, exeIn } from "./ungoogled.mjs";
 
 const win = process.platform === "win32";
 /** How many pixels the engine draws per page pixel: the Browser window's own screen sharpness when the engine starts
@@ -18,37 +19,87 @@ const win = process.platform === "win32";
 const renderScaleFor = (dpr) => Math.min(2, Math.max(1, Math.round((Number(dpr) || 1) * 20) / 20));
 const mac = process.platform === "darwin";
 
-/** Chromium-family browsers already on this computer, best for privacy first. */
+/** What each kind of engine is good at, shown beside it. */
+const ABOUT = {
+  brave: "Privacy-minded Chromium. (Its own ad blocker may not run here.)",
+  chromium: "Plain Chromium, as Google's open-source project builds it.",
+  chrome: "Google's own: the browser most sites are tested with; Google sign-in.",
+  edge: "Microsoft's: sites made for Edge or Chrome; Microsoft account sign-in.",
+  vivaldi: "Vivaldi's build of Chromium.",
+  opera: "Opera's build of Chromium (slower to start: it goes through its launcher).",
+  thorium: "Thorium: Chromium compiled for speed.",
+  supermium: "Supermium: Chromium that also runs on older Windows.",
+  yandex: "Yandex Browser.",
+  cromite: "Cromite: privacy-hardened, ad blocking built in.",
+};
+
+/** Chromium-family browsers already on this computer (the only kind that can be shown live here), best for privacy
+ *  first. Each channel (Beta, Dev, Canary…) is its own choice. */
 export function installedEngines() {
   const pf = process.env["ProgramFiles"] || "C:\\Program Files";
   const pf86 = process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)";
   const local = process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local");
+  const both = (...rel) => [path.join(pf, ...rel), path.join(pf86, ...rel), path.join(local, ...rel)];
+  const W = (id, kind, name, ...rels) => rels.flatMap((rel) => both(...rel).map((p) => [id, kind, name, p]));
   const candidates = win
     ? [
-        ["brave", "Brave", path.join(pf, "BraveSoftware", "Brave-Browser", "Application", "brave.exe")],
-        ["brave", "Brave", path.join(local, "BraveSoftware", "Brave-Browser", "Application", "brave.exe")],
-        ["chrome", "Google Chrome", path.join(pf, "Google", "Chrome", "Application", "chrome.exe")],
-        ["chrome", "Google Chrome", path.join(local, "Google", "Chrome", "Application", "chrome.exe")],
-        ["edge", "Microsoft Edge", path.join(pf86, "Microsoft", "Edge", "Application", "msedge.exe")],
-        ["edge", "Microsoft Edge", path.join(pf, "Microsoft", "Edge", "Application", "msedge.exe")],
+        ...W("brave", "brave", "Brave", ["BraveSoftware", "Brave-Browser", "Application", "brave.exe"]),
+        ...W("brave-beta", "brave", "Brave Beta", ["BraveSoftware", "Brave-Browser-Beta", "Application", "brave.exe"]),
+        ...W("brave-nightly", "brave", "Brave Nightly", ["BraveSoftware", "Brave-Browser-Nightly", "Application", "brave.exe"]),
+        ...W("cromite", "cromite", "Cromite (installed)", ["Cromite", "Application", "chrome.exe"]),
+        ...W("chromium", "chromium", "Chromium", ["Chromium", "Application", "chrome.exe"]),
+        ...W("thorium", "thorium", "Thorium", ["Thorium", "Application", "thorium.exe"]),
+        ...W("vivaldi", "vivaldi", "Vivaldi", ["Vivaldi", "Application", "vivaldi.exe"]),
+        ...W("chrome", "chrome", "Google Chrome", ["Google", "Chrome", "Application", "chrome.exe"]),
+        ...W("chrome-beta", "chrome", "Google Chrome Beta", ["Google", "Chrome Beta", "Application", "chrome.exe"]),
+        ...W("chrome-dev", "chrome", "Google Chrome Dev", ["Google", "Chrome Dev", "Application", "chrome.exe"]),
+        ...W("chrome-canary", "chrome", "Google Chrome Canary", ["Google", "Chrome SxS", "Application", "chrome.exe"]),
+        ...W("edge", "edge", "Microsoft Edge", ["Microsoft", "Edge", "Application", "msedge.exe"]),
+        ...W("edge-beta", "edge", "Microsoft Edge Beta", ["Microsoft", "Edge Beta", "Application", "msedge.exe"]),
+        ...W("edge-dev", "edge", "Microsoft Edge Dev", ["Microsoft", "Edge Dev", "Application", "msedge.exe"]),
+        ...W("edge-canary", "edge", "Microsoft Edge Canary", ["Microsoft", "Edge SxS", "Application", "msedge.exe"]),
+        ...W("opera", "opera", "Opera", ["Programs", "Opera", "opera.exe"], ["Opera", "opera.exe"]),
+        ...W("opera-gx", "opera", "Opera GX", ["Programs", "Opera GX", "opera.exe"]),
+        ...W("supermium", "supermium", "Supermium", ["Supermium", "chrome.exe"]),
+        ...W("yandex", "yandex", "Yandex Browser", ["Yandex", "YandexBrowser", "Application", "browser.exe"]),
       ]
     : mac
       ? [
-          ["brave", "Brave", "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"],
-          ["chromium", "Chromium", "/Applications/Chromium.app/Contents/MacOS/Chromium"],
-          ["chrome", "Google Chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"],
-          ["edge", "Microsoft Edge", "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"],
+          ["brave", "brave", "Brave", "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"],
+          ["brave-beta", "brave", "Brave Beta", "/Applications/Brave Browser Beta.app/Contents/MacOS/Brave Browser Beta"],
+          ["chromium", "chromium", "Chromium", "/Applications/Chromium.app/Contents/MacOS/Chromium"],
+          ["thorium", "thorium", "Thorium", "/Applications/Thorium.app/Contents/MacOS/Thorium"],
+          ["vivaldi", "vivaldi", "Vivaldi", "/Applications/Vivaldi.app/Contents/MacOS/Vivaldi"],
+          ["chrome", "chrome", "Google Chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"],
+          ["chrome-beta", "chrome", "Google Chrome Beta", "/Applications/Google Chrome Beta.app/Contents/MacOS/Google Chrome Beta"],
+          ["chrome-canary", "chrome", "Google Chrome Canary", "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary"],
+          ["edge", "edge", "Microsoft Edge", "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"],
+          ["edge-beta", "edge", "Microsoft Edge Beta", "/Applications/Microsoft Edge Beta.app/Contents/MacOS/Microsoft Edge Beta"],
+          ["opera", "opera", "Opera", "/Applications/Opera.app/Contents/MacOS/Opera"],
         ]
       : [
-          ["chromium", "Chromium", "/usr/bin/chromium"],
-          ["chromium", "Chromium", "/usr/bin/chromium-browser"],
-          ["brave", "Brave", "/usr/bin/brave-browser"],
-          ["chrome", "Google Chrome", "/usr/bin/google-chrome"],
-          ["edge", "Microsoft Edge", "/usr/bin/microsoft-edge"],
+          ["brave", "brave", "Brave", "/usr/bin/brave-browser"],
+          ["brave-beta", "brave", "Brave Beta", "/usr/bin/brave-browser-beta"],
+          ["chromium", "chromium", "Chromium", "/usr/bin/chromium"],
+          ["chromium", "chromium", "Chromium", "/usr/bin/chromium-browser"],
+          ["chromium", "chromium", "Chromium", "/snap/bin/chromium"],
+          ["thorium", "thorium", "Thorium", "/usr/bin/thorium-browser"],
+          ["vivaldi", "vivaldi", "Vivaldi", "/usr/bin/vivaldi"],
+          ["chrome", "chrome", "Google Chrome", "/usr/bin/google-chrome"],
+          ["chrome-beta", "chrome", "Google Chrome Beta", "/usr/bin/google-chrome-beta"],
+          ["edge", "edge", "Microsoft Edge", "/usr/bin/microsoft-edge"],
+          ["opera", "opera", "Opera", "/usr/bin/opera"],
+          ["yandex", "yandex", "Yandex Browser", "/usr/bin/yandex-browser"],
         ];
   const seen = new Set();
-  return candidates.filter(([id, , p]) => fs.existsSync(p) && !seen.has(id) && seen.add(id)).map(([id, name, p]) => ({ id, name, path: p }));
+  return candidates
+    .filter(([id, , , p]) => !seen.has(id) && fs.existsSync(p) && seen.add(id))
+    .map(([id, kind, name, p]) => ({ id, name, path: p, about: ABOUT[kind] ?? "" }));
 }
+
+/** A profile folder per engine, so two brands or versions of Chromium never share one. Edge keeps the one the
+ *  full browser has always used (nobody signed out); Ungoogled Chromium keeps its own. */
+const profileFor = (name) => (name === "Microsoft Edge" ? "default" : name === "Ungoogled Chromium" ? "ungoogled" : name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "other");
 
 /** Addresses a page must never reach through the engine: this computer itself, and the desktop wherever it answers. */
 function forbidden(url, deskPorts) {
@@ -90,6 +141,11 @@ function startFresh(profile) {
     fs.writeFileSync(file, JSON.stringify(prefs));
   } catch {
     /* a new profile: nothing to restore yet */
+  }
+  // the browser's own record of its last session (Brave and Opera reopen it whatever the setting says); the
+  // desktop keeps where you left off itself (browser/session.json)
+  for (const name of ["Sessions", "Sessions_Encrypted", "Current Session", "Current Tabs", "Last Session", "Last Tabs"]) {
+    fs.rmSync(path.join(profile, "Default", name), { recursive: true, force: true });
   }
 }
 
@@ -190,7 +246,7 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     const back = [];
     for (const s of list) {
       const blank = [...tabs.entries()].find(([, t]) => t.url === "about:blank" && !t.loading);
-      const id = blank ? blank[0] : await adopt(await ctx.newPage(), false);
+      const id = blank ? blank[0] : await adopt(await newTab(), false);
       const t = tabs.get(id);
       if (!t) continue;
       const [x, y] = Array.isArray(s.scroll) ? s.scroll : [0, 0];
@@ -213,16 +269,28 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     return list.length;
   }
 
+  /** Engines downloaded into the data folder (Ungoogled Chromium, Cromite), as choices. */
+  const downloaded = () =>
+    DOWNLOADS.map((d) => ({ id: d.id, name: d.name, path: exeIn(path.join(dataDir(), "browser", d.folder)), about: d.about })).filter((d) => fs.existsSync(d.path));
+
+  /** The engine to run: the one chosen; otherwise (Automatic) the one used last, so finding another browser on
+   *  the computer never switches it silently; otherwise a downloaded one, then the most private one installed. */
   function pick() {
     const choice = getChoice() || {};
-    const found = installedEngines();
     if (choice.path && fs.existsSync(choice.path)) return { name: choice.name || path.basename(choice.path), path: choice.path };
-    const own = path.join(dataDir(), "browser", "engine");
-    // a downloaded Ungoogled Chromium in the data folder comes first (the private choice)
-    const ownExe = win ? path.join(own, "chrome.exe") : mac ? path.join(own, "Chromium.app", "Contents", "MacOS", "Chromium") : path.join(own, "chrome");
-    if (fs.existsSync(ownExe)) return { name: "Ungoogled Chromium", path: ownExe };
-    return found[0] ? { name: found[0].name, path: found[0].path } : null;
+    const last = readJson(settingsFile(), {}).lastUsed;
+    if (last?.path && fs.existsSync(last.path)) return { name: last.name, path: last.path };
+    // (desktops from before this was noted: a browser that already has a profile here was the one in use)
+    const used = [...downloaded(), ...installedEngines()].find((e) => fs.existsSync(path.join(dataDir(), "browser", "profiles", profileFor(e.name))));
+    if (used) return { name: used.name, path: used.path };
+    const own = downloaded()[0] ?? installedEngines()[0];
+    return own ? { name: own.name, path: own.path } : null;
   }
+  /** After a choice or a download, Automatic picks afresh. */
+  const forgetLast = () => {
+    const st = readJson(settingsFile(), {});
+    if (st.lastUsed) writeJson(settingsFile(), { ...st, lastUsed: undefined });
+  };
 
   async function start() {
     while (paused) await paused; // its files are being replaced (a new Ungoogled Chromium)
@@ -232,9 +300,8 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
       const eng = pick();
       if (!eng) throw Object.assign(new Error("No Chromium-family browser found on this computer (Edge, Chrome, Brave or Chromium)."), { status: 409 });
       const { chromium } = await import("playwright-core");
-      // Ungoogled Chromium keeps a profile of its own (two brands and versions of Chromium mustn't share one);
-      // the installed browsers keep the one they always had, so nobody is signed out
-      const profile = path.join(dataDir(), "browser", "profiles", eng.name === "Ungoogled Chromium" ? "ungoogled" : "default");
+      // a profile of its own per engine (two brands or versions of Chromium mustn't share one; Edge keeps its old one)
+      const profile = path.join(dataDir(), "browser", "profiles", profileFor(eng.name));
       fs.mkdirSync(profile, { recursive: true });
       startFresh(profile);
       const launch = () => chromium.launchPersistentContext(profile, {
@@ -262,9 +329,18 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
         c = await launch();
       }
       engineName = eng.name;
+      writeJson(settingsFile(), { ...readJson(settingsFile(), {}), lastUsed: { name: eng.name, path: eng.path } });
       // pages can't reach the desktop's controls, or anything else on this computer
       await c.route("**/*", (route) => (forbidden(route.request().url(), deskPorts) ? route.abort("blockedbyclient") : route.continue()));
-      c.on("page", (p) => void adopt(p, true));
+      // some browsers (Brave, Opera, Opera GX) open their own welcome pages as they start: pages a browser opens by
+      // itself in its first seconds are closed; our own new tabs and pages' real pop-ups stay
+      startupUntil = Date.now() + 10_000;
+      c.on("page", async (p) => {
+        // decided the moment it appears (one of ours finishes opening while the opener is looked up)
+        const suspect = Date.now() < startupUntil && !ownNew;
+        if (suspect && !(await p.opener().catch(() => null))) return void p.close().catch(() => undefined);
+        void adopt(p, true);
+      });
       c.on("close", () => {
         ctx = null;
         tabs.clear();
@@ -272,7 +348,10 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
         pushTabs();
       });
       ctx = c;
-      for (const p of c.pages()) await adopt(p, false);
+      // the first page it starts with is kept (it becomes the first tab); any others it opened are welcome pages
+      const [first, ...more] = c.pages();
+      for (const p of more) await p.close().catch(() => undefined);
+      if (first) await adopt(first, false);
       return c;
     })();
     try {
@@ -285,10 +364,22 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     }
   }
 
+  let startupUntil = 0;
+  let ownNew = 0; // new tabs we're opening right now (so they're never taken for a welcome page)
+  async function newTab() {
+    ownNew++;
+    try {
+      return await ctx.newPage();
+    } finally {
+      ownNew--;
+    }
+  }
+
   /** A page the engine opened (a new tab, or a site's pop-up): track it, and show it if it's new. */
   const known = new WeakMap(); // page → the tab being set up for it, so a page announced twice is one tab
   function adopt(page, show) {
-    if (!known.has(page)) known.set(page, setUp(page, show));
+    // a page that's gone before it's set up (Opera's launcher swaps its first page as it starts) is skipped: null
+    if (!known.has(page)) known.set(page, setUp(page, show).catch(() => null));
     return known.get(page);
   }
   async function setUp(page, show) {
@@ -424,7 +515,9 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     if (op === "open") {
       // the empty tab the engine starts with is used first, rather than left behind
       const blank = [...tabs.entries()].find(([, t]) => t.url === "about:blank" && !t.loading);
-      const id = blank ? blank[0] : await adopt(await ctx.newPage(), true);
+      let id = blank ? blank[0] : await adopt(await newTab(), true);
+      if (!id) id = await adopt(await newTab(), true); // it vanished while starting: once more
+      if (!id) throw Object.assign(new Error("The browser closed the new tab as it opened; try again."), { status: 503 });
       if (blank) await watch(id);
       if (b.url) go(tabs.get(id), addressOf(b.url));
       return { id };
@@ -542,5 +635,5 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     };
   };
 
-  return { cmd, stream, attachSocket, status, installedEngines, close, restart, hold };
+  return { cmd, stream, attachSocket, status, installedEngines, downloaded, forgetLast, close, restart, hold };
 }

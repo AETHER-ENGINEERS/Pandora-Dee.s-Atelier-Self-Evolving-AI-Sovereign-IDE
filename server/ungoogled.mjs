@@ -1,7 +1,8 @@
-// Ungoogled Chromium for the full browser: Chromium without Google's services, downloaded from the
-// ungoogled-software releases on GitHub only when the person asks, checked against the SHA-256 GitHub lists for
-// that file, and unpacked into the data folder (browser/engine), where engine.mjs looks for it first.
-// Nothing is installed on the computer itself; deleting that folder removes it.
+// Engines the full browser can download: Ungoogled Chromium (Chromium without Google's services) and Cromite
+// (privacy-hardened, with ad blocking built in). Each comes from its project's own releases on GitHub, only when the
+// person asks, is checked against the SHA-256 GitHub lists for that file, and is unpacked into the data folder
+// (browser/engine for Ungoogled Chromium, browser/engines/<id> for the others). Nothing is installed on the computer
+// itself; deleting the folder removes it.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -15,14 +16,28 @@ const UA = { "User-Agent": "PandoraDeeDesktop/3.10", Accept: "application/vnd.gi
 const win = process.platform === "win32";
 const mac = process.platform === "darwin";
 
-/** Which release repository and file suit this computer. */
+/** Which release repository and file suit this computer (Ungoogled Chromium). */
 export function assetFor(platform = process.platform, arch = process.arch) {
   const a = arch === "arm64" ? "arm64" : arch === "ia32" ? "x86" : "x64";
-  if (platform === "win32") return { repo: "ungoogled-chromium-windows", match: new RegExp(`_windows_${a}\\.zip$`) };
-  if (platform === "darwin") return { repo: "ungoogled-chromium-macos", match: new RegExp(`_${a === "arm64" ? "arm64" : "x86_64"}-macos\\.dmg$`) };
-  if (platform === "linux" && a !== "x86") return { repo: "ungoogled-chromium-portablelinux", match: new RegExp(`-${a === "arm64" ? "arm64" : "x86_64"}_linux\\.tar\\.xz$`) };
+  if (platform === "win32") return { repo: "ungoogled-software/ungoogled-chromium-windows", match: new RegExp(`_windows_${a}\\.zip$`) };
+  if (platform === "darwin") return { repo: "ungoogled-software/ungoogled-chromium-macos", match: new RegExp(`_${a === "arm64" ? "arm64" : "x86_64"}-macos\\.dmg$`) };
+  if (platform === "linux" && a !== "x86") return { repo: "ungoogled-software/ungoogled-chromium-portablelinux", match: new RegExp(`-${a === "arm64" ? "arm64" : "x86_64"}_linux\\.tar\\.xz$`) };
   return null;
 }
+
+/** Cromite's desktop builds: Windows and Linux, 64-bit Intel/AMD. */
+export function cromiteAssetFor(platform = process.platform, arch = process.arch) {
+  if (arch !== "x64") return null;
+  if (platform === "win32") return { repo: "uazo/cromite", match: /^chrome-win\.zip$/ };
+  if (platform === "linux") return { repo: "uazo/cromite", match: /^chrome-lin64\.tar\.gz$/ };
+  return null;
+}
+
+/** What can be downloaded: name, what it's good for, where its files go, and which release file suits this computer. */
+export const DOWNLOADS = [
+  { id: "ungoogled", name: "Ungoogled Chromium", folder: "engine", asset: assetFor, about: "Chromium with Google's services taken out: nothing sent to Google, no sign-in to Google, no Google updates." },
+  { id: "cromite", name: "Cromite", folder: path.join("engines", "cromite"), asset: cromiteAssetFor, about: "Privacy-hardened Chromium with ad and tracker blocking built in and protection against fingerprinting." },
+];
 
 /** The program inside an unpacked engine folder. */
 export const exeIn = (dir) => (win ? path.join(dir, "chrome.exe") : mac ? path.join(dir, "Chromium.app", "Contents", "MacOS", "Chromium") : path.join(dir, "chrome"));
@@ -39,8 +54,8 @@ async function settle(fn) {
   }
 }
 
-export function createUngoogled({ browserDir, hold }) {
-  const engineDir = () => path.join(browserDir(), "engine");
+export function createUngoogled({ browserDir, hold, entry = DOWNLOADS[0] }) {
+  const engineDir = () => path.join(browserDir(), entry.folder);
   const versionFile = () => path.join(engineDir(), "pandora-version.json");
   let job = { busy: false, stage: "", got: 0, total: 0, error: "" };
   let latestSeen = null;
@@ -56,9 +71,9 @@ export function createUngoogled({ browserDir, hold }) {
 
   /** The newest release for this computer: its version, file, size and checksum. */
   async function latest() {
-    const want = assetFor();
-    if (!want) throw Object.assign(new Error("There's no Ungoogled Chromium release for this kind of computer."), { status: 409 });
-    const r = await fetch(`https://api.github.com/repos/ungoogled-software/${want.repo}/releases/latest`, { headers: UA });
+    const want = entry.asset();
+    if (!want) throw Object.assign(new Error(`There's no ${entry.name} release for this kind of computer.`), { status: 409 });
+    const r = await fetch(`https://api.github.com/repos/${want.repo}/releases/latest`, { headers: UA });
     if (r.status === 403) throw new Error("GitHub's hourly limit for checks was reached; try again in a while.");
     if (!r.ok) throw new Error(`GitHub answered ${r.status}.`);
     const rel = await r.json();
@@ -70,14 +85,14 @@ export function createUngoogled({ browserDir, hold }) {
     return latestSeen;
   }
 
-  const status = () => ({ installed: installed(), latest: latestSeen, ...job, where: engineDir() });
+  const status = () => ({ id: entry.id, name: entry.name, about: entry.about, available: Boolean(entry.asset()), installed: installed(), latest: latestSeen, ...job, where: engineDir(), program: exeIn(engineDir()) });
 
   /** Download, check and unpack the newest release (in the background; status() reports progress). */
   function install() {
     if (job.busy) return status();
     job = { busy: true, stage: "Looking up the newest release…", got: 0, total: 0, error: "" };
     void (async () => {
-      const tmp = path.join(browserDir(), "download");
+      const tmp = path.join(browserDir(), `download-${entry.id}`);
       fs.rmSync(tmp, { recursive: true, force: true });
       fs.mkdirSync(tmp, { recursive: true });
       try {
@@ -117,7 +132,7 @@ export function createUngoogled({ browserDir, hold }) {
         } finally {
           release();
         }
-        job = { busy: false, stage: `Ungoogled Chromium ${rel.version} is ready.`, got: job.got, total: job.total, error: "" };
+        job = { busy: false, stage: `${entry.name} ${rel.version} is ready.`, got: job.got, total: job.total, error: "" };
       } catch (e) {
         job = { busy: false, stage: "", got: 0, total: 0, error: e instanceof Error ? e.message : String(e) };
       } finally {
@@ -133,6 +148,8 @@ export function createUngoogled({ browserDir, hold }) {
       execFileSync(win ? path.join(process.env.SystemRoot || "C:\\Windows", "System32", "tar.exe") : "tar", ["-xf", file, "-C", out], { stdio: "ignore", timeout: 600_000 });
     } else if (file.endsWith(".tar.xz")) {
       execFileSync("tar", ["-xJf", file, "-C", out], { stdio: "ignore", timeout: 600_000 });
+    } else if (file.endsWith(".tar.gz")) {
+      execFileSync("tar", ["-xzf", file, "-C", out], { stdio: "ignore", timeout: 600_000 });
     } else if (file.endsWith(".dmg")) {
       const mnt = fs.mkdtempSync(path.join(os.tmpdir(), "ungoogled-"));
       execFileSync("hdiutil", ["attach", "-nobrowse", "-readonly", "-mountpoint", mnt, file], { stdio: "ignore", timeout: 120_000 });
@@ -170,5 +187,5 @@ export function createUngoogled({ browserDir, hold }) {
     return status();
   }
 
-  return { status, latest, install, remove, installed, engineDir };
+  return { id: entry.id, name: entry.name, status, latest, install, remove, installed, engineDir, program: () => exeIn(engineDir()) };
 }

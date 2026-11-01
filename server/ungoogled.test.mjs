@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assetFor } from "./ungoogled.mjs";
+import { assetFor, cromiteAssetFor } from "./ungoogled.mjs";
 
 // file names from the ungoogled-software releases (10-31)
 const names = [
@@ -20,10 +20,22 @@ const pick = (platform, arch) => {
 };
 
 test("each computer gets the one Ungoogled Chromium file that suits it", () => {
-  assert.deepEqual(pick("win32", "x64"), { repo: "ungoogled-chromium-windows", file: ["ungoogled-chromium_156.0.8078.73-1.1_windows_x64.zip"] });
+  assert.deepEqual(pick("win32", "x64"), { repo: "ungoogled-software/ungoogled-chromium-windows", file: ["ungoogled-chromium_156.0.8078.73-1.1_windows_x64.zip"] });
   assert.deepEqual(pick("win32", "arm64").file, ["ungoogled-chromium_156.0.8078.73-1.1_windows_arm64.zip"]);
-  assert.deepEqual(pick("darwin", "arm64"), { repo: "ungoogled-chromium-macos", file: ["ungoogled-chromium_156.0.8078.47-1.1_arm64-macos.dmg"] });
+  assert.deepEqual(pick("darwin", "arm64"), { repo: "ungoogled-software/ungoogled-chromium-macos", file: ["ungoogled-chromium_156.0.8078.47-1.1_arm64-macos.dmg"] });
   assert.deepEqual(pick("darwin", "x64").file, ["ungoogled-chromium_156.0.8078.47-1.1_x86_64-macos.dmg"]);
-  assert.deepEqual(pick("linux", "x64"), { repo: "ungoogled-chromium-portablelinux", file: ["ungoogled-chromium-156.0.8078.79-1-x86_64_linux.tar.xz"] });
+  assert.deepEqual(pick("linux", "x64"), { repo: "ungoogled-software/ungoogled-chromium-portablelinux", file: ["ungoogled-chromium-156.0.8078.79-1-x86_64_linux.tar.xz"] });
   assert.equal(pick("freebsd", "x64"), null);
+});
+
+test("Cromite: its Windows zip and Linux archive, and nothing for other computers", () => {
+  const files = ["arm64_ChromePublic.apk", "chrome-lin64.tar.gz", "chrome-win.zip", "updateurl.txt", "x64_ChromePublic.apk"];
+  const pickC = (platform, arch) => {
+    const a = cromiteAssetFor(platform, arch);
+    return a && { repo: a.repo, file: files.filter((n) => a.match.test(n)) };
+  };
+  assert.deepEqual(pickC("win32", "x64"), { repo: "uazo/cromite", file: ["chrome-win.zip"] });
+  assert.deepEqual(pickC("linux", "x64"), { repo: "uazo/cromite", file: ["chrome-lin64.tar.gz"] });
+  assert.equal(pickC("darwin", "arm64"), null);
+  assert.equal(pickC("win32", "arm64"), null);
 });
