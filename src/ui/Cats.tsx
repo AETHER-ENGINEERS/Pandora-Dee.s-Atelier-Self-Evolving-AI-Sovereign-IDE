@@ -3,6 +3,7 @@
 // don't walk past while she sleeps. Pet one by clicking it. The characters hear what the cats are up to (catsNote).
 // Drawn here with shapes, until proper art is ready.
 
+import { viewH, viewW } from "../lib/zoom.ts";
 import { openMenu } from "./ContextMenu.tsx";
 import { poseItems, snapDrawing } from "../lib/poses.ts";
 import { useEffect, useRef } from "react";
@@ -14,7 +15,7 @@ const H = 44;
 const SPEED = 55; // px per second, a cat's amble
 
 const rnd = (a: number, b: number) => a + Math.random() * (b - a);
-const bounds = () => ({ x0: 40, x1: window.innerWidth - 40, y0: 90, y1: window.innerHeight - 90 });
+const bounds = () => ({ x0: 40, x1: viewW() - 40, y0: 90, y1: viewH() - 90 });
 
 function pick(c: Live, senior: Live | undefined, now: number) {
   // Neko's rhythm: a wander, a sit, a wash, a yawn, and a long sleep; awake again with a stretch

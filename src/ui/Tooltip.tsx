@@ -1,3 +1,4 @@
+import { toCss } from "../lib/zoom.ts";
 import { useEffect, useRef, useState } from "react";
 
 /**
@@ -52,7 +53,7 @@ export function TooltipHost() {
     let top = tip.up ? above : below;
     if (top + b.height > vh - gap) top = above;
     if (top < gap) top = below + b.height > vh - gap ? gap : below;
-    setPos({ left, top });
+    setPos({ left: toCss(left), top: toCss(top) });
   }, [tip]);
 
   if (!tip) return null;

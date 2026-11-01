@@ -1,3 +1,4 @@
+import { viewH, viewW } from "./zoom.ts";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { BUILT_IN, DEFAULT_ROOM, type Character, type Look } from "./characters.ts";
@@ -566,8 +567,8 @@ function withNotes(d: DockPrefs): DockPrefs {
 }
 
 export function defaultWins(): Record<AppId, Win> {
-  const vw = typeof window === "undefined" ? 1440 : window.innerWidth;
-  const vh = typeof window === "undefined" ? 900 : window.innerHeight - 110;
+  const vw = viewW();
+  const vh = viewH() - 110;
   const wide = vw >= 1180;
   const presW = Math.min(360, Math.max(280, Math.round(vw * 0.3)));
   const presX = vw - presW - 16;
@@ -735,8 +736,8 @@ export const useDesk = create<Store>()(
         set((s) => {
           if (s.toddler && !inToddler(id)) return {};
           // Keep the window on screen if the screen got smaller since it was last placed.
-          const vw = window.innerWidth;
-          const vh = window.innerHeight - 100;
+          const vw = viewW();
+          const vh = viewH() - 100;
           const w0 = s.wins[id];
           const w = Math.min(w0.w, vw - 16);
           const h = Math.min(w0.h, vh - 10);
@@ -754,8 +755,8 @@ export const useDesk = create<Store>()(
       arrange: (how) =>
         set((s) => {
           const open = APPS.filter((a) => s.wins[a.id].open && !s.wins[a.id].min).map((a) => a.id);
-          const vw = window.innerWidth;
-          const vh = window.innerHeight - 110;
+          const vw = viewW();
+          const vh = viewH() - 110;
           const wins = { ...s.wins };
           if (how === "cascade") {
             open.forEach((id, i) => (wins[id] = { ...wins[id], max: false, x: 30 + i * 32, y: 44 + i * 30, w: Math.min(720, vw - 80), h: Math.min(520, vh - 40) }));

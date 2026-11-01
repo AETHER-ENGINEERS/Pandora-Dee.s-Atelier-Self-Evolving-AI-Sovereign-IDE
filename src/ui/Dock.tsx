@@ -1,3 +1,4 @@
+import { toCss, viewH, viewW } from "../lib/zoom.ts";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { GripVertical, MonitorPlay, Trees } from "lucide-react";
 import { APPS, desk, inToddler, useDesk, type AppId, type DockPrefs } from "../lib/store.ts";
@@ -50,9 +51,9 @@ export function Dock({ front, phone }: { front?: AppId; phone?: boolean }) {
       const r = nav.current?.getBoundingClientRect();
       const f = desk().dock.float;
       if (!r || !f) return;
-      const x = Math.max(4, Math.min(f.x, window.innerWidth - r.width - 4));
+      const x = Math.max(4, Math.min(f.x, viewW() - toCss(r.width) - 4));
       const { top, bottom } = room();
-      const y = Math.max(top, Math.min(f.y, bottom - r.height));
+      const y = Math.max(toCss(top), Math.min(f.y, toCss(bottom - r.height)));
       if (x !== f.x || y !== f.y) desk().set({ dock: { ...desk().dock, float: { ...f, x, y } } });
     };
     fit();
@@ -99,8 +100,8 @@ export function Dock({ front, phone }: { front?: AppId; phone?: boolean }) {
     // on touch screens, clear of the side edges (swiping there is "back" on phones with gestures)
     const side = window.matchMedia("(pointer: coarse)").matches ? 28 : 4;
     const place = (ev: PointerEvent) => ({
-      x: Math.max(side, Math.min(ev.clientX - dx, window.innerWidth - r.width - side)),
-      y: Math.max(room().top, Math.min(ev.clientY - dy, room().bottom - r.height)),
+      x: toCss(Math.max(side, Math.min(ev.clientX - dx, window.innerWidth - r.width - side))),
+      y: toCss(Math.max(room().top, Math.min(ev.clientY - dy, room().bottom - r.height))),
     });
     const move = (ev: PointerEvent) => {
       if (!moved && Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY) < 4) return;
@@ -123,7 +124,7 @@ export function Dock({ front, phone }: { front?: AppId; phone?: boolean }) {
     window.addEventListener("pointerup", up);
   };
   const at = phone ? undefined : drag ?? (d.edge === "float" ? d.float : undefined);
-  const upTips = d.edge === "bottom" || (floating && (at?.y ?? 0) > window.innerHeight / 2);
+  const upTips = d.edge === "bottom" || (floating && (at?.y ?? 0) > viewH() / 2);
 
   const icon = Math.round(d.size * 0.46);
   const button = (id: string, i: number): ReactNode => {
@@ -187,7 +188,7 @@ function dockMenu(conceal: () => void): MenuItem[] {
     {
       label: "Floating (drag it anywhere)",
       checked: d.edge === "float",
-      run: () => set({ edge: "float", float: d.float ?? { x: Math.max(4, window.innerWidth / 2 - 200), y: Math.max(40, window.innerHeight - 140), vertical: false } }),
+      run: () => set({ edge: "float", float: d.float ?? { x: Math.max(4, viewW() / 2 - 200), y: Math.max(40, viewH() - 140), vertical: false } }),
     },
     ...(d.edge === "float" ? [{ label: "Upright", checked: Boolean(d.float?.vertical), run: () => set({ float: { x: d.float?.x ?? 40, y: d.float?.y ?? 40, vertical: !d.float?.vertical } }) } as MenuItem] : []),
     { sep: true },

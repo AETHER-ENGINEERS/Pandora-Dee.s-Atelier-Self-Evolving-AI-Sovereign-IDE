@@ -1,3 +1,4 @@
+import { toCss, viewH, viewW } from "../lib/zoom.ts";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Check } from "lucide-react";
 
@@ -21,13 +22,13 @@ export function openMenu(e: { clientX: number; clientY: number; preventDefault: 
   e.preventDefault();
   e.stopPropagation();
   const shown = items.filter((it, i, all) => !("sep" in it) || (i > 0 && i < all.length - 1 && !("sep" in all[i - 1])));
-  set({ x: e.clientX, y: e.clientY, items: shown });
+  set({ x: toCss(e.clientX), y: toCss(e.clientY), items: shown });
 }
 
 /** Open a menu next to an element, for keyboard users (Shift+F10 or the Menu key). */
 export function openMenuAt(el: Element, items: MenuItem[]) {
   const r = el.getBoundingClientRect();
-  set({ x: r.left + Math.min(24, r.width / 2), y: r.top + Math.min(24, r.height / 2), items });
+  set({ x: toCss(r.left + Math.min(24, r.width / 2)), y: toCss(r.top + Math.min(24, r.height / 2)), items });
 }
 
 export const closeMenu = () => set(null);
@@ -55,7 +56,7 @@ export function ContextMenuHost() {
     const el = ref.current;
     const w = el?.offsetWidth ?? 240;
     const h = el?.offsetHeight ?? 300;
-    setPos({ x: Math.max(4, Math.min(menu.x, window.innerWidth - w - 4)), y: Math.max(4, Math.min(menu.y, window.innerHeight - h - 4)) });
+    setPos({ x: Math.max(4, Math.min(menu.x, viewW() - w - 4)), y: Math.max(4, Math.min(menu.y, viewH() - h - 4)) });
     el?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
     const away = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && closeMenu();
     const key = (e: KeyboardEvent) => {

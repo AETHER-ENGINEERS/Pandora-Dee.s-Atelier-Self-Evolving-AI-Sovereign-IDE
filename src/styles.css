@@ -1078,3 +1078,23 @@ html { touch-action: pan-x pan-y; }
 .pads-servers { padding: 6px 10px; border-top: 1px solid var(--line); }
 .pads-invite { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; padding: 8px; border: 1px dashed var(--line-strong); border-radius: 8px; }
 .pads-code { font-family: ui-monospace, monospace; padding: 3px 6px; border-radius: 5px; background: rgba(255, 255, 255, .06); user-select: all; word-break: break-all; }
+/* phones and tablets: buttons big enough for a finger, toolbars that wrap instead of running off the edge */
+@media (pointer: coarse) {
+  .icon-btn { width: 36px; height: 36px; }
+  .btn.small { min-height: 32px; }
+  input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; }
+}
+@media (max-width: 760px) {
+  .toolbar { flex-wrap: wrap; row-gap: 6px; }
+  /* two-pane windows (Journal): the list above, what's open below */
+  .split { flex-direction: column; }
+  .split > .side, .narrow .split > .side { width: auto; max-height: 34%; border-right: 0; border-bottom: 1px solid var(--line); }
+}
+/* Music in a narrow window: the playback buttons get a row of their own, centred under the song */
+.music.narrow .now-playing { grid-template-columns: auto 1fr; }
+.music.narrow .np-controls { grid-column: 1 / -1; justify-content: center; gap: 8px; }
+.pads-mail-pill { position: fixed; right: 12px; bottom: calc(var(--dock-h, 56px) + 14px + env(safe-area-inset-bottom)); z-index: 40000; display: inline-flex; align-items: center; gap: 6px; max-width: min(260px, calc(100vw - 24px)); padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--panel, #15121e); color: var(--text); box-shadow: 0 6px 18px rgba(0, 0, 0, .4); font-size: .86em; }
+.pads-mail-pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pads-mail-pill.fresh { animation: pads-pulse 1.6s ease-out; }
+@keyframes pads-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 70%, transparent); } 100% { box-shadow: 0 0 0 14px transparent; } }
+.pads-mail-hide { align-self: flex-end; }

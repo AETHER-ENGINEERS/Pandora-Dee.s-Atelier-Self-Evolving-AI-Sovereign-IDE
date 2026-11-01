@@ -1,3 +1,4 @@
+import { toCss, viewH, viewW } from "../lib/zoom.ts";
 import { useRef, type PointerEvent as RPointerEvent, type ReactNode } from "react";
 import { Maximize2, Minimize2, Minus, X } from "lucide-react";
 import { useDesk, type AppId } from "../lib/store.ts";
@@ -44,8 +45,8 @@ export function Window({
     const sy = e.clientY;
     const box = { x: win.x, y: win.y, w: win.w, h: win.h };
     const space = ref.current?.parentElement?.getBoundingClientRect();
-    const maxW = space?.width ?? window.innerWidth;
-    const maxH = space?.height ?? window.innerHeight;
+    const maxW = space ? toCss(space.width) : viewW();
+    const maxH = space ? toCss(space.height) : viewH();
     const el = ref.current;
     let next = { ...box };
     // While dragging, embedded pages (Vector, games, the browser) ignore the pointer, and the handle holds on to it:
@@ -68,15 +69,16 @@ export function Window({
       el.style.height = `${next.h}px`;
     };
     const onMove = (ev: PointerEvent) => {
-      const dx = ev.clientX - sx;
-      const dy = ev.clientY - sy;
+      const dx = toCss(ev.clientX - sx);
+      const dy = toCss(ev.clientY - sy);
       next = { ...box };
       if (mode === "move") {
         next.x = Math.min(maxW - 80, Math.max(-box.w + 120, box.x + dx));
         next.y = Math.min(maxH - 36, Math.max(0, box.y + dy));
       } else {
-        if (mode.includes("e")) next.w = Math.max(MIN_W, Math.min(maxW - box.x, box.w + dx));
-        if (mode.includes("s")) next.h = Math.max(MIN_H, Math.min(maxH - box.y, box.h + dy));
+        // a window already past the screen's edge isn't snapped back by the first nudge: it can only grow to the edge
+        if (mode.includes("e")) next.w = Math.max(MIN_W, Math.min(Math.max(maxW - box.x, box.w), box.w + dx));
+        if (mode.includes("s")) next.h = Math.max(MIN_H, Math.min(Math.max(maxH - box.y, box.h), box.h + dy));
         if (mode.includes("w")) {
           const w = Math.max(MIN_W, box.w - dx);
           next.x = box.x + (box.w - w);

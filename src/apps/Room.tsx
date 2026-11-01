@@ -1,3 +1,4 @@
+import { toCss } from "../lib/zoom.ts";
 import { useEffect, useRef, useState } from "react";
 import {
   Infinity as InfinityIcon,
@@ -167,7 +168,7 @@ export function RoomApp() {
     e.preventDefault();
     const startY = e.clientY;
     const startH = ta.offsetHeight;
-    const size = (y: number) => Math.round(Math.max(42, Math.min(startH + startY - y, box.clientHeight * 0.75)));
+    const size = (y: number) => Math.round(Math.max(42, Math.min(startH + toCss(startY - y), box.clientHeight * 0.75)));
     const move = (ev: PointerEvent) => setInputH(size(ev.clientY));
     const up = (ev: PointerEvent) => {
       window.removeEventListener("pointermove", move);

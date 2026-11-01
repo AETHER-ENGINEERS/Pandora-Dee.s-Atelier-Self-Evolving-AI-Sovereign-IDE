@@ -1,3 +1,4 @@
+import { toCss, viewH } from "../lib/zoom.ts";
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, MonitorPlay } from "lucide-react";
 import { desk, useDesk, type ClassicApp } from "../lib/store.ts";
@@ -64,7 +65,7 @@ export function Classic() {
     }
   });
   const dragged = useRef(false);
-  const fit = (n: number) => Math.max(0, Math.min(n, window.innerHeight - 60));
+  const fit = (n: number) => Math.max(0, Math.min(n, viewH() - 60));
   // Hold and slide the round button up or down; a tap without sliding opens or closes the options.
   const slide = (e: React.PointerEvent) => {
     const startY = e.clientY;
@@ -73,7 +74,7 @@ export function Classic() {
     const move = (ev: PointerEvent) => {
       if (!dragged.current && Math.abs(ev.clientY - startY) < 8) return;
       dragged.current = true;
-      setLift(fit(from + startY - ev.clientY));
+      setLift(fit(from + toCss(startY - ev.clientY)));
     };
     const up = (ev: PointerEvent) => {
       window.removeEventListener("pointermove", move);
@@ -81,7 +82,7 @@ export function Classic() {
       window.removeEventListener("pointercancel", up);
       if (!dragged.current) return;
       try {
-        localStorage.setItem("pdd-classic-lift", String(fit(from + startY - ev.clientY)));
+        localStorage.setItem("pdd-classic-lift", String(fit(from + toCss(startY - ev.clientY))));
       } catch {
         /* not kept in a private window: fine */
       }

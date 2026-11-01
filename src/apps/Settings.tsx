@@ -1,3 +1,4 @@
+import { viewH, viewW } from "../lib/zoom.ts";
 import { EngineVoicePicker, ListeningSettings, VoiceEnginesEditor } from "../ui/VoiceEngines.tsx";
 import { remoteFor } from "../lib/prefs.ts";
 import { Num } from "../ui/Num.tsx";
@@ -917,7 +918,7 @@ function DockSection() {
             { id: "top", label: "Top" },
             { id: "float", label: "Floating" },
           ]}
-          onChange={(edge) => set(edge === "float" ? { edge, float: d.float ?? { x: Math.max(4, window.innerWidth / 2 - 200), y: Math.max(40, window.innerHeight - 140), vertical: false } } : { edge })}
+          onChange={(edge) => set(edge === "float" ? { edge, float: d.float ?? { x: Math.max(4, viewW() / 2 - 200), y: Math.max(40, viewH() - 140), vertical: false } } : { edge })}
         />
       </label>
       {d.edge === "float" ? (

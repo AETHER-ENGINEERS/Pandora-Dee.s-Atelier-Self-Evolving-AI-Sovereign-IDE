@@ -1,3 +1,4 @@
+import { toCss } from "../lib/zoom.ts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AudioWaveform, ChevronUp, ChevronsRight, Disc3, Folder, FolderOpen, FolderPlus, Globe2, ListMusic, Maximize2, Mic2, Pause, Play, Radio, Repeat, Repeat1, Search, Shuffle, SkipBack, Sparkles, SkipForward, Star, Trash2, Upload, Users, Volume2 } from "lucide-react";
 import { desk, useDesk } from "../lib/store.ts";
@@ -184,7 +185,7 @@ export function MusicApp() {
                   const from = prefs.vizHeight;
                   const box = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
                   e.currentTarget.setPointerCapture(e.pointerId);
-                  const move = (ev: PointerEvent) => setPrefs({ vizHeight: Math.round(Math.max(40, Math.min(box.height - 90, from + ev.clientY - start))) });
+                  const move = (ev: PointerEvent) => setPrefs({ vizHeight: Math.round(Math.max(40, Math.min(toCss(box.height) - 90, from + toCss(ev.clientY - start)))) });
                   const up = () => (window.removeEventListener("pointermove", move), window.removeEventListener("pointerup", up));
                   window.addEventListener("pointermove", move);
                   window.addEventListener("pointerup", up);
