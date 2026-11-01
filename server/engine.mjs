@@ -627,7 +627,7 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     if (active) void watch(active); // a fresh frame for the newcomer
   }
 
-  const status = () => ({ running: Boolean(ctx), engine: engineName, view, picture, platform: process.platform, remember: remembering(), saved: (readJson(sessionFile(), null)?.tabs ?? []).length, using: pick(), chosen: getChoice()?.path || "", installed: installedEngines(), error, tabs: tabList() });
+  const status = () => ({ running: Boolean(ctx), engine: engineName, view, picture, platform: process.platform, remember: remembering(), saved: (readJson(sessionFile(), null)?.tabs ?? []).length, using: pick(), chosen: getChoice()?.path && fs.existsSync(getChoice().path) ? getChoice().path : "" /* a download that never finished isn't a choice */, installed: installedEngines(), error, tabs: tabList() });
 
   /** Close the engine (when the desktop's server stops), noting where everything was first. */
   const close = async () => {
