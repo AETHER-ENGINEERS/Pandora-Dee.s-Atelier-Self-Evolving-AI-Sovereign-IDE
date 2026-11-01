@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AudioWaveform, ChevronUp, Disc3, Folder, FolderOpen, FolderPlus, Globe2, ListMusic, Maximize2, Mic2, Pause, Play, Radio, Repeat, Repeat1, Search, Shuffle, SkipBack, Sparkles, SkipForward, Star, Trash2, Upload, Users, Volume2 } from "lucide-react";
+import { AudioWaveform, ChevronUp, ChevronsRight, Disc3, Folder, FolderOpen, FolderPlus, Globe2, ListMusic, Maximize2, Mic2, Pause, Play, Radio, Repeat, Repeat1, Search, Shuffle, SkipBack, Sparkles, SkipForward, Star, Trash2, Upload, Users, Volume2 } from "lucide-react";
 import { desk, useDesk } from "../lib/store.ts";
 import {
   addFiles,
@@ -23,9 +23,10 @@ import {
   type Track,
   shuffled,
   albumOrder,
+  skipBy,
 } from "../lib/music.ts";
 import { Num } from "../ui/Num.tsx";
-import { openMenu, type MenuItem } from "../ui/ContextMenu.tsx";
+import { openMenu, openMenuAt, type MenuItem } from "../ui/ContextMenu.tsx";
 import { useWidth } from "../ui/hooks.ts";
 import { Visualizer, importPresets, milkdropPresets } from "./Visualizer.tsx";
 import { WorldRadio } from "./WorldRadio.tsx";
@@ -40,6 +41,15 @@ type View = "songs" | "make" | "albums" | "artists" | "world" | "radio" | "find"
 const time = (s: number) => (Number.isFinite(s) && s > 0 ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}` : "–:––");
 const setPrefs = (p: Partial<ReturnType<typeof desk>["music"]>) => desk().set({ music: { ...desk().music, ...p } });
 const asItems = (ts: Track[]): Item[] => ts.map((t) => ({ kind: "track", ...t }));
+/** Past the rest of this album, or this artist, in the queue (playing by artist or album, or albums shuffled). */
+const skip = (by: "album" | "artist") => {
+  const said = skipBy(by);
+  if (said) desk().say(said);
+};
+const skipMenu = (): MenuItem[] => [
+  { label: "Skip to the next album", run: () => skip("album") },
+  { label: "Skip to the next artist", run: () => skip("artist") },
+];
 
 export function MusicApp() {
   const m = useMusic();
@@ -330,8 +340,18 @@ export function MusicApp() {
           <button className="icon-btn np-play" aria-label={m.playing ? "Pause" : "Play"} onClick={toggle}>
             {m.playing ? <Pause size={18} /> : <Play size={18} />}
           </button>
-          <button className="icon-btn" aria-label="Next" onClick={() => void next()}>
+          <button className="icon-btn" aria-label="Next" onClick={() => void next()} onContextMenu={(e) => (e.preventDefault(), openMenuAt(e.currentTarget, skipMenu()))}>
             <SkipForward size={16} />
+          </button>
+          <button
+            className="icon-btn"
+            aria-label="Skip the album or the artist"
+            data-tip-up=""
+            data-tip="Skip this album or artist"
+            disabled={cur?.kind !== "track"}
+            onClick={(e) => openMenuAt(e.currentTarget, skipMenu())}
+          >
+            <ChevronsRight size={16} />
           </button>
           <button
             className={`icon-btn${prefs.repeat !== "off" ? " on" : ""}`}

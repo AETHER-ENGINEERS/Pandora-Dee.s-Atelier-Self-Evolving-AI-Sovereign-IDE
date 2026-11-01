@@ -358,6 +358,34 @@ export async function next(auto = false) {
   useMusic.setState({ playing: false });
 }
 
+/** Skip the rest of this album, or everything by this artist that comes next, to the first song in the queue from
+ *  another album (or artist). Playing by artist or album, or albums shuffled, keeps them together in the queue, so
+ *  this skips the whole run. With repeat on it wraps round. Says what it did. */
+export function skipBy(by: "album" | "artist"): string {
+  const { queue, index } = mu();
+  const cur = queue[index];
+  if (!cur || cur.kind !== "track") {
+    void next();
+    return "Next.";
+  }
+  // songs with no album (or artist) count as their own
+  const key = (it: Item) => (it.kind !== "track" ? `\u0001${it.url}` : by === "album" ? (it.album ? it.album.trim().toLowerCase() : `\u0002${it.id}`) : it.artist ? it.artist.trim().toLowerCase() : `\u0002${it.id}`);
+  const here = key(cur);
+  const after = queue.slice(index + 1).findIndex((it) => key(it) !== here);
+  if (after >= 0) {
+    void start(index + 1 + after);
+    return "";
+  }
+  if (prefs().repeat !== "off") {
+    const from = queue.slice(0, index).findIndex((it) => key(it) !== here);
+    if (from >= 0) {
+      void start(from);
+      return "";
+    }
+  }
+  return by === "album" ? "That's the last album in the list." : "That's the last artist in the list.";
+}
+
 export function previous() {
   const a = element();
   if (a.currentTime > 4) {
