@@ -23,7 +23,7 @@ async function call<T>(url: string, body?: unknown): Promise<T> {
 }
 
 /** Which engine the full browser runs, and fetching Ungoogled Chromium (only changed on the desktop's own computer). */
-export function EnginePanel({ onClose, onRestarted }: { onClose: () => void; onRestarted: (urls: string[]) => void }) {
+export function EnginePanel({ onClose, onRestarted, embedded = false }: { onClose: () => void; onRestarted: (urls: string[]) => void; embedded?: boolean }) {
   const [s, setS] = useState<Status | null>(null);
   const [err, setErr] = useState("");
   const load = () => call<Status>("/api/engine/status").then(setS, (e: Error) => setErr(e.message));
@@ -61,12 +61,14 @@ export function EnginePanel({ onClose, onRestarted }: { onClose: () => void; onR
   const can = s.canChange;
 
   return (
-    <div className="engine-panel" role="dialog" aria-label="The browser's engine">
+    <div className={embedded ? "" : "engine-panel"} role={embedded ? undefined : "dialog"} aria-label="The browser's engine">
       <div className="row" style={{ alignItems: "center" }}>
         <b className="grow">The browser's engine</b>
-        <button className="icon-btn" aria-label="Close" onClick={onClose}>
-          <X size={14} />
-        </button>
+        {embedded ? null : (
+          <button className="icon-btn" aria-label="Close" onClick={onClose}>
+            <X size={14} />
+          </button>
+        )}
       </div>
       <p className="small muted" style={{ margin: "4px 0 8px" }}>
         Pages are opened by a real browser running on the desktop's computer, with its own profile there (never anyone's personal browser).

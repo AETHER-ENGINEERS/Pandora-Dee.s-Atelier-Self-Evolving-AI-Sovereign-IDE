@@ -139,7 +139,78 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
   }
   const broadcast = (type, data) => clients.forEach((c) => send(c, type, data));
   const tabList = () => [...tabs.entries()].map(([id, t]) => ({ id, url: t.url, title: t.title, loading: t.loading, active: id === active }));
-  const pushTabs = () => broadcast("tabs", { tabs: tabList(), engine: engineName });
+  const pushTabs = () => {
+    broadcast("tabs", { tabs: tabList(), engine: engineName });
+    saveSoon();
+  };
+
+  // ---- where you left off: the open tabs, the front one, and how far down each page was (unless switched off) ----
+  const browserDir = () => path.join(dataDir(), "browser");
+  const sessionFile = () => path.join(browserDir(), "session.json");
+  const settingsFile = () => path.join(browserDir(), "settings.json");
+  const readJson = (f, fallback) => {
+    try {
+      return JSON.parse(fs.readFileSync(f, "utf8"));
+    } catch {
+      return fallback;
+    }
+  };
+  const writeJson = (f, data) => {
+    fs.mkdirSync(path.dirname(f), { recursive: true });
+    fs.writeFileSync(`${f}.tmp`, JSON.stringify(data, null, 1));
+    fs.renameSync(`${f}.tmp`, f);
+  };
+  const remembering = () => readJson(settingsFile(), {}).remember !== false;
+  let saveTimer = null;
+  function saveSoon() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => void saveSession(), 1500);
+  }
+  let restoring = 0; // while pages are being put back where they were, saving waits (or it would note "top")
+  async function saveSession() {
+    if (!ctx || !remembering() || Date.now() < restoring) return;
+    const list = [];
+    for (const [id, t] of tabs) {
+      const url = t.page.url();
+      if (!/^https?:/.test(url)) continue;
+      const scroll = await t.page.evaluate(() => [Math.round(scrollX), Math.round(scrollY)]).catch(() => [0, 0]);
+      list.push({ url, title: t.title, scroll, active: id === active });
+    }
+    if (ctx) writeJson(sessionFile(), { at: Date.now(), tabs: list });
+  }
+  // scrolling doesn't change the tabs, so where each page is gets noted now and then too
+  setInterval(() => ctx && remembering() && void saveSession(), 15_000).unref?.();
+
+  /** Reopen what was open, each page scrolled back to where it was. */
+  async function restoreSession(saved) {
+    const list = saved.tabs.filter((t) => /^https?:/.test(t.url)).slice(0, 30);
+    let front = null;
+    restoring = Date.now() + 30_000;
+    const back = [];
+    for (const s of list) {
+      const blank = [...tabs.entries()].find(([, t]) => t.url === "about:blank" && !t.loading);
+      const id = blank ? blank[0] : await adopt(await ctx.newPage(), false);
+      const t = tabs.get(id);
+      if (!t) continue;
+      const [x, y] = Array.isArray(s.scroll) ? s.scroll : [0, 0];
+      t.loading = true;
+      // the page itself loaded, then scrolled back to where it was
+      back.push(
+        t.page
+          .goto(s.url, { waitUntil: "load", timeout: 60_000 })
+          .then(() => (x || y) && t.page.evaluate(([a, b]) => scrollTo(a, b), [x, y]))
+          .catch(() => undefined),
+      );
+      if (s.active || !front) front = id;
+    }
+    if (front) await watch(front);
+    pushTabs();
+    void Promise.all(back).finally(() => {
+      restoring = 0;
+      saveSoon();
+    });
+    return list.length;
+  }
 
   function pick() {
     const choice = getChoice() || {};
@@ -282,6 +353,7 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     const prev = active && tabs.get(active);
     if (prev) await prev.cdp.send("Page.stopScreencast").catch(() => undefined);
     active = id;
+    saveSoon(); // which tab is in front is part of where you left off
     const t = tabs.get(id);
     if (!t) return;
     await t.page.bringToFront().catch(() => undefined);
@@ -319,6 +391,28 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     // the window's sharpness rides along with its requests, so the engine starts at the right scale whichever comes first
     if (!ctx && b.dpr) view = { ...view, dpr: Math.max(1, Math.min(3, Number(b.dpr) || 1)) };
     await start();
+    // the Browser window's first request: pick up where it was left off, unless asked for the start page
+    if (op === "open" && b.start) {
+      if ([...tabs.values()].some((t) => t.url !== "about:blank")) return { id: active }; // already open (another device)
+      const saved = b.reopen !== false && remembering() ? readJson(sessionFile(), null) : null;
+      if (saved?.tabs?.length) return { restored: await restoreSession(saved) };
+    }
+    if (op === "remember") {
+      writeJson(settingsFile(), { ...readJson(settingsFile(), {}), remember: Boolean(b.on) });
+      if (b.on) await saveSession();
+      else fs.rmSync(sessionFile(), { force: true });
+      return { ok: true };
+    }
+    if (op === "forget") return fs.rmSync(sessionFile(), { force: true }), { ok: true };
+    // cookies (signed-in sites sign out), the cache, and the open sites' stored data
+    if (op === "clear-data") {
+      await ctx.clearCookies().catch(() => undefined);
+      const any = [...tabs.values()][0];
+      if (any) await any.cdp.send("Network.clearBrowserCache").catch(() => undefined);
+      const origins = new Set([...tabs.values()].map((t) => { try { return new URL(t.page.url()).origin; } catch { return ""; } }).filter((o) => o.startsWith("http")));
+      for (const origin of origins) await any?.cdp.send("Storage.clearDataForOrigin", { origin, storageTypes: "all" }).catch(() => undefined);
+      return { ok: true, sites: origins.size };
+    }
     if (op === "open") {
       // the empty tab the engine starts with is used first, rather than left behind
       const blank = [...tabs.entries()].find(([, t]) => t.url === "about:blank" && !t.loading);
@@ -382,14 +476,18 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     if (active) void watch(active); // a fresh frame for the newcomer
   }
 
-  const status = () => ({ running: Boolean(ctx), engine: engineName, view, using: pick(), chosen: getChoice()?.path || "", installed: installedEngines(), error, tabs: tabList() });
+  const status = () => ({ running: Boolean(ctx), engine: engineName, view, remember: remembering(), saved: (readJson(sessionFile(), null)?.tabs ?? []).length, using: pick(), chosen: getChoice()?.path || "", installed: installedEngines(), error, tabs: tabList() });
 
-  /** Close the engine (when the desktop's server stops). */
-  const close = () => ctx?.close().catch(() => undefined);
+  /** Close the engine (when the desktop's server stops), noting where everything was first. */
+  const close = async () => {
+    await saveSession().catch(() => undefined);
+    await ctx?.close().catch(() => undefined);
+  };
 
   /** Stop it, so the next use starts the engine now chosen (tabs reopen from scratch). */
   const restart = async () => {
     const was = tabList().map((t) => t.url).filter((u) => u && u !== "about:blank");
+    await saveSession().catch(() => undefined);
     await ctx?.close().catch(() => undefined);
     ctx = null;
     return was;

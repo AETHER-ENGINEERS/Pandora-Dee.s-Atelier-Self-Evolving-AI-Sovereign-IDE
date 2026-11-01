@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, BookOpenText, Cpu, Keyboard, Plus, RotateCw, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpenText, Keyboard, Plus, RotateCw, Settings2, X } from "lucide-react";
 import { desk } from "../lib/store.ts";
-import { EnginePanel } from "./BrowserEngine.tsx";
+import { addressFor } from "../lib/browserPrefs.ts";
+import { BrowserSettings } from "./BrowserSettings.tsx";
 import { LookButton, usePageLook } from "./browserLook.tsx";
 
 /** Open an address in the full browser, in a new tab, and bring the Browser window forward. */
@@ -88,7 +89,8 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
       // nothing open yet: start with the start page
       if (!d.tabs.length && !opened.current) {
         opened.current = true;
-        void post({ op: "open", url: home }).catch((err: Error) => setProblem(err.message));
+        // where it was left off (the engine reopens those tabs), or the start page
+        void post({ op: "open", url: home, start: true, reopen: desk().browser.reopen !== false }).catch((err: Error) => setProblem(err.message));
       }
     });
     // frames decode one at a time; one that arrives meanwhile waits, replaced by any newer one
@@ -206,8 +208,9 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
             e.preventDefault();
             setEditing(false);
             (document.activeElement as HTMLElement | null)?.blur();
-            if (id) quiet({ op: "go", id, url: address });
-            else quiet({ op: "open", url: address });
+            const to = addressFor(address, desk().browser.search, desk().web.searx);
+            if (id) quiet({ op: "go", id, url: to });
+            else quiet({ op: "open", url: to });
           }}
         >
           <input className="input" value={address} placeholder="Search, or type an address" aria-label="Address" onFocus={(e) => (setEditing(true), e.target.select())} onBlur={() => setEditing(false)} onChange={(e) => setAddress(e.target.value)} />
@@ -219,12 +222,12 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
           <BookOpenText size={15} />
         </button>
         <LookButton />
-        <button className="icon-btn" aria-label="Engine" data-tip="The browser's engine (Ungoogled Chromium…)" onClick={() => setEngineOpen(!engineOpen)}>
-          <Cpu size={15} />
+        <button className="icon-btn" aria-label="Browser settings" data-tip="Browser settings: start, search, colours, privacy, engine" onClick={() => setEngineOpen(!engineOpen)}>
+          <Settings2 size={15} />
         </button>
       </div>
       {engineOpen ? (
-        <EnginePanel
+        <BrowserSettings
           onClose={() => setEngineOpen(false)}
           onRestarted={(urls) => {
             // the engine started over: bring back what was open (or the start page)
