@@ -20,6 +20,9 @@ export type BrowserPrefs = {
   darken?: boolean;
   reopen?: boolean;
   search?: string;
+  /** How the full browser's pictures are made: sharp (the default), balanced, or smooth (lighter, for animation and
+   *  slower devices or connections). */
+  picture?: "sharp" | "balanced" | "smooth";
 };
 
 /** Search engines for the address bar (%s is where the words go). */

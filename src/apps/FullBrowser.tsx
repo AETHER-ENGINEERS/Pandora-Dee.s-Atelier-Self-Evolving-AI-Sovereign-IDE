@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, BookOpenText, Keyboard, Plus, RotateCw, Settings2, X } from "lucide-react";
-import { desk } from "../lib/store.ts";
+import { desk, useDesk } from "../lib/store.ts";
 import { addressFor } from "../lib/browserPrefs.ts";
 import { BrowserSettings } from "./BrowserSettings.tsx";
 import { LookButton, usePageLook } from "./browserLook.tsx";
@@ -74,6 +74,11 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
   useEffect(() => {
     if (tabs.length) quiet({ op: "look", ...look });
   }, [look.scheme, look.darken, tabs.length > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  // sharp, balanced or smooth pictures (one engine for every device: the last one to choose decides)
+  const picture = useDesk((s) => s.browser.picture ?? "sharp");
+  useEffect(() => {
+    if (tabs.length) quiet({ op: "picture", picture });
+  }, [picture, tabs.length > 0]); // eslint-disable-line react-hooks/exhaustive-deps
   const view = useRef<HTMLDivElement>(null);
   const typer = useRef<HTMLTextAreaElement>(null);
   const opened = useRef(false);

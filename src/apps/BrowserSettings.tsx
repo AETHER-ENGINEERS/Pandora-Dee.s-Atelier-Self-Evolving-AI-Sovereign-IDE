@@ -88,6 +88,26 @@ export function BrowserSettings({ onClose, onRestarted }: { onClose: () => void;
       </section>
 
       <section>
+        <h4>Pictures</h4>
+        <p className="small faint" style={{ margin: "0 0 2px" }}>
+          The page reaches this device as pictures. Lighter ones arrive faster: better for animations and video, a slower device (Firefox decodes more
+          slowly) or a slow connection.
+        </p>
+        {(
+          [
+            ["sharp", "Sharp: this screen's full sharpness"],
+            ["balanced", "Balanced: a little lighter (about a quarter less to send)"],
+            ["smooth", "Smooth: half the size, a little softer"],
+          ] as const
+        ).map(([v, label]) => (
+          <label key={v} className="check small">
+            <input type="radio" name="bs-picture" checked={(b.picture ?? "sharp") === v} onChange={() => setPrefs({ picture: v })} />
+            <span>{label}</span>
+          </label>
+        ))}
+      </section>
+
+      <section>
         <h4>Page colours</h4>
         {(
           [

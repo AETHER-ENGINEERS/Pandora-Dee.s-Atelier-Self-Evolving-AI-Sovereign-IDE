@@ -162,6 +162,10 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
   // the look pages are asked for: light or dark (the Browser window sends its device's own, or the one chosen), and
   // Chromium's automatic darkening for sites without a dark look of their own
   let look = { scheme: "light", darken: false };
+  // how the pictures are made: sharp (the screen's own sharpness, quality 85), balanced (quality 72), or smooth
+  // (quality 60 at one page pixel per picture pixel): lighter pictures come faster, for animation and scrolling
+  const PICTURES = { sharp: { quality: 85, scale: 1 }, balanced: { quality: 72, scale: 1 }, smooth: { quality: 60, scale: 0 } };
+  let picture = "sharp";
   let error = "";
   let paused = null;
 
@@ -457,7 +461,9 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     if (!t) return;
     await t.page.bringToFront().catch(() => undefined);
     // quality 90 keeps text crisp; the picture is sent at the device's own pixels and shown 1:1
-    await t.cdp.send("Page.startScreencast", { format: "jpeg", quality: 85, maxWidth: Math.round(view.w * view.dpr), maxHeight: Math.round(view.h * view.dpr), everyNthFrame: 1 }).catch(() => undefined);
+    const pic = PICTURES[picture] ?? PICTURES.sharp;
+    const k = pic.scale ? view.dpr : 1; // smooth: the page's own size (its pixels, not the screen's)
+    await t.cdp.send("Page.startScreencast", { format: "jpeg", quality: pic.quality, maxWidth: Math.round(view.w * k), maxHeight: Math.round(view.h * k), everyNthFrame: 1 }).catch(() => undefined);
   }
 
   const tab = (id) => {
@@ -532,6 +538,11 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
       return { ok: true };
     }
     if (op === "focus") return await watch(String(b.id)), { ok: true };
+    if (op === "picture") {
+      picture = PICTURES[b.picture] ? b.picture : "sharp";
+      if (active) await watch(active);
+      return { ok: true };
+    }
     if (op === "look") {
       look = { scheme: b.scheme === "dark" ? "dark" : "light", darken: Boolean(b.darken) };
       for (const t of tabs.values()) await dress(t.cdp);
@@ -549,7 +560,16 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
       return { ok: true };
     }
     if (op === "wheel") {
-      await t.cdp.send("Input.dispatchMouseEvent", { type: "mouseWheel", x: Number(b.x) || 0, y: Number(b.y) || 0, deltaX: Number(b.dx) || 0, deltaY: Number(b.dy) || 0, modifiers: Number(b.mods) || 0 });
+      const x = Number(b.x) || 0, y = Number(b.y) || 0, dx = Number(b.dx) || 0, dy = Number(b.dy) || 0, mods = Number(b.mods) || 0;
+      // plain scrolling glides, frame by frame, as in a browser window (a wheel message is applied in one jump
+      // here, which looked skippy); with keys held (Ctrl+wheel zooms) it stays a wheel message
+      const d = Math.hypot(dx, dy);
+      if (!mods && d) {
+        const speed = Math.min(8000, Math.max(1600, d * 8)); // pixels a second: a notch takes about 120 ms
+        const ok = await t.cdp.send("Input.synthesizeScrollGesture", { x, y, xDistance: -dx, yDistance: -dy, speed, gestureSourceType: "mouse", preventFling: true }).then(() => true, () => false);
+        if (ok) return { ok: true };
+      }
+      await t.cdp.send("Input.dispatchMouseEvent", { type: "mouseWheel", x, y, deltaX: dx, deltaY: dy, modifiers: mods });
       return { ok: true };
     }
     if (op === "key") {
@@ -607,7 +627,7 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     if (active) void watch(active); // a fresh frame for the newcomer
   }
 
-  const status = () => ({ running: Boolean(ctx), engine: engineName, view, remember: remembering(), saved: (readJson(sessionFile(), null)?.tabs ?? []).length, using: pick(), chosen: getChoice()?.path || "", installed: installedEngines(), error, tabs: tabList() });
+  const status = () => ({ running: Boolean(ctx), engine: engineName, view, picture, platform: process.platform, remember: remembering(), saved: (readJson(sessionFile(), null)?.tabs ?? []).length, using: pick(), chosen: getChoice()?.path || "", installed: installedEngines(), error, tabs: tabList() });
 
   /** Close the engine (when the desktop's server stops), noting where everything was first. */
   const close = async () => {

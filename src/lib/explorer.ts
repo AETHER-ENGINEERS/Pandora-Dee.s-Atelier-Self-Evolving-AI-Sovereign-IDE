@@ -96,6 +96,8 @@ export type PickOptions = {
   filters?: { name?: string; extensions: string[] }[];
   defaultName?: string;
   title?: string;
+  /** The folder it opens in (otherwise where Explorer was last). */
+  start?: string;
 };
 type PickRequest = PickOptions & { id: number; resolve: (paths: string[] | null) => void };
 

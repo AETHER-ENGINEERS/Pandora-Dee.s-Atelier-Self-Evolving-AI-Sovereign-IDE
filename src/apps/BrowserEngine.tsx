@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { sizeText } from "../lib/theater.ts";
+import { fileApi, pickInExplorer } from "../lib/explorer.ts";
+import { askUser } from "../ui/Ask.tsx";
 
 type Engine = { id?: string; name: string; path: string; about?: string };
 type Download = {
@@ -17,7 +19,7 @@ type Download = {
   error: string;
   program: string;
 };
-type Status = { running: boolean; engine: string; using: Engine | null; chosen: string; installed: Engine[]; downloaded: Engine[]; downloads: Download[]; error: string; canChange: boolean };
+type Status = { running: boolean; engine: string; using: Engine | null; chosen: string; installed: Engine[]; downloaded: Engine[]; downloads: Download[]; error: string; canChange: boolean; platform?: string };
 
 async function call<T>(url: string, body?: unknown): Promise<T> {
   const r = await fetch(url, body === undefined ? undefined : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -61,6 +63,28 @@ export function EnginePanel({ onClose, onRestarted, embedded = false }: { onClos
     await load();
   };
   const choose = (path: string, extra: Record<string, unknown> = {}) => void act(async () => onRestarted((await call<{ reopen: string[] }>("/api/engine/choose", { path, ...extra })).reopen));
+
+  /** Pick a browser's program file with the desktop's own Explorer. Program files are outside the desktop's own
+   *  places, so the whole-computer switch has to be on (asked first; it only ever applies on this computer). */
+  const chooseProgram = () =>
+    void act(async () => {
+      const ov = await fileApi.overview();
+      if (!ov.wholePc.on) {
+        const yes = await askUser(
+          "Let Explorer reach this whole computer?",
+          "A browser's program file is outside the desktop's own places, so Explorer needs its whole-computer switch to find it. It applies only on this computer itself: phones and other devices never get it. You can turn it off again in Explorer (Whole computer) once the browser is chosen.",
+          "Turn it on",
+          "Not now",
+        );
+        if (!yes) return;
+        await fileApi.setWholePc(true);
+      }
+      const win = (s?.platform ?? "win32") === "win32";
+      // where browsers usually are: the Program Files folder of one already found, or the usual place
+      const start = win ? (s?.installed[0]?.path.match(/^[A-Za-z]:\\Program Files( \(x86\))?/)?.[0] ?? "C:\\Program Files") : s?.platform === "darwin" ? "/Applications" : "/usr/bin";
+      const picked = await pickInExplorer({ mode: "open", title: "Choose a browser's program", filters: win ? [{ name: "Programs", extensions: ["exe"] }] : undefined, start });
+      if (picked?.[0]) choose(picked[0], { custom: true });
+    });
 
   if (!s) return null;
   const can = s.canChange;
@@ -169,6 +193,9 @@ export function EnginePanel({ onClose, onRestarted, embedded = false }: { onClos
               Use it
             </button>
           </div>
+          <button className="btn small" style={{ marginTop: 4, alignSelf: "flex-start" }} onClick={chooseProgram}>
+            Choose a program in Explorer…
+          </button>
         </div>
       ) : (
         <p className="small faint">The engine can only be changed on the desktop's own computer.</p>

@@ -65,7 +65,7 @@ type Mode = "browse" | PickOptions["mode"];
 
 function FileBrowser({ mode, go, pick }: { mode: Mode; go?: { path: string; at: number } | null; pick?: PickOptions }) {
   const [ov, setOv] = useState<Overview | null>(null);
-  const [cwd, setCwd] = useState<string>(() => localStorage.getItem("pdd-explorer-cwd") || "");
+  const [cwd, setCwd] = useState<string>(() => pick?.start || localStorage.getItem("pdd-explorer-cwd") || "");
   const [listing, setListing] = useState<Listing | null>(null);
   const [trashView, setTrashView] = useState(false);
   const [trashed, setTrashed] = useState<Trashed[]>([]);
