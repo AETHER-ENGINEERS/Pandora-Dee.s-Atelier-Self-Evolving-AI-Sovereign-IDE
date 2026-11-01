@@ -46,6 +46,16 @@ jobs:
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake tclsh zip zstd gettext python3 wget git
 
+      # Emscripten 6 builds real shared libraries where CMake asks for them (it used to make static ones regardless).
+      # zstd and libzip ask by default, and libarchive's configure then links its checks against libzstd.so and can't
+      # run them. Static only, as the rest of the build already is (curl, openssl).
+      - name: Static libraries only
+        working-directory: luanti-wasm
+        run: |
+          sed -i 's/-DCMAKE_INSTALL_PREFIX="$INSTALL_DIR"/-DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DZSTD_BUILD_SHARED=OFF -DZSTD_BUILD_PROGRAMS=OFF/' build_zstd.sh
+          sed -i 's/-DCMAKE_INSTALL_PREFIX="$INSTALL_DIR"/-DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DBUILD_SHARED_LIBS=OFF/' build_libzip.sh
+          grep -n "INSTALL_PREFIX" build_zstd.sh build_libzip.sh
+
       - name: Emscripten
         working-directory: luanti-wasm
         run: |
