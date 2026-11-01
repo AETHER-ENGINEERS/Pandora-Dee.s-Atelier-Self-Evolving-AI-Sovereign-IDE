@@ -1,0 +1,90 @@
+# Luanti for the browser: builds the real Luanti client for WebAssembly (paradust7/luanti-wasm, MIT; Luanti itself is
+# LGPL-2.1+) on a Linux runner, and publishes it as a release of this repository. The desktop's server fetches that
+# release (checked against its SHA-256), serves it, and relays its connections (server/luantiWeb.mjs), so every device
+# can play Luanti inside SEASIDE. Runs when this file changes, or by hand with another luanti-wasm commit.
+name: Luanti for the browser
+
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/luanti-web.yml"]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "luanti-wasm commit to build"
+        required: true
+        default: "5bfae52b53605b39667dfc29cddd59c861e38111"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: luanti-web
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 330
+    env:
+      REF: ${{ github.event.inputs.ref || '5bfae52b53605b39667dfc29cddd59c861e38111' }}
+    steps:
+      - name: Get luanti-wasm
+        uses: actions/checkout@v4
+        with:
+          repository: paradust7/luanti-wasm
+          ref: ${{ env.REF }}
+          path: luanti-wasm
+
+      - name: Node 24 (the build needs it)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Build tools
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake tclsh zip zstd gettext python3 wget git
+
+      - name: Emscripten
+        working-directory: luanti-wasm
+        run: ./install_emsdk.sh
+
+      - name: Build Luanti for the browser
+        working-directory: luanti-wasm
+        run: ./build_all.sh
+
+      - name: Package
+        id: pack
+        run: |
+          short="${REF:0:7}"
+          tag="luanti-web-${short}"
+          cd luanti-wasm/www
+          # where the build came from, and its licences, travel with it
+          {
+            echo "Luanti for the browser, built from paradust7/luanti-wasm at ${REF}"
+            echo "https://github.com/paradust7/luanti-wasm/tree/${REF}"
+            echo
+            echo "luanti-wasm: MIT licence. Luanti (the engine): LGPL-2.1-or-later, https://github.com/luanti-org/luanti"
+            echo "Its own sources (the Luanti fork, webshims, and the libraries) are listed with exact versions in fetch_sources.sh there."
+          } > ABOUT.txt
+          cp ../LICENSE LICENSE-luanti-wasm.txt
+          zip -qr "$GITHUB_WORKSPACE/luanti-web.zip" .
+          cd "$GITHUB_WORKSPACE"
+          sha256sum luanti-web.zip | cut -d' ' -f1 > luanti-web.zip.sha256
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "sha=$(cat luanti-web.zip.sha256)" >> "$GITHUB_OUTPUT"
+          ls -la luanti-web.zip
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.pack.outputs.tag }}
+          SHA: ${{ steps.pack.outputs.sha }}
+        run: |
+          gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" luanti-web.zip luanti-web.zip.sha256 \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Luanti for the browser (${REF:0:7})" \
+            --notes "The real Luanti client built for the browser from paradust7/luanti-wasm at ${REF} (MIT; Luanti is LGPL-2.1-or-later). SEASIDE's desktop fetches this, checks it (SHA-256 ${SHA}), and serves it. Sources: https://github.com/paradust7/luanti-wasm/tree/${REF}"
