@@ -360,8 +360,14 @@ function CatsSettings() {
       <h4 style={{ marginTop: 18 }}>Cats</h4>
       <label className="check">
         <input type="checkbox" checked={c.on} onChange={(e) => set({ on: e.target.checked })} />
-        <span>Cats on the desktop: they wander, sit, wash and nap on top of everything, and never chase the pointer. Click one to pet it. The characters notice them.</span>
+        <span>Cats on the desktop: they wander, sit, wash and nap on top of everything. Click one to pet it; right-click (or hold) one to feed them. The characters notice them.</span>
       </label>
+      {c.on ? (
+        <label className="check">
+          <input type="checkbox" checked={c.follow} onChange={(e) => set({ follow: e.target.checked })} />
+          <span>Follow the pointer: they trot after the mouse (or your finger or stylus) and sit beside it.</span>
+        </label>
+      ) : null}
       {c.on ? (
         <>
           <label className="field" style={{ maxWidth: 380 }}>
@@ -791,7 +797,8 @@ function AdultSection() {
       <h4 style={{ marginTop: 18 }}>Toddler mode</h4>
       <p className="small muted">
         For little ones: making and watching pictures and music, games, notes and Hangout, with the characters still around but every AI feature resting (AI can cost
-        money). Other apps and Classic are put away. It stays on after a restart; the passcode above turns it off (the 🧸 in the top bar).
+        money). Other apps and Classic are put away. Turning it on asks for nothing (it's also in the top bar's first menu); it stays on after a
+        restart, and only the passcode above turns it off (the 🧸 in the top bar).
       </p>
       <button className="btn" disabled={!s.adult} onClick={() => setNote(startToddler())}>
         Turn on toddler mode

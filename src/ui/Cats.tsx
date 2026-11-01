@@ -1,20 +1,22 @@
 // Cats on the desktop, the classic Neko way: they wander, sit, wash, stretch, yawn and sleep wherever they like,
-// on top of the windows, and never chase the pointer. Mrrowr-murrr has seniority: the others give way to her and
-// don't walk past while she sleeps. Pet one by clicking it. The characters hear what the cats are up to (catsNote).
+// on top of the windows. Mrrowr-murrr has seniority: the others give way to her and don't walk past while she sleeps.
+// Pet one by clicking it; feed them from a cat's menu (a bowl goes down and they come to eat). With "follow" on, they
+// trot after the pointer (or a finger or stylus) and sit by it. The characters hear what the cats are up to (catsNote).
 // Drawn here with shapes, until proper art is ready.
 
-import { viewH, viewW } from "../lib/zoom.ts";
+import { toCss, viewH, viewW } from "../lib/zoom.ts";
 import { openMenu } from "./ContextMenu.tsx";
 import { poseItems, snapDrawing } from "../lib/poses.ts";
-import { useEffect, useRef } from "react";
-import { useDesk, type Cat } from "../lib/store.ts";
-import { live, type Live, type Pose } from "../lib/cats.ts";
+import { useEffect, useRef, useState } from "react";
+import { desk, useDesk, type Cat } from "../lib/store.ts";
+import { bowl, clearBowl, feedCats, live, onBowl, type Live, type Pose } from "../lib/cats.ts";
 
 const W = 56;
 const H = 44;
 const SPEED = 55; // px per second, a cat's amble
 
 const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+let pointer: { x: number; y: number; at: number } | null = null;
 const bounds = () => ({ x0: 40, x1: viewW() - 40, y0: 90, y1: viewH() - 90 });
 
 function pick(c: Live, senior: Live | undefined, now: number) {
@@ -182,6 +184,16 @@ function drawCat(g: CanvasRenderingContext2D, cat: Cat, c: Live) {
     leg(18, 24, 1, 16);
     leg(44, 34, 7, 6);
     head(46, 30, 7.5, 0.2, c.t > 0.5 && c.t < 1.3);
+  } else if (c.pose === "eat") {
+    // crouched over the bowl, head down and nodding as it eats
+    const nod = Math.sin(t * 8) * 1.2;
+    tail(10, 34, [4, 30, 2, 22, 7, 18]);
+    ellipse(24, 31, 13, 8);
+    fill(cat.coat);
+    stripes(18, 25, 3, 5, 5);
+    leg(30, 34, 2, 7);
+    leg(36, 34, 2, 7);
+    head(40, 32 + nod, 8, 0.55);
   } else if (c.pose === "sleep") {
     const breathe = 1 + Math.sin(t * 2.2) * 0.04;
     ellipse(26, 33, 17 * breathe, 8.5 * breathe);
@@ -227,6 +239,9 @@ export function Cats() {
   const bubbles = useRef(new Map<string, HTMLDivElement>());
   const list = s.cats.list;
   const scale = s.cats.size;
+  const bowlRef = useRef<HTMLDivElement>(null);
+  const [, redraw] = useState(0);
+  useEffect(() => onBowl(() => redraw((n) => n + 1)), []);
 
   useEffect(() => {
     if (!on) return;
@@ -240,6 +255,11 @@ export function Cats() {
       }
     for (const id of [...live.keys()]) if (!list.some((c) => c.id === id)) live.delete(id);
 
+    // where the pointer (or finger, or stylus) was last, in SEASIDE's pixels
+    const point = (e: PointerEvent) => void (pointer = { x: toCss(e.clientX), y: toCss(e.clientY), at: performance.now() });
+    window.addEventListener("pointermove", point, { passive: true, capture: true });
+    window.addEventListener("pointerdown", point, { passive: true, capture: true });
+
     let raf = 0;
     let last = performance.now();
     const tick = (now: number) => {
@@ -248,24 +268,58 @@ export function Cats() {
       last = now;
       if (document.hidden) return;
       const senior = live.get(list[0]?.id);
-      for (const cat of list) {
+      const follow = desk().cats.follow && pointer && now - pointer.at < 8000;
+      // a bowl that's been eaten from long enough is empty; one nobody came to is taken away after a minute
+      if (bowl && now > bowl.until) clearBowl();
+      list.forEach((cat, i) => {
         const c = live.get(cat.id);
         const el = canvases.current.get(cat.id);
-        if (!c || !el) continue;
+        if (!c || !el) return;
         c.t += dt;
+        // food first: each cat comes to its own side of the bowl, and eats
+        if (bowl && c.pose !== "eat") {
+          const side = i % 2 ? 1 : -1;
+          const tx = bowl.x - side * (26 + Math.floor(i / 2) * 18) * scale;
+          if (Math.hypot(tx - c.x, bowl.y - c.y) < 4) {
+            c.face = side === 1 ? 1 : -1;
+            set(c, "eat", now, bowl.until - now);
+            c.fedAt = Date.now();
+            // once one is eating, the bowl lasts a little while
+            if (!bowl.eating) (bowl.eating = true), (bowl.until = now + 14_000);
+          } else if (c.pose !== "walk" || c.tx !== tx || c.ty !== bowl.y) {
+            c.tx = tx;
+            c.ty = bowl.y;
+            set(c, "walk", now, 60_000);
+          }
+        } else if (c.pose === "eat" && !bowl) set(c, "wash", now, rnd(3000, 6000)); // a wash after a meal
+        else if (follow && pointer && c.pose !== "eat") {
+          // following: trot to a spot beside the pointer (each cat its own), then sit and watch it
+          const tx = pointer.x + (i % 2 ? 1 : -1) * (34 + Math.floor(i / 2) * 26) * scale;
+          const ty = pointer.y + 18 * scale;
+          const far = Math.hypot(tx - c.x, ty - c.y);
+          if (far > 24 && (c.pose !== "walk" || Math.hypot(c.tx - tx, c.ty - ty) > 12)) {
+            c.tx = tx;
+            c.ty = ty;
+            set(c, "walk", now, 60_000);
+          } else if (far <= 24 && c.pose === "walk") {
+            c.face = pointer.x > c.x ? 1 : -1;
+            set(c, "sit", now, rnd(4000, 9000));
+          }
+        }
         if (c.pose === "walk") {
           const dx = c.tx - c.x;
           const dy = c.ty - c.y;
           const d = Math.hypot(dx, dy);
           if (Math.abs(dx) > 2) c.face = dx > 0 ? 1 : -1;
           // meeting the senior cat on the way: stop, look elsewhere, and have a wash
-          if (senior && senior !== c && Math.hypot(senior.x - c.x, senior.y - c.y) < 55) {
+          if (!bowl && !follow && senior && senior !== c && Math.hypot(senior.x - c.x, senior.y - c.y) < 55) {
             c.face = senior.x > c.x ? -1 : 1;
             set(c, "wash", now, rnd(2500, 5000));
             c.deferring = true;
           } else if (d < 2) set(c, "sit", now, rnd(3000, 8000));
           else {
-            const step = Math.min(d, SPEED * dt);
+            // a trot when there's food or a pointer to follow
+            const step = Math.min(d, SPEED * (bowl || follow ? 1.8 : 1) * dt);
             c.x += (dx / d) * step;
             c.y += (dy / d) * step;
           }
@@ -275,15 +329,20 @@ export function Cats() {
           g.setTransform(el.width / W, 0, 0, el.height / H, 0, 0);
           drawCat(g, cat, c);
         }
+        const bowlEl = bowlRef.current;
+        if (bowlEl) {
+          bowlEl.style.display = bowl ? "" : "none";
+          if (bowl) bowlEl.style.transform = `translate(${Math.round(bowl.x - 14 * scale)}px, ${Math.round(bowl.y - 12 * scale)}px) scale(${scale})`;
+        }
         el.style.transform = `translate(${Math.round(c.x - (W * scale) / 2)}px, ${Math.round(c.y - H * scale)}px)`;
         const bub = bubbles.current.get(cat.id);
         if (bub) {
           const purring = now - c.pettedAt < 1800;
-          bub.textContent = purring ? "♥ prrr" : c.pose === "sleep" ? "z z" : "";
+          bub.textContent = purring ? "♥ prrr" : c.pose === "sleep" ? "z z" : c.pose === "eat" ? "nom" : "";
           bub.style.opacity = bub.textContent ? (c.pose === "sleep" && !purring ? String(0.45 + Math.sin(c.t * 1.5) * 0.25) : "1") : "0";
           bub.style.transform = `translate(${Math.round(c.x + (c.face === 1 ? 4 : -28) * scale)}px, ${Math.round(c.y - H * scale - 10)}px)`;
         }
-      }
+      });
     };
     raf = requestAnimationFrame(tick);
     const keepIn = () => {
@@ -296,13 +355,25 @@ export function Cats() {
       }
     };
     window.addEventListener("resize", keepIn);
-    return () => (cancelAnimationFrame(raf), window.removeEventListener("resize", keepIn));
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", keepIn);
+      window.removeEventListener("pointermove", point, { capture: true });
+      window.removeEventListener("pointerdown", point, { capture: true });
+    };
   }, [on, list, scale]);
 
   if (!on) return null;
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   return (
     <div className="cats" aria-hidden>
+      <div ref={bowlRef} className="cat-bowl" style={{ display: bowl ? undefined : "none" }}>
+        <svg width="28" height="16" viewBox="0 0 28 16">
+          <ellipse cx="14" cy="5" rx="11" ry="3" fill={bowl?.eating && performance.now() > bowl.until - 7000 ? "#6b4a2e" : "#a9713f"} />
+          <path d="M2 5 Q3 15 14 15 Q25 15 26 5 Z" fill="#c9506a" stroke="rgba(20,16,28,.7)" strokeWidth="1" />
+          <ellipse cx="14" cy="5" rx="12" ry="3.2" fill="none" stroke="rgba(20,16,28,.7)" strokeWidth="1" />
+        </svg>
+      </div>
       {list.map((cat) => (
         <div key={cat.id}>
           <canvas
@@ -319,9 +390,12 @@ export function Cats() {
               // the pose as it is at the moment of the right-click, drawn four times larger than the cat walks
               const still = { ...c };
               const big = 4;
+              const at = { x: toCss(e.clientX), y: toCss(e.clientY) };
               openMenu(e, [
                 { heading: cat.name },
                 { label: "Pet", run: () => pet(cat.id) },
+                { label: "Feed the cats", run: () => feedCats(at.x + 40 * scale, still.y) },
+                { label: "Follow the pointer", checked: desk().cats.follow, run: () => desk().set({ cats: { ...desk().cats, follow: !desk().cats.follow } }) },
                 { sep: true },
                 ...poseItems(cat.name, () =>
                   snapDrawing(W * big, H * big, (g) => {

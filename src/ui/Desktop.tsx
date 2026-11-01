@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Check, Download, GripVertical, LayoutGrid } from "lucide-react";
 import { APPS, desk, inToddler, useDesk, type AppId } from "../lib/store.ts";
-import { ToddlerPill } from "./Toddler.tsx";
+import { startToddler, ToddlerPill } from "./Toddler.tsx";
 import { Window } from "./Window.tsx";
 import { PersonAvatar } from "./common.tsx";
 import { download, makeBackup, toClassic } from "../lib/backup.ts";
@@ -460,6 +460,17 @@ function MenuBar({ onLoad }: { onLoad: () => void }) {
         </button>
         <div className="sep" />
         {s.toddler ? null : <button onClick={act(() => desk().set({ classic: true }))}>Classic Pandora Dee</button>}
+        {/* on straight away, no passcode asked; the passcode is what turns it off (until one is set, Settings asks for one first) */}
+        {s.toddler ? null : (
+          <button
+            onClick={act(() => {
+              if (startToddler()) openSettings("adult");
+              else desk().say("Toddler mode is on. The passcode turns it off (the 🧸 at the top).");
+            })}
+          >
+            🧸 Toddler mode
+          </button>
+        )}
         <div className="sep" />
         <button disabled={!s.accounts.length} onClick={act(() => desk().lock())}>
           Lock the desktop

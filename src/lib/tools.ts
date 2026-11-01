@@ -882,6 +882,18 @@ const NOTES_TOOLS: Tool[] = [
   },
 ];
 
+const CATS_TOOL: Tool = {
+  name: "feed_cats",
+  description: "Put a bowl of food down for the desktop's cats; they come over and eat. Only when the cats are out, and now and then, not every turn.",
+  parameters: obj({}, []),
+  run: async () => {
+    if (!desk().cats.on || !desk().cats.list.length) return "The cats aren't out on the desktop right now.";
+    const { feedCats } = await import("./cats.ts");
+    feedCats();
+    return `A bowl is down. ${desk().cats.list.map((c) => c.name).join(" and ")} ${desk().cats.list.length > 1 ? "are" : "is"} on the way.`;
+  },
+};
+
 const MUSIC_TOOL: Tool = {
   name: "music",
   description:
@@ -1008,7 +1020,7 @@ export function toolsFor(ctx: TurnCtx): Tool[] {
     if (web) list.push(WEB[0]);
     return list;
   }
-  const list = [...BASE, BASH, MEMORY, EMBEDDINGS, SKILL, ...NOTES_TOOLS, MUSIC_TOOL, APPS, NOTIFY];
+  const list = [...BASE, BASH, MEMORY, EMBEDDINGS, SKILL, ...NOTES_TOOLS, MUSIC_TOOL, CATS_TOOL, APPS, NOTIFY];
   if (web) list.push(...WEB, HTTP);
   if (vector) list.push(VECTOR_TOOL);
   if (discord) list.push(DISCORD_TOOL, DISCORD_HISTORY);

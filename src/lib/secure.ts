@@ -1,18 +1,25 @@
-// Passwords and passcodes are kept only as salted PBKDF2 hashes on this device.
+// Passwords and passcodes are kept only as salted PBKDF2 hashes on this device. On a plain-http address (a phone on the
+// home network), where browsers hold back their own crypto, the same hashing runs in plain JavaScript (pbkdf2.ts).
+
+import { pbkdf2Sha256 } from "./pbkdf2.ts";
 
 export type Sealed = { salt: string; hash: string };
 
 const hex = (buf: ArrayBuffer) => Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, "0")).join("");
 
+/** Passcodes can be kept here (any address: the browser's crypto where it has it, plain JavaScript where it doesn't). */
 export function canSeal() {
-  return typeof crypto !== "undefined" && Boolean(crypto.subtle);
+  return typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function";
 }
 
 export async function seal(secret: string, salt?: string): Promise<Sealed> {
-  if (!canSeal()) throw new Error("This page needs a secure address (localhost or https) to keep passwords.");
+  if (!canSeal()) throw new Error("This browser can't make the random numbers a passcode needs.");
   const s = salt ?? hex(crypto.getRandomValues(new Uint8Array(16)).buffer);
-  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: new TextEncoder().encode(s), iterations: 120_000 }, key, 256);
+  const pass = new TextEncoder().encode(secret);
+  const saltBytes = new TextEncoder().encode(s);
+  if (!crypto.subtle) return { salt: s, hash: hex((await pbkdf2Sha256(pass, saltBytes, 120_000)).buffer as ArrayBuffer) };
+  const key = await crypto.subtle.importKey("raw", pass, "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: saltBytes, iterations: 120_000 }, key, 256);
   return { salt: s, hash: hex(bits) };
 }
 

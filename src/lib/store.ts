@@ -146,9 +146,10 @@ export const CAT_COATS: { label: string; coat: string; marks: string; belly: str
   { label: "Blue-grey", coat: "#7d8aa0", marks: "#5f6b80", belly: "#c9d0dc" },
 ];
 
-export const CATS_DEFAULT: { on: boolean; size: number; list: Cat[] } = {
+export const CATS_DEFAULT: { on: boolean; size: number; list: Cat[]; follow: boolean } = {
   on: false,
   size: 1,
+  follow: false,
   list: [{ id: "mrrowr-murrr", name: "Mrrowr-murrr", coat: "#8a8794", marks: "#4e4b57", belly: "#d9d4de", eyes: "#a6d96a" }],
 };
 
@@ -500,7 +501,7 @@ export type State = {
   keys: Record<string, string>;
   touch: { edgeSwipe: boolean; doubleTapScene: boolean; longPress: boolean };
   /** Cats on the desktop; the first one listed is the senior cat. */
-  cats: { on: boolean; size: number; list: Cat[] };
+  cats: { on: boolean; size: number; list: Cat[]; follow: boolean };
   /** Where each character stands in the scene, as shares of the screen (feet position). */
   spots: Record<string, { x: number; y: number }>;
   web: WebPrefs;

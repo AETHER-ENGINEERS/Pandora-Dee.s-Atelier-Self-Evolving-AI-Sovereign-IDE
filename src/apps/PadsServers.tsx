@@ -15,11 +15,12 @@ export function LinkedServers({ live }: { live: Server[] }) {
   const [info, setInfo] = useState<ServersInfo | null>(null);
   const [invite, setInvite] = useState<{ code: string; expires: number } | null>(null);
   const [busy, setBusy] = useState(false);
-  const load = () => void padsApi.servers().then(setInfo, () => undefined);
+  // a server without linking yet (not restarted since) answers without its details: then there's nothing to show
+  const load = () => void padsApi.servers().then((i) => setInfo(i?.me ? i : null), () => undefined);
   // again whenever the linked servers change (linked or unlinked here, or there)
   const known = live.map((s) => s.id).join();
   useEffect(load, [known]);
-  if (!info) return null;
+  if (!info?.me) return null;
 
   const run = async (f: () => Promise<unknown>) => {
     setBusy(true);
