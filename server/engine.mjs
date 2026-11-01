@@ -10,6 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { execFileSync } from "node:child_process";
+import { frameMessage } from "./wsframes.mjs";
 
 const win = process.platform === "win32";
 /** How many pixels the engine draws per page pixel: the Browser window's own screen sharpness when the engine starts
@@ -326,7 +327,14 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     });
     cdp.on("Page.screencastFrame", (f) => {
       void cdp.send("Page.screencastFrameAck", { sessionId: f.sessionId }).catch(() => undefined);
-      if (active === id) for (const c of clients) sendFrame(c, { id, data: f.data, w: f.metadata.deviceWidth, h: f.metadata.deviceHeight });
+      if (active !== id) return;
+      const head = { id, w: f.metadata.deviceWidth, h: f.metadata.deviceHeight };
+      // binary to the viewers on the WebSocket (one message, made once), base64 text to any that can't use it
+      if (sockets.size) {
+        const msg = frameMessage(head, Buffer.from(f.data, "base64"));
+        for (const s of sockets) sendBinary(s, msg);
+      }
+      for (const c of clients) if (!picturesElsewhere.has(c)) sendFrame(c, { ...head, data: f.data });
     });
     if (show || !active) await watch(id);
     pushTabs();
@@ -461,10 +469,40 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     throw Object.assign(new Error(`Unknown request: ${op}`), { status: 400 });
   }
 
-  /** The Browser window's live stream: tabs, frames, notes. */
-  function stream(res) {
+  // viewers taking pictures over the WebSocket (binary); their event stream then carries only tabs and notes
+  const sockets = new Set();
+  const picturesElsewhere = new WeakSet();
+  const socketWaiting = new Map();
+  /** The same "latest wins" as the event stream: while one picture is on its way, only the newest waits. */
+  function sendBinary(s, msg) {
+    if (s.destroyed) return void sockets.delete(s);
+    if (s.writableNeedDrain) {
+      const first = !socketWaiting.has(s);
+      socketWaiting.set(s, msg);
+      if (first)
+        s.once("drain", () => {
+          const next = socketWaiting.get(s);
+          socketWaiting.delete(s);
+          if (next && sockets.has(s)) sendBinary(s, next);
+        });
+      return;
+    }
+    s.write(msg);
+  }
+  /** A viewer's picture socket (already accepted): pictures go there from now on. */
+  function attachSocket(s) {
+    sockets.add(s);
+    const gone = () => (sockets.delete(s), socketWaiting.delete(s));
+    s.on("close", gone);
+    s.on("error", gone);
+    if (active) void watch(active); // a fresh picture for the newcomer
+  }
+
+  /** The Browser window's live stream: tabs, notes, and pictures unless they come by the WebSocket (`frames=0`). */
+  function stream(res, frames = true) {
     res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-store", Connection: "keep-alive" });
     clients.add(res);
+    if (!frames) picturesElsewhere.add(res);
     send(res, "tabs", { tabs: tabList(), engine: engineName });
     const ping = setInterval(() => res.write(": ping\n\n"), 20_000);
     res.on("close", () => {
@@ -504,5 +542,5 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
     };
   };
 
-  return { cmd, stream, status, installedEngines, close, restart, hold };
+  return { cmd, stream, attachSocket, status, installedEngines, close, restart, hold };
 }

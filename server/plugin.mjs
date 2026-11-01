@@ -24,6 +24,7 @@ import { createVecMem } from "./vecmem.mjs";
 import { createMcpStdio } from "./mcpstdio.mjs";
 import { createTheater, PIECE_MAX } from "./theater.mjs";
 import { createPairs, pairedCors } from "./pairs.mjs";
+import { acceptSocket } from "./wsframes.mjs";
 import os from "node:os";
 import dns from "node:dns";
 import { createHash } from "node:crypto";
@@ -500,7 +501,7 @@ export function deskServer() {
           }
           if (b.op === "remove") return send(res, 200, await ungoogled.remove());
         }
-        if (parts[1] === "stream" && m === "GET") return engine.stream(res);
+        if (parts[1] === "stream" && m === "GET") return engine.stream(res, url.searchParams.get("frames") !== "0");
         if (!parts[1] && m === "POST") return send(res, 200, await engine.cmd(JSON.parse((await readBody(req, 200_000)).toString("utf8") || "{}")));
       } catch (e) {
         return send(res, e?.status || 400, { error: e instanceof Error ? e.message.split("\n")[0] : String(e) });
@@ -898,6 +899,16 @@ export function deskServer() {
     }
   }
 
+  /** The full browser's pictures as binary (wsframes.mjs): the desktop's own page only, as with /api. Other
+   *  upgrades (Vite's own live reload) are left alone. */
+  function pictureSocket(req, socket) {
+    if (new URL(req.url || "/", "http://x").pathname !== "/api/engine/ws") return;
+    if (fromElsewhere(req)) return void socket.destroy();
+    deskPorts.add(socket.localPort);
+    if (acceptSocket(req, socket)) engine.attachSocket(socket);
+    else socket.destroy();
+  }
+
   async function handle(req, res, next) {
     const url = new URL(req.url || "/", "http://x");
     try {
@@ -994,6 +1005,7 @@ export function deskServer() {
       publicDir = config.publicDir || path.join(root, "public");
     },
     configureServer(server) {
+      server.httpServer?.on("upgrade", pictureSocket);
       // the full browser closes with the desktop, so its profile is free next time
       server.httpServer?.once("close", () => (void engine.close(), stdio.closeAll()));
       // (a listener here replaces Node's own exit on Ctrl+C, so it exits itself once the engine is closed)
@@ -1001,6 +1013,7 @@ export function deskServer() {
       server.middlewares.use(handle);
     },
     configurePreviewServer(server) {
+      server.httpServer?.on("upgrade", pictureSocket);
       server.middlewares.use(handle);
     },
   };

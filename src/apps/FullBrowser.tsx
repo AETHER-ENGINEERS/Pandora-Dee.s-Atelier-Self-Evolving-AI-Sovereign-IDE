@@ -79,30 +79,19 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
   const opened = useRef(false);
   const active = tabs.find((t) => t.active);
 
-  // the live stream: tabs, pictures, notes
+  // the live stream: tabs and notes by the event stream; pictures as binary by a WebSocket (back to the event stream
+  // when the WebSocket can't connect: an older desktop, or a proxy that doesn't pass WebSockets)
   useEffect(() => {
-    const es = new EventSource("/api/engine/stream");
-    es.addEventListener("tabs", (e) => {
-      const d = JSON.parse((e as MessageEvent).data) as { tabs: Tab[]; engine: string };
-      setTabs(d.tabs);
-      if (d.engine) setEngine(d.engine);
-      // nothing open yet: start with the start page
-      if (!d.tabs.length && !opened.current) {
-        opened.current = true;
-        // where it was left off (the engine reopens those tabs), or the start page
-        void post({ op: "open", url: home, start: true, reopen: desk().browser.reopen !== false }).catch((err: Error) => setProblem(err.message));
-      }
-    });
-    // frames decode one at a time; one that arrives meanwhile waits, replaced by any newer one
+    let closed = false;
+    let es: EventSource | null = null;
+    // pictures decode one at a time; one that arrives meanwhile waits, replaced by any newer one
+    type Pic = { blob: Blob; w: number; h: number };
     let decoding = false;
-    let next: { data: string; w: number; h: number } | null = null;
-    const draw = async (f: { data: string; w: number; h: number }) => {
+    let next: Pic | null = null;
+    const draw = async (f: Pic) => {
       decoding = true;
       try {
-        const bin = atob(f.data);
-        const bytes = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        const bmp = await createImageBitmap(new Blob([bytes], { type: "image/jpeg" }));
+        const bmp = await createImageBitmap(f.blob);
         const c = canvas.current;
         if (c) {
           if (c.width !== bmp.width || c.height !== bmp.height) (c.width = bmp.width), (c.height = bmp.height);
@@ -111,7 +100,7 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
         bmp.close();
         setFrame((old) => (old && old.w === f.w && old.h === f.h ? old : { w: f.w, h: f.h }));
       } catch {
-        /* a damaged frame: the next one replaces it */
+        /* a damaged picture: the next one replaces it */
       } finally {
         decoding = false;
         const n = next;
@@ -119,13 +108,64 @@ export function FullBrowser({ home, onReader }: { home: string; onReader: () => 
         if (n) void draw(n);
       }
     };
-    es.addEventListener("frame", (e) => {
-      const f = JSON.parse((e as MessageEvent).data) as { data: string; w: number; h: number };
+    const show = (f: Pic) => {
       if (decoding) next = f;
       else void draw(f);
-    });
-    es.addEventListener("note", (e) => setNote((JSON.parse((e as MessageEvent).data) as { text: string }).text));
-    return () => es.close();
+    };
+
+    const listen = (pictures: boolean) => {
+      es?.close();
+      es = new EventSource(`/api/engine/stream${pictures ? "" : "?frames=0"}`);
+      es.addEventListener("tabs", (e) => {
+        const d = JSON.parse((e as MessageEvent).data) as { tabs: Tab[]; engine: string };
+        setTabs(d.tabs);
+        if (d.engine) setEngine(d.engine);
+        // nothing open yet: start with the start page
+        if (!d.tabs.length && !opened.current) {
+          opened.current = true;
+          // where it was left off (the engine reopens those tabs), or the start page
+          void post({ op: "open", url: home, start: true, reopen: desk().browser.reopen !== false }).catch((err: Error) => setProblem(err.message));
+        }
+      });
+      if (pictures)
+        es.addEventListener("frame", (e) => {
+          const f = JSON.parse((e as MessageEvent).data) as { data: string; w: number; h: number };
+          const bin = atob(f.data);
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          show({ blob: new Blob([bytes], { type: "image/jpeg" }), w: f.w, h: f.h });
+        });
+      es.addEventListener("note", (e) => setNote((JSON.parse((e as MessageEvent).data) as { text: string }).text));
+    };
+
+    listen(false);
+    let ws: WebSocket | null = null;
+    let worked = false;
+    const fallBack = () => !closed && !worked && listen(true);
+    try {
+      ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/engine/ws`);
+      ws.binaryType = "arraybuffer";
+      ws.onopen = () => (worked = true);
+      ws.onmessage = (e) => {
+        const buf = e.data as ArrayBuffer;
+        const n = new DataView(buf).getUint32(0);
+        const head = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, n))) as { w: number; h: number };
+        show({ blob: new Blob([new Uint8Array(buf, 4 + n)], { type: "image/jpeg" }), w: head.w, h: head.h });
+      };
+      ws.onclose = () => {
+        if (closed) return;
+        // it worked and then dropped (the desktop restarted): pictures by the event stream from now on
+        if (worked) (worked = false), listen(true);
+        else fallBack();
+      };
+    } catch {
+      fallBack();
+    }
+    return () => {
+      closed = true;
+      es?.close();
+      ws?.close();
+    };
   }, [home]);
 
   useEffect(() => {
