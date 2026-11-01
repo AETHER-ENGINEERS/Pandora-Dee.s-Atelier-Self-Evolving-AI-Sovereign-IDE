@@ -35,6 +35,8 @@ import { FilesApp } from "../apps/Files.tsx";
 import { NotesApp } from "../apps/Notes.tsx";
 import { MusicApp } from "../apps/Music.tsx";
 import { TheaterApp } from "../apps/Theater.tsx";
+import { PadsApp } from "../apps/Pads.tsx";
+import { startPads } from "../lib/pads.ts";
 import { Visualizer, VisualizerApp } from "../apps/Visualizer.tsx";
 import "../lib/musicTalk.ts";
 import { JournalApp } from "../apps/Journal.tsx";
@@ -64,6 +66,7 @@ const BODIES: Record<AppId, () => ReactNode> = {
   notes: () => <NotesApp />,
   music: () => <MusicApp />,
   theater: () => <TheaterApp />,
+  pads: () => <PadsApp />,
   visualizer: () => <VisualizerApp />,
   create: () => <CreateApp />,
   browser: () => <BrowserApp />,
@@ -134,6 +137,8 @@ export function Desktop() {
 
   useEffect(() => {
     resumeBridges();
+    // PADS: this device reports in while it's switched on here (it does nothing until then)
+    startPads();
     const backups = startBackupSchedule();
     startChatSync();
     void loadNotes();

@@ -1,0 +1,134 @@
+// PADS: Pandora's Atelier's Distributed Systems. This SEASIDE, when its person switched PADS on here (a privacy
+// setting, off until then, kept on this device only), reports in to the desktop every few seconds: its name, what kind
+// of device it is, its screen, and what's open on it. The PADS Manager window (apps/Pads.tsx) shows every device of
+// the account and how they're arranged in the room.
+
+import { useSyncExternalStore } from "react";
+import { APPS, desk } from "./store.ts";
+import { label, useMusic } from "./music.ts";
+
+export type Kind = "phone" | "tablet" | "laptop" | "desktop" | "mac" | "console" | "tv" | "handheld" | "other";
+export const KINDS: { id: Kind; name: string }[] = [
+  { id: "desktop", name: "Desktop computer" },
+  { id: "laptop", name: "Laptop" },
+  { id: "mac", name: "Mac" },
+  { id: "phone", name: "Phone" },
+  { id: "tablet", name: "Tablet" },
+  { id: "console", name: "Console (Xbox…)" },
+  { id: "tv", name: "TV" },
+  { id: "handheld", name: "Handheld" },
+  { id: "other", name: "Something else" },
+];
+
+export type Win = { app: string; title: string; x: number; y: number; w: number; h: number; front: boolean; max: boolean };
+export type Device = {
+  id: string;
+  name: string;
+  kind: Kind;
+  screen: { w: number; h: number; dpr: number };
+  browser: string;
+  seen: number;
+  here: boolean;
+  layout: { x: number; y: number };
+  state: { windows: Win[]; hangout: boolean; phone: boolean; playing: string } | null;
+};
+
+type Me = { on: boolean; name: string; kind: Kind };
+const ME_KEY = "pdd-pads-me";
+const ID_KEY = "pdd-device-id";
+
+const ua = () => navigator.userAgent;
+/** A first guess at what this device is (the person can correct it). */
+export function guessKind(): Kind {
+  const u = ua();
+  if (/Xbox/i.test(u)) return "console";
+  if (/SMART-TV|SmartTV|Tizen|Web0S|BRAVIA|AFT[A-Z]/i.test(u)) return "tv";
+  if (/iPad/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1)) return "tablet";
+  if (/iPhone/.test(u) || (/Android/.test(u) && /Mobile/.test(u))) return "phone";
+  if (/Android/.test(u)) return "tablet";
+  if (/Mac/.test(u)) return "mac";
+  return "desktop";
+}
+const browserName = () => {
+  const u = ua();
+  return /Edg\//.test(u) ? "Edge" : /OPR\//.test(u) ? "Opera" : /Firefox\//.test(u) ? "Firefox" : /Chrome\//.test(u) ? "Chrome" : /Safari\//.test(u) ? "Safari" : "a browser";
+};
+
+/** This device's lasting id (kept in this browser). */
+export function deviceId(): string {
+  try {
+    let id = localStorage.getItem(ID_KEY);
+    if (!id || !/^[A-Za-z0-9_-]{8,40}$/.test(id)) {
+      id = (crypto.randomUUID?.() ?? `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`).replace(/[^A-Za-z0-9]/g, "").slice(0, 24);
+      localStorage.setItem(ID_KEY, id);
+    }
+    return id;
+  } catch {
+    return "nostorage00";
+  }
+}
+
+let me: Me = (() => {
+  try {
+    const m = JSON.parse(localStorage.getItem(ME_KEY) || "null") as Partial<Me> | null;
+    return { on: m?.on === true, name: m?.name || "", kind: (m?.kind as Kind) || guessKind() };
+  } catch {
+    return { on: false, name: "", kind: guessKind() };
+  }
+})();
+const meListeners = new Set<() => void>();
+export const useMe = () => useSyncExternalStore((f) => (meListeners.add(f), () => meListeners.delete(f)), () => me);
+export function setMe(patch: Partial<Me>) {
+  me = { ...me, ...patch };
+  try {
+    localStorage.setItem(ME_KEY, JSON.stringify(me));
+  } catch {
+    /* this browser keeps nothing */
+  }
+  meListeners.forEach((f) => f());
+  if (me.on) void report();
+}
+
+/** What this device is called in PADS: the name given, or a sensible default. */
+export const myName = () => me.name || `${KINDS.find((k) => k.id === me.kind)?.name ?? "Device"} (${browserName()})`;
+export const account = () => desk().session || "";
+
+/** What's on this SEASIDE now: its open windows (a miniature), which is in front, Hangout, music. */
+function state() {
+  const s = desk();
+  const windows = APPS.flatMap((a) => {
+    const w = s.wins[a.id];
+    if (!w?.open || w.min) return [];
+    return [{ app: a.id, title: a.title, x: Math.round(w.x), y: Math.round(w.y), w: Math.round(w.w), h: Math.round(w.h), front: w.z === s.zTop, max: w.max }];
+  });
+  const m = useMusic.getState();
+  return { windows, hangout: Boolean(s.hangout), phone: innerWidth < 760, playing: m.playing ? label(m.queue[m.index]) : "" };
+}
+
+/** Report in (only while PADS is on here). */
+export async function report(): Promise<Device[] | null> {
+  if (!me.on) return null;
+  const r = await fetch("/api/pads/hello", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id: deviceId(), account: account(), name: myName(), kind: me.kind, browser: browserName(), screen: { w: innerWidth, h: innerHeight, dpr: devicePixelRatio || 1 }, state: state() }),
+  }).catch(() => null);
+  if (!r?.ok) return null;
+  return ((await r.json()) as { devices: Device[] }).devices;
+}
+
+let started = false;
+/** Reports every five seconds, and when this page is about to go (so the Manager sees it leave soon). */
+export function startPads() {
+  if (started) return;
+  started = true;
+  void report();
+  setInterval(() => void report(), 5000);
+  document.addEventListener("visibilitychange", () => document.visibilityState === "visible" && void report());
+}
+
+export const padsApi = {
+  roster: async (): Promise<Device[]> => ((await (await fetch(`/api/pads/roster?account=${encodeURIComponent(account())}`)).json()) as { devices: Device[] }).devices ?? [],
+  arrange: (positions: Record<string, { x: number; y: number }>) => fetch("/api/pads/arrange", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ account: account(), positions }) }),
+  forget: (id: string) => fetch("/api/pads/forget", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ account: account(), id }) }),
+};

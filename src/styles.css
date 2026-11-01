@@ -1040,3 +1040,26 @@ body.dragging-window iframe, body.dragging-window webview { pointer-events: none
 .shield-btn { position: relative; }
 .shield-btn.off { color: var(--bad); }
 .shield-count { position: absolute; right: -3px; bottom: -2px; min-width: 14px; padding: 0 3px; border-radius: 7px; background: var(--accent); color: #120c22; font-size: 9px; font-weight: 700; line-height: 13px; text-align: center; }
+
+/* PADS Manager: the account's devices, arranged like monitors */
+.pads { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.pads-me { padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.pads-room { position: relative; flex: 1; min-height: 220px; overflow: auto; background: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, .06) 1px, transparent 0) 0 0 / 22px 22px; touch-action: none; }
+.pads-empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 20px; }
+.pads-card { position: absolute; display: flex; flex-direction: column; border: 2px solid var(--line-strong); border-radius: 8px; background: #0d0b14; cursor: grab; user-select: none; box-shadow: 0 4px 14px rgba(0, 0, 0, .35); }
+.pads-card.mine { border-color: var(--accent); }
+.pads-card.away { opacity: .5; }
+.pads-card.dragging { cursor: grabbing; box-shadow: 0 10px 30px rgba(0, 0, 0, .55); z-index: 2; }
+.pads-screen { position: relative; flex: 1; overflow: hidden; border-radius: 6px; background: linear-gradient(160deg, #1d1530, #0b0912); }
+.pads-win { position: absolute; border: 1px solid rgba(196, 181, 253, .35); border-radius: 3px; background: rgba(32, 26, 48, .92); overflow: hidden; }
+.pads-win.front { border-color: var(--accent); z-index: 1; }
+.pads-win span { display: block; font-size: 9px; padding: 1px 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+.pads-hangout { position: absolute; inset: 0; display: grid; place-items: center; font-size: 10px; color: var(--muted); }
+/* the name sits under the card, so a narrow phone still shows it whole */
+.pads-label { position: absolute; top: 100%; left: 0; margin-top: 3px; display: flex; align-items: center; gap: 4px; min-width: 100%; font-size: 10px; white-space: nowrap; color: var(--text); }
+.pads-name { white-space: nowrap; }
+.pads-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex: none; display: inline-block; }
+.pads-dot.on { background: var(--good); }
+.pads-playing { position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 2px; font-size: 9px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pads-list { list-style: none; margin: 0; padding: 6px 10px; border-top: 1px solid var(--line); max-height: 30%; overflow: auto; }
+.pads-list li { display: flex; align-items: center; gap: 8px; min-height: 26px; }

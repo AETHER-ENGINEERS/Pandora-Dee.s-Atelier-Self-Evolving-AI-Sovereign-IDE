@@ -25,6 +25,7 @@ import { createMcpStdio } from "./mcpstdio.mjs";
 import { createTheater, PIECE_MAX } from "./theater.mjs";
 import { createPairs, pairedCors } from "./pairs.mjs";
 import { acceptSocket } from "./wsframes.mjs";
+import { createPads } from "./pads.mjs";
 import os from "node:os";
 import dns from "node:dns";
 import { createHash } from "node:crypto";
@@ -135,6 +136,8 @@ export function deskServer() {
   const theater = createTheater({ vaultDir: () => path.join(dataDir, "vault") });
   // Classic opened on its own (a plain browser tab), paired with this desktop to use its relay (see pairs.mjs)
   const pairs = createPairs({ file: () => path.join(dataDir, "classic-pairs.json") });
+  // PADS: the account's devices, what's on them, and how they're arranged (see pads.mjs)
+  const pads = createPads({ dataDir: () => dataDir });
   /** A paired page may use the relay, but never to reach the desktop itself (its own server, by any name that
    *  leads to this computer, after any redirect): that would give it the desktop's controls. */
   const notTheDesktop = (req) => async (u) => {
@@ -548,6 +551,19 @@ export function deskServer() {
     }
     // Explorer: the desktop's places, and the computer when that's allowed (see files.mjs)
     // pairings for Classic opened elsewhere: listed here; made and removed only on the desktop's own computer
+    if (parts[0] === "pads") {
+      try {
+        if (parts[1] === "roster" && m === "GET") return send(res, 200, pads.roster(String(url.searchParams.get("account") || "")));
+        if (m === "POST") {
+          const b = JSON.parse((await readBody(req, 200_000)).toString("utf8") || "{}");
+          if (parts[1] === "hello") return send(res, 200, pads.hello(b));
+          if (parts[1] === "arrange") return send(res, 200, pads.arrange(String(b.account || ""), b.positions));
+          if (parts[1] === "forget") return send(res, 200, pads.forget(String(b.account || ""), String(b.id || "")));
+        }
+      } catch (e) {
+        return send(res, e?.status ?? 400, { error: e instanceof Error ? e.message : String(e) });
+      }
+    }
     if (parts[0] === "pairs") {
       if (m === "GET") {
         // where a paired Classic can find the desktop: this computer, and its home-network addresses (those answer
