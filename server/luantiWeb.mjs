@@ -139,6 +139,7 @@ export function createLuantiWeb({ dataDir, fetchImpl = (...a) => fetch(...a) }) 
       fs.writeFileSync(currentFile(), JSON.stringify({ dir, release, tag: rel.tag, made: rel.made, sha256: want, at: Date.now() }, null, 1));
       // the build it replaces goes
       if (was && was.dir !== dir) fs.rmSync(path.join(root(), was.dir), { recursive: true, force: true });
+      busy = null;
       return status();
     } finally {
       busy = null;
