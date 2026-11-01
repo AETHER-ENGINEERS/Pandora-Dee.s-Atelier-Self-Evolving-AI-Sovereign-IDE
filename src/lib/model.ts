@@ -241,6 +241,73 @@ function toAICord(turns: Turn[]) {
 let callSeq = 0;
 const newCallId = () => `call_${Date.now().toString(36)}_${++callSeq}`;
 
+/**
+ * Tool calls a model wrote as text instead of sending them as calls (its template on Ollama doesn't turn them into
+ * calls): GLM's "name" line then its JSON arguments; <tool_call>{…}</tool_call> (Qwen, Hermes); or a bare
+ * {"name": …, "arguments": …}. Only names of tools offered this turn count, so ordinary text never becomes a call.
+ * Returns the calls and the text without them.
+ */
+export function textToolCalls(text: string, names: string[]): { calls: { name: string; args: Record<string, unknown> }[]; rest: string } {
+  const known = new Set(names);
+  const calls: { name: string; args: Record<string, unknown> }[] = [];
+  const asCall = (j: unknown) => {
+    const o = j as { name?: unknown; arguments?: unknown; parameters?: unknown } | null;
+    if (!o || typeof o.name !== "string" || !known.has(o.name)) return false;
+    calls.push({ name: o.name, args: parseArgs(o.arguments ?? o.parameters ?? {}) });
+    return true;
+  };
+  let rest = text;
+  // <tool_call>{…}</tool_call>
+  rest = rest.replace(/<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/g, (all, body: string) => {
+    try {
+      return asCall(JSON.parse(body)) ? "" : all;
+    } catch {
+      return all;
+    }
+  });
+  // a bare JSON call, the whole reply
+  if (!calls.length && /^\s*\{[\s\S]*\}\s*$/.test(rest)) {
+    try {
+      if (asCall(JSON.parse(rest))) rest = "";
+    } catch {
+      /* not a call */
+    }
+  }
+  // GLM: a line that's only a tool's name, then its JSON arguments (one line or several)
+  if (!calls.length) {
+    const lines = rest.split("\n");
+    const kept: string[] = [];
+    for (let i = 0; i < lines.length; i++) {
+      const name = lines[i].trim();
+      if (known.has(name)) {
+        let j = i + 1;
+        let body = "";
+        let args: Record<string, unknown> | null = null;
+        for (; j < lines.length && j < i + 40; j++) {
+          body += `${lines[j]}\n`;
+          try {
+            const v = JSON.parse(body) as unknown;
+            if (v && typeof v === "object") {
+              args = v as Record<string, unknown>;
+              break;
+            }
+          } catch {
+            /* the arguments go on */
+          }
+        }
+        if (args) {
+          calls.push({ name, args });
+          i = j;
+          continue;
+        }
+      }
+      kept.push(lines[i]);
+    }
+    if (calls.length) rest = kept.join("\n");
+  }
+  return { calls, rest: rest.trim() };
+}
+
 function parseArgs(raw: unknown): Record<string, unknown> {
   if (raw && typeof raw === "object") return raw as Record<string, unknown>;
   if (typeof raw === "string" && raw.trim()) {
@@ -363,6 +430,14 @@ export async function streamOnce(
   }
   for (const p of [...partial.entries()].sort((a, b) => a[0] - b[0]).map((e) => e[1])) {
     if (p.name) calls.push({ id: p.id || newCallId(), name: p.name, args: parseArgs(p.args) });
+  }
+  // no calls came as calls: the model may have written them as text (GLM on Ollama does)
+  if (!calls.length && tools.length) {
+    const found = textToolCalls(text, tools.map((t) => t.name));
+    if (found.calls.length) {
+      for (const c of found.calls) calls.push({ id: newCallId(), ...c });
+      return { text: found.rest, toolCalls: calls, thinking };
+    }
   }
   return { text, toolCalls: calls, thinking };
 }

@@ -4,7 +4,7 @@ import { judge, mayWake, LARGE } from "./flood.ts";
 import { loopCheck, mentioned, responders, similarity, streakOf, tidyReply, transcriptFor, type Message } from "./room.ts";
 import { run } from "./shell.ts";
 import { allowed, maskName, withinHours, PRIVACY_DEFAULT } from "./privacy.ts";
-import { scopeOf, pickModel } from "./model.ts";
+import { scopeOf, pickModel, textToolCalls } from "./model.ts";
 import { parseBackup, scrub, toClassic, prefsFromClassic } from "./backup.ts";
 import { BUILT_IN } from "./characters.ts";
 
@@ -48,11 +48,19 @@ test("loop breaker catches repeats and long streaks", () => {
   assert.equal(loopCheck(hist, "Anything", 16, false), "cap");
   assert.ok(similarity("a b c d", "a b c d") > 0.9);
   assert.equal(streakOf([msg({ kind: "human" }), msg({}), msg({}), msg({ pass: true })]), 2);
+  // a character voiced from outside counts like a person: the count starts again after them
+  assert.equal(streakOf([msg({}), msg({}), msg({ outside: true }), msg({})]), 1);
 });
 
 test("replies lose their own name prefix and anything written for others", () => {
   assert.equal(tidyReply(dee, "Dee: hello there\nJade: hi Dee", room), "hello there");
   assert.equal(tidyReply(dee, "**Pandora Dee:** fine", room), "fine");
+  // any word of their own name counts at the start (Test Fae, short "Test", wrote "Fae:")
+  const fae = { ...dee, id: "test-fae", name: "Test Fae", short: "Test" };
+  assert.equal(tidyReply(fae, "Fae: Hello, everyone.", room), "Hello, everyone.");
+  assert.equal(tidyReply(fae, "Test: hi", room), "hi");
+  // but only at the very start: the name later in the line stays
+  assert.equal(tidyReply(fae, "Hello, Fae: that's me.", room), "Hello, Fae: that's me.");
 });
 
 test("each character sees itself as the assistant and others by name", () => {
@@ -379,6 +387,27 @@ test("her Classic thinking, journal, memory, helper model and heartbeat come alo
   assert.equal(out.settings.hbOn, true);
   assert.equal(out.settings.hbEvery, 60);
   assert.equal(out.settings.hbPrompt, "Tend the garden notes.");
+});
+
+test("tool calls a model wrote as text are found (GLM, <tool_call>, bare JSON), and only for offered tools", () => {
+  const names = ["app_updates", "app_send_update"];
+  // GLM-4 on Ollama: the name on a line, then the arguments
+  let r = textToolCalls('app_updates\n{}\nThe game state is unknown.', names);
+  assert.deepEqual(r.calls, [{ name: "app_updates", args: {} }]);
+  assert.equal(r.rest, "The game state is unknown.");
+  r = textToolCalls('app_send_update\n{\n  "payload": {"x": 7, "y": 7}\n}', names);
+  assert.deepEqual(r.calls, [{ name: "app_send_update", args: { payload: { x: 7, y: 7 } } }]);
+  // Qwen / Hermes
+  r = textToolCalls('Let me look. <tool_call>{"name": "app_updates", "arguments": {"since": 3}}</tool_call>', names);
+  assert.deepEqual(r.calls, [{ name: "app_updates", args: { since: 3 } }]);
+  assert.equal(r.rest, "Let me look.");
+  // a bare JSON call
+  r = textToolCalls('{"name": "app_updates", "arguments": {}}', names);
+  assert.equal(r.calls.length, 1);
+  // not offered, or just talk: nothing
+  assert.equal(textToolCalls('rm_everything\n{}', names).calls.length, 0);
+  assert.equal(textToolCalls("I'll check app_updates soon {maybe}.", names).calls.length, 0);
+  assert.equal(textToolCalls('app_updates\nnot json at all', names).calls.length, 0);
 });
 
 test("the shell hands mcp commands on whole, JSON arguments included", () => {

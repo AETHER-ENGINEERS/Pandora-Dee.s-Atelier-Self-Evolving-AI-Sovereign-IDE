@@ -20,7 +20,7 @@ import {
   type Message,
   type Source,
 } from "./room.ts";
-import { addJournal, describeCall, runTool, toolsFor, type Scope } from "./tools.ts";
+import { addJournal, describeCall, gameToolsFor, runTool, toolsFor, type Scope } from "./tools.ts";
 import { speak, stopSpeaking } from "./voice.ts";
 import { aiFor, voiceFor } from "./prefs.ts";
 import type { TurnCtx } from "./tools.ts";
@@ -139,6 +139,8 @@ type TurnOpts = {
   signal?: AbortSignal;
   /** Background work (journal, memory, heartbeat): her helper model first. */
   helper?: boolean;
+  /** A game turn: only the tools for playing. */
+  game?: boolean;
 };
 
 /** Which memory lines go in the prompt: all of them, or the ones that fit (by keywords; by meaning too with her vector memory). */
@@ -236,7 +238,7 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
     try {
       const model = await ensureModel(conn, wanted, signal);
       const ai = aiFor(me.id);
-      let tools = ai.tools ? toolsFor(ctx) : [];
+      let tools = ai.tools ? (opts.game ? gameToolsFor() : toolsFor(ctx)) : [];
       const turns = [...base];
       let final = "";
       let thought = "";
@@ -442,7 +444,7 @@ export async function speakAs(charId: string, text: string) {
   const clean = text.trim();
   if (!clean) return;
   const blocked = s.weigh(clean, "desk", "keyholder");
-  const id = s.post({ kind: "character", who: c.id, name: c.short, text: clean, source: "desk" });
+  const id = s.post({ kind: "character", who: c.id, name: c.short, text: clean, source: "desk", outside: true });
   if (blocked) return s.notice(blocked);
   const msg = desk().messages.find((m) => m.id === id);
   if (msg) await respond(msg);
@@ -565,6 +567,7 @@ export async function gameTurn() {
       if (controller?.signal.aborted) return;
       await takeTurn(c, {
         scope: "locksmith",
+        game: true,
         instruction:
           g.kind === "xdc"
             ? `[Game] You're playing the Vector app "${g.title}" together, as a real player. Check app_updates to see the state, and if it's your turn make your move with app_send_update. Then say a short, playful line about it.`
@@ -791,7 +794,7 @@ export async function replyAsOutside(charId: string, source: "discord" | "vector
   const clean = text.trim().slice(0, 7900);
   if (!clean) throw new Error("Say something.");
   await io.send(chatId, `${c.short}: ${clean}`, replyTo);
-  s.post({ kind: "character", who: c.id, name: c.short, text: clean, source, bridge: { chatId, msgId: replyTo, author: c.id, isGroup: true } });
+  s.post({ kind: "character", who: c.id, name: c.short, text: clean, source, outside: true, bridge: { chatId, msgId: replyTo, author: c.id, isGroup: true } });
   // what was answered leaves the inbox
   if (replyTo) s.set({ outsideMail: { ...s.outsideMail, [charId]: (s.outsideMail[charId] ?? []).filter((x) => x.msgId !== replyTo) } });
 }

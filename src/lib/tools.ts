@@ -1007,6 +1007,13 @@ const MAKE_SONG: Tool = {
 /** Classic's names for the note tools. */
 const NOTE_ALIASES: Record<string, string> = { read: "note_read", write: "note_write", edit: "note_edit", notify_owner: "notify_locksmith" };
 
+/** For a game turn: only the tools for playing (the screen, the game's updates, sending a move), so a model that
+ *  would rather talk than pick from thirty tools sees just what the turn is for. */
+const GAME_TOOLS = new Set(["game_screen", "app_updates", "app_send_live", "app_send_update"]);
+export function gameToolsFor(): Tool[] {
+  return BASE.filter((t) => GAME_TOOLS.has(t.name));
+}
+
 export function toolsFor(ctx: TurnCtx): Tool[] {
   const s = desk();
   const web = allowed(s.privacy, "web");

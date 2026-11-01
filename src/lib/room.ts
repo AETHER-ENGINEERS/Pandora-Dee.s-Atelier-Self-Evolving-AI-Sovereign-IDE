@@ -8,6 +8,9 @@ export type Source = "desk" | "discord" | "vector";
 export type Message = {
   id: string;
   kind: "human" | "character" | "notice";
+  /** Said by a character voiced from outside (another AI or program, through the inbound API): it counts like a
+   *  person's message for the loop breaker, since nobody here wrote it on a model. */
+  outside?: boolean;
   /** Character id for characters, the person's name for humans. */
   who: string;
   name: string;
@@ -115,7 +118,7 @@ export function streakOf(history: Message[]) {
   let n = 0;
   for (let i = history.length - 1; i >= 0; i--) {
     const m = history[i];
-    if (m.kind === "human") break;
+    if (m.kind === "human" || m.outside) break;
     if (m.kind === "character" && !m.pass) n++;
   }
   return n;
@@ -318,7 +321,9 @@ export function splitThink(raw: string): { text: string; thinking: string } {
 /** Clean up what a model sends back: drop a leading "Name:" and anything it wrote for others. */
 export function tidyReply(me: Character, raw: string, room: Character[]): string {
   let text = splitThink(raw).text.trim();
-  const own = [me.name, me.short].map(escape).join("|");
+  // their own name at the start ("Name:"): the full name, the short one, or any word of it (Test Fae wrote "Fae:")
+  const words = me.name.split(/\s+/).filter((w) => w.length >= 3);
+  const own = [...new Set([me.name, me.short, ...words])].sort((x, y) => y.length - x.length).map(escape).join("|");
   text = text.replace(new RegExp(`^\\s*\\**(${own})\\**\\s*:\\s*\\**\\s*`, "i"), "");
   const others = room.filter((c) => c.id !== me.id).flatMap((c) => [c.name, c.short]).map(escape);
   if (others.length) {
