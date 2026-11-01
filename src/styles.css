@@ -1107,3 +1107,4 @@ html { touch-action: pan-x pan-y; }
 .luanti-srv { display: flex; flex-direction: column; flex: 1; min-width: 180px; }
 .luanti-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .luanti-how { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.theater-playlist-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 0 12px 8px; }

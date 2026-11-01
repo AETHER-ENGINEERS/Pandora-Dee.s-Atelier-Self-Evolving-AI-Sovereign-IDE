@@ -6,7 +6,8 @@ import { useSyncExternalStore } from "react";
 import { rawUrl } from "./explorer.ts";
 
 export type Video = { id: string; path: string; name: string; ext: string; shelf: string; size: number; mtime: number; seconds: number; thumb: 1 | 0 | -1; fav: boolean };
-export type Library = { root: string; shelves: string[]; videos: Video[] };
+export type Playlist = { id: string; name: string; items: string[]; made: number };
+export type Library = { root: string; shelves: string[]; videos: Video[]; playlists?: Playlist[] };
 
 async function call<T>(url: string, body?: unknown): Promise<T> {
   const r = await fetch(url, body === undefined ? undefined : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -51,7 +52,28 @@ export const theaterApi = {
   move: (path: string, shelf: string) => call<{ path: string }>("/api/theater/move", { path, shelf }),
   shelf: (name: string) => call<{ shelf: string }>("/api/theater/shelf", { name }),
   have: (items: { name: string; size: number }[]) => call<{ have: (string | null)[] }>("/api/theater/have", { items }),
+  /** Make a playlist (no id), or change one's name or videos. */
+  playlist: (p: { id?: string; name?: string; items?: string[] }) => call<Playlist>("/api/theater/playlist", p),
+  dropPlaylist: (id: string) => call<{ ok: true }>("/api/theater/playlist", { id, drop: true }),
 };
+
+/** Change a playlist on the desktop, and in the list here straight away. */
+export async function changePlaylist(p: { id?: string; name?: string; items?: string[] }) {
+  const saved = await theaterApi.playlist(p);
+  if (lib) {
+    const others = (lib.playlists ?? []).filter((x) => x.id !== saved.id);
+    lib = { ...lib, playlists: p.id ? (lib.playlists ?? []).map((x) => (x.id === saved.id ? saved : x)) : [...others, saved] };
+    libChanged();
+  }
+  return saved;
+}
+export async function deletePlaylist(id: string) {
+  await theaterApi.dropPlaylist(id);
+  if (lib) {
+    lib = { ...lib, playlists: (lib.playlists ?? []).filter((x) => x.id !== id) };
+    libChanged();
+  }
+}
 
 export const thumbUrl = (id: string) => `/api/theater/thumb?id=${encodeURIComponent(id)}`;
 export const videoUrl = (v: Video) => rawUrl(v.path);

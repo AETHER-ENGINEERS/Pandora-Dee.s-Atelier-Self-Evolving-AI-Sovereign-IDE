@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, Film, FolderInput, MoreHorizontal, Pencil, RefreshCw, Search, Star, Trash2, Upload, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Download, Film, FolderInput, ListMusic, ListPlus, MoreHorizontal, Pencil, Play, Plus, RefreshCw, Repeat, Search, Shuffle, Star, Trash2, Upload, X } from "lucide-react";
 import { desk, useDesk } from "../lib/store.ts";
 import { downloadToDevice, fileApi } from "../lib/explorer.ts";
 import {
   backUp,
   cancelJob,
+  changePlaylist,
+  deletePlaylist,
   clearFinished,
   leftOff,
   lengthText,
@@ -19,13 +21,42 @@ import {
   useJobs,
   useLibrary,
   videoUrl,
+  type Playlist,
   type Video,
 } from "../lib/theater.ts";
-import { openMenuAt, type MenuItem } from "../ui/ContextMenu.tsx";
-import { askText } from "../ui/Ask.tsx";
+import { openMenu, openMenuAt, type MenuItem } from "../ui/ContextMenu.tsx";
+import { askText, askUser } from "../ui/Ask.tsx";
 import { useWidth } from "../ui/hooks.ts";
 
-const ALL = "\u0000all", FAVS = "\u0000favs";
+const ALL = "\u0000all", FAVS = "\u0000favs", LIST = "\u0000list:";
+
+/** "Add to playlist" lines for a video's menus: each playlist (ticked where it already is), and a new one. */
+function addToPlaylistItems(v: Video, playlists: Playlist[]): MenuItem[] {
+  const fail = (e: unknown) => desk().say(e instanceof Error ? e.message : String(e));
+  return [
+    { heading: "Add to playlist" },
+    ...playlists.map(
+      (p): MenuItem => ({
+        label: p.name,
+        checked: p.items.includes(v.id),
+        icon: <ListMusic size={14} />,
+        run: () =>
+          void changePlaylist({ id: p.id, items: p.items.includes(v.id) ? p.items.filter((x) => x !== v.id) : [...p.items, v.id] }).then(
+            () => desk().say(p.items.includes(v.id) ? `Taken off ${p.name}.` : `Added to ${p.name}.`),
+            fail,
+          ),
+      }),
+    ),
+    {
+      label: "New playlist…",
+      icon: <ListPlus size={14} />,
+      run: () =>
+        void askText("A new playlist", "", { placeholder: "Saturday cartoons", yes: "Make it" }).then((name) => {
+          if (name?.trim()) void changePlaylist({ name: name.trim(), items: [v.id] }).then((p) => desk().say(`${p.name}: made, with ${v.name} in it.`), fail);
+        }),
+    },
+  ];
+}
 const SHELF_KEY = "pdd-theater-shelf";
 /** The shelf this device backs up to (each phone remembers its own). */
 const savedShelf = () => {
@@ -44,6 +75,11 @@ export function TheaterApp() {
   const [shelf, setShelf] = useState(ALL);
   const [q, setQ] = useState("");
   const [playing, setPlaying] = useState<string | null>(null);
+  // a playlist played shuffled keeps its shuffled order until it's played again; repeat starts it over at the end
+  const [order, setOrder] = useState<string[] | null>(null);
+  const [repeat, setRepeat] = useState(false);
+  const playlists = lib?.playlists ?? [];
+  const playlist = shelf.startsWith(LIST) ? (playlists.find((p) => p.id === shelf.slice(LIST.length)) ?? null) : null;
   const [target, setTarget] = useState(savedShelf);
   const pick = useRef<HTMLInputElement>(null);
   const [ref, width] = useWidth<HTMLDivElement>();
@@ -55,10 +91,20 @@ export function TheaterApp() {
 
   const shown = useMemo(() => {
     const words = q.toLowerCase().split(/\s+/).filter(Boolean);
-    return (lib?.videos ?? []).filter(
-      (v) => (shelf === ALL || (shelf === FAVS ? v.fav : v.shelf === shelf)) && words.every((w) => `${v.name} ${v.shelf}`.toLowerCase().includes(w)),
-    );
-  }, [lib, shelf, q]);
+    const match = (v: Video) => words.every((w) => `${v.name} ${v.shelf}`.toLowerCase().includes(w));
+    // a playlist shows its videos in its own order (those still here)
+    if (playlist) {
+      const byId = new Map((lib?.videos ?? []).map((v) => [v.id, v]));
+      return playlist.items.map((id) => byId.get(id)).filter((v): v is Video => Boolean(v) && match(v!));
+    }
+    return (lib?.videos ?? []).filter((v) => (shelf === ALL || (shelf === FAVS ? v.fav : v.shelf === shelf)) && match(v));
+  }, [lib, shelf, q, playlist]);
+  // what the player steps through: the shuffled order while one is playing shuffled, otherwise what's shown
+  const queue = useMemo(() => {
+    if (!order) return shown;
+    const byId = new Map(shown.map((v) => [v.id, v]));
+    return order.map((id) => byId.get(id)).filter((v): v is Video => Boolean(v));
+  }, [order, shown]);
 
   // thumbnails for the ones still without, a few at a time as the list changes
   useEffect(() => {
@@ -67,6 +113,7 @@ export function TheaterApp() {
 
   const groups = useMemo(() => {
     const out: { label: string; videos: Video[] }[] = [];
+    if (playlist) return shown.length ? [{ label: `${playlist.name} · ${shown.length} video${shown.length === 1 ? "" : "s"}`, videos: shown }] : out;
     for (const v of shown) {
       const label = month(v.mtime);
       if (out.at(-1)?.label === label) out.at(-1)!.videos.push(v);
@@ -156,13 +203,70 @@ export function TheaterApp() {
         {[
           [ALL, "All"],
           [FAVS, "★ Favourites"],
+          ...playlists.map((p) => [LIST + p.id, `≡ ${p.name}`]),
           ...(lib?.shelves ?? []).map((s) => [s, s]),
         ].map(([id, label]) => (
-          <button key={id} role="tab" aria-selected={shelf === id} className={`chip${shelf === id ? " focus" : ""}`} onClick={() => setShelf(id)}>
+          <button key={id} role="tab" aria-selected={shelf === id} className={`chip${shelf === id ? " focus" : ""}`} onClick={() => (setShelf(id), setOrder(null))}>
             {label}
           </button>
         ))}
+        {toddler ? null : (
+          <button
+            className="chip"
+            title="A new playlist"
+            onClick={() =>
+              void askText("A new playlist", "", { body: "Then add videos to it from their menus (right-click, or hold).", placeholder: "Saturday cartoons", yes: "Make it" }).then(
+                (name) => name?.trim() && void changePlaylist({ name: name.trim(), items: [] }).then((p) => setShelf(LIST + p.id), (e) => desk().say(String(e))),
+              )
+            }
+          >
+            <Plus size={12} /> Playlist
+          </button>
+        )}
       </div>
+
+      {playlist ? (
+        <div className="theater-playlist-bar">
+          <button className="btn small primary" disabled={!shown.length} onClick={() => (setOrder(null), setPlaying(shown[0]?.id ?? null))}>
+            <Play size={13} /> Play all
+          </button>
+          <button
+            className="btn small"
+            disabled={!shown.length}
+            onClick={() => {
+              const ids = shown.map((v) => v.id).sort(() => Math.random() - 0.5);
+              setOrder(ids);
+              setPlaying(ids[0] ?? null);
+            }}
+          >
+            <Shuffle size={13} /> Shuffle
+          </button>
+          <button className={`btn small ghost${repeat ? " on" : ""}`} aria-pressed={repeat} onClick={() => setRepeat(!repeat)} title="Start over at the end">
+            <Repeat size={13} /> Repeat
+          </button>
+          <span style={{ flex: 1 }} />
+          {toddler ? null : (
+            <>
+              <button
+                className="btn small ghost"
+                onClick={() => void askText("Rename the playlist", playlist.name, { yes: "Rename" }).then((name) => name?.trim() && void changePlaylist({ id: playlist.id, name: name.trim() }))}
+              >
+                <Pencil size={13} /> Rename
+              </button>
+              <button
+                className="btn small ghost"
+                onClick={() =>
+                  void askUser(`Delete ${playlist.name}?`, "Only the list goes; the videos stay where they are.", "Delete it", "Keep it").then(
+                    (yes) => yes && void deletePlaylist(playlist.id).then(() => setShelf(ALL)),
+                  )
+                }
+              >
+                <Trash2 size={13} /> Delete
+              </button>
+            </>
+          )}
+        </div>
+      ) : null}
 
       {jobs.length ? <Uploads /> : null}
 
@@ -180,13 +284,40 @@ export function TheaterApp() {
             </p>
           </div>
         ) : null}
-        {lib && lib.videos.length && !shown.length ? <p className="small muted">Nothing on this shelf{q ? " matches" : " yet"}.</p> : null}
+        {lib && lib.videos.length && !shown.length ? (
+          <p className="small muted">
+            {playlist ? (q ? "Nothing in this playlist matches." : "This playlist is empty. Add videos from their menus: right-click one (or hold it), then Add to playlist.") : `Nothing on this shelf${q ? " matches" : " yet"}.`}
+          </p>
+        ) : null}
         {groups.map((g) => (
           <section key={g.label}>
             <h3 className="theater-month">{g.label}</h3>
             <div className="theater-grid">
-              {g.videos.map((v) => (
-                <Card key={v.id} v={v} onPlay={() => setPlaying(v.id)} />
+              {g.videos.map((v, i) => (
+                <Card
+                  key={v.id}
+                  v={v}
+                  onPlay={() => (setOrder(null), setPlaying(v.id))}
+                  menu={() => {
+                    if (toddler) return [];
+                    const items = addToPlaylistItems(v, playlists);
+                    if (!playlist || q) return items;
+                    // inside a playlist: its order, and leaving it
+                    const move = (to: number) => {
+                      const ids = playlist.items.filter((id) => id !== v.id);
+                      const at = playlist.items.indexOf(v.id) + to;
+                      ids.splice(Math.max(0, Math.min(ids.length, at)), 0, v.id);
+                      void changePlaylist({ id: playlist.id, items: ids });
+                    };
+                    return [
+                      { label: "Earlier in the playlist", icon: <ArrowUp size={14} />, disabled: i === 0, run: () => move(-1) },
+                      { label: "Later in the playlist", icon: <ArrowDown size={14} />, disabled: i === g.videos.length - 1, run: () => move(1) },
+                      { label: `Take off ${playlist.name}`, icon: <X size={14} />, run: () => void changePlaylist({ id: playlist.id, items: playlist.items.filter((id) => id !== v.id) }) },
+                      { sep: true },
+                      ...items,
+                    ];
+                  }}
+                />
               ))}
             </div>
           </section>
@@ -196,7 +327,9 @@ export function TheaterApp() {
       {current ? (
         <Player
           v={current}
-          list={shown}
+          list={queue}
+          repeat={Boolean(playlist) && repeat}
+          playlists={playlists}
           toddler={toddler}
           shelves={shelves}
           onPick={(id) => setPlaying(id)}
@@ -207,10 +340,17 @@ export function TheaterApp() {
   );
 }
 
-function Card({ v, onPlay }: { v: Video; onPlay: () => void }) {
+function Card({ v, onPlay, menu }: { v: Video; onPlay: () => void; menu: () => MenuItem[] }) {
   const at = leftOff(v.id);
   return (
-    <button className="theater-card" onClick={onPlay} title={`${v.name} · ${sizeText(v.size)}${v.shelf ? ` · ${v.shelf}` : ""}`}>
+    <button
+      className="theater-card"
+      onClick={onPlay}
+      onContextMenu={(e) => {
+        const items = menu();
+        if (items.length) openMenu(e, items);
+      }}
+      title={`${v.name} · ${sizeText(v.size)}${v.shelf ? ` · ${v.shelf}` : ""}`}>
       <span className="theater-thumb">
         {v.thumb === 1 ? <img src={thumbUrl(v.id)} alt="" loading="lazy" /> : <Film size={30} />}
         {v.seconds ? <span className="theater-len">{lengthText(v.seconds)}</span> : null}
@@ -222,12 +362,31 @@ function Card({ v, onPlay }: { v: Video; onPlay: () => void }) {
   );
 }
 
-function Player({ v, list, toddler, shelves, onPick, onClose }: { v: Video; list: Video[]; toddler: boolean; shelves: string[]; onPick: (id: string) => void; onClose: () => void }) {
+function Player({
+  v,
+  list,
+  repeat,
+  playlists,
+  toddler,
+  shelves,
+  onPick,
+  onClose,
+}: {
+  v: Video;
+  list: Video[];
+  repeat: boolean;
+  playlists: Playlist[];
+  toddler: boolean;
+  shelves: string[];
+  onPick: (id: string) => void;
+  onClose: () => void;
+}) {
   const vid = useRef<HTMLVideoElement>(null);
   const more = useRef<HTMLButtonElement>(null);
   const i = list.findIndex((x) => x.id === v.id);
   const prev = i > 0 ? list[i - 1] : null;
-  const next = i >= 0 && i < list.length - 1 ? list[i + 1] : null;
+  // at the end of a playlist on repeat, back to its first
+  const next = i >= 0 && i < list.length - 1 ? list[i + 1] : repeat && list.length > 1 ? list[0] : null;
 
   // carry on from where it was left on this device, and remember as it plays
   useEffect(() => {
@@ -278,6 +437,8 @@ function Player({ v, list, toddler, shelves, onPick, onClose }: { v: Video; list
     };
     return [
       ...items,
+      ...addToPlaylistItems(v, playlists),
+      { sep: true },
       {
         label: "Rename…",
         icon: <Pencil size={14} />,

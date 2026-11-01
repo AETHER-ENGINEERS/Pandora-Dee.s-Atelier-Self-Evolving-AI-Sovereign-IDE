@@ -641,6 +641,7 @@ export function deskServer() {
           if (parts[1] === "have") return send(res, 200, { have: theater.have(b.items) });
           if (parts[1] === "shelf") return send(res, 200, { shelf: theater.mkShelf(b.name) });
           if (parts[1] === "fav") return send(res, 200, theater.setFav(b.id, Boolean(b.on)));
+          if (parts[1] === "playlist") return send(res, 200, b.drop ? theater.dropPlaylist(String(b.id || "")) : theater.savePlaylist(b));
           if (parts[1] === "move") return send(res, 200, { path: theater.moveTo(b.path, b.shelf) });
         }
       } catch (e) {

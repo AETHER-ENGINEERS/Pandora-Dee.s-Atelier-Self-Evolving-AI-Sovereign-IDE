@@ -28,9 +28,9 @@ export function createTheater({ vaultDir }) {
   function readMeta() {
     try {
       const j = JSON.parse(fs.readFileSync(metaFile(), "utf8"));
-      return { favs: j.favs ?? {}, seconds: j.seconds ?? {} };
+      return { favs: j.favs ?? {}, seconds: j.seconds ?? {}, playlists: Array.isArray(j.playlists) ? j.playlists : [] };
     } catch {
-      return { favs: {}, seconds: {} };
+      return { favs: {}, seconds: {}, playlists: [] };
     }
   }
   function writeMeta(m) {
@@ -97,7 +97,7 @@ export function createTheater({ vaultDir }) {
     }
     out.sort((a, b) => b.mtime - a.mtime);
     shelves.sort((a, b) => (a === "From devices") - (b === "From devices") || a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
-    return { root: root(), shelves, videos: out };
+    return { root: root(), shelves, videos: out, playlists: m.playlists };
   }
 
   /** Which of these (name and size, from a phone) are already kept here, anywhere in the Theater. */
@@ -201,6 +201,33 @@ export function createTheater({ vaultDir }) {
     }
   }
 
+  /** Playlists: a name and videos in order (by id, which stays the same through a rename or a move). Kept with the
+   *  favourites, so every device has the same ones. A video that's gone simply isn't shown. */
+  function savePlaylist({ id, name, items }) {
+    const m = readMeta();
+    const clean = String(name ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
+    const list = (Array.isArray(items) ? items : []).map(String).filter((x) => /^[a-z0-9]{1,14}-[a-z0-9]{1,10}$/.test(x)).slice(0, 2000);
+    const at = m.playlists.findIndex((p) => p.id === id);
+    if (at < 0) {
+      if (!clean) throw fail(400, "A playlist needs a name.");
+      const p = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: clean, items: [...new Set(list)], made: Date.now() };
+      m.playlists.push(p);
+      writeMeta(m);
+      return p;
+    }
+    const p = m.playlists[at];
+    if (clean) p.name = clean;
+    if (Array.isArray(items)) p.items = [...new Set(list)];
+    writeMeta(m);
+    return p;
+  }
+  function dropPlaylist(id) {
+    const m = readMeta();
+    m.playlists = m.playlists.filter((p) => p.id !== id);
+    writeMeta(m);
+    return { ok: true };
+  }
+
   function setFav(id, on) {
     const m = readMeta();
     if (on) m.favs[checkId(id)] = Date.now();
@@ -230,5 +257,5 @@ export function createTheater({ vaultDir }) {
     return target;
   }
 
-  return { root, list, have, mkShelf, uploadState, uploadPiece, dropUpload, sweep, thumbFile, setThumb, setFav, owns, moveTo };
+  return { root, list, have, mkShelf, uploadState, uploadPiece, dropUpload, sweep, thumbFile, setThumb, setFav, owns, moveTo, savePlaylist, dropPlaylist };
 }

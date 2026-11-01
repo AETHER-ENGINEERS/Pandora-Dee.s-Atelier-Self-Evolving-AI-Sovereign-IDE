@@ -68,3 +68,23 @@ test("favourites and thumbnails follow a video when it moves shelf", () => {
   assert.throws(() => T.setThumb(skate.id, Buffer.from("png?"), 0), /JPEG/);
   assert.throws(() => T.moveTo(path.join(vault, "elsewhere.mp4"), "Best"), /isn't there/);
 });
+
+test("playlists: made, named, ordered, and shared through the library list", () => {
+  const vault = fs.mkdtempSync(path.join(os.tmpdir(), "theater-pl-"));
+  const T = createTheater({ vaultDir: () => vault });
+  fs.mkdirSync(path.join(vault, "Videos"), { recursive: true });
+  for (const n of ["a", "b", "c"]) fs.writeFileSync(path.join(vault, "Videos", `${n}.mp4`), n.repeat(10 + n.charCodeAt(0)));
+  const ids = T.list().videos.map((v) => v.id);
+  assert.throws(() => T.savePlaylist({ name: "  ", items: [] }), /needs a name/);
+  const p = T.savePlaylist({ name: "Saturday  cartoons", items: [ids[2], ids[0], ids[0], "../bad"] });
+  assert.equal(p.name, "Saturday cartoons");
+  assert.deepEqual(p.items, [ids[2], ids[0]]);
+  T.savePlaylist({ id: p.id, items: [ids[0], ids[1], ids[2]] });
+  T.savePlaylist({ id: p.id, name: "Cartoons" });
+  const listed = T.list().playlists;
+  assert.equal(listed.length, 1);
+  assert.equal(listed[0].name, "Cartoons");
+  assert.deepEqual(listed[0].items, [ids[0], ids[1], ids[2]]);
+  T.dropPlaylist(p.id);
+  assert.equal(T.list().playlists.length, 0);
+});
