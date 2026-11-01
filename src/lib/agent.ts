@@ -1,7 +1,7 @@
 // Runs the room: who answers, in what order, through which connection, with which tools.
 
 import type { Character } from "./characters.ts";
-import { desk } from "./store.ts";
+import { desk, type OutsideMail } from "./store.ts";
 import { credential, explainError, listModels, pickModel, scopeOf, streamOnce, type Connection, type Turn } from "./model.ts";
 import { allowed, blockedBecause } from "./privacy.ts";
 import { memoryForPrompt } from "./vecmem.ts";
@@ -738,7 +738,10 @@ async function answerJob({ m, io }: Job) {
   const pool = s.visibleCharacters();
   const named = pool.filter((c) => new RegExp(`\\b${c.short.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(m.text));
   const fallback = pool.find((c) => c.id === b.answerAs) ?? pool[0];
-  const who = named.length ? named.slice(0, 2) : fallback ? [fallback] : [];
+  const chosen = named.length ? named.slice(0, 2) : fallback ? [fallback] : [];
+  // characters voiced from outside aren't here to answer live: it waits for them (read through /v1/inbox)
+  for (const c of chosen.filter((x) => x.outside)) mailForOutside(c.id, m);
+  const who = chosen.filter((x) => !x.outside);
   const replyTo = [...desk().messages].reverse().find((x) => x.bridge?.chatId === m.chatId && x.kind === "human");
   let images: { data: string; mime: string }[] = [];
   if (b.images && m.msgId && m.imageIndexes?.length) {
@@ -757,8 +760,45 @@ async function answerJob({ m, io }: Job) {
   });
 }
 
+// The way back to each bridge, as its last message came in (so a reply from outside goes out the same way).
+const bridgeOut = new Map<string, BridgeIO>();
+
+/** Keep a bridge message for a character voiced from outside, until whoever speaks for them reads it. */
+function mailForOutside(charId: string, m: Incoming) {
+  const s = desk();
+  const item: OutsideMail = { id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, source: m.source, chatId: m.chatId, msgId: m.msgId, author: m.author, text: m.text.slice(0, 8000), at: Date.now(), isGroup: m.isGroup };
+  const box = [...(s.outsideMail[charId] ?? []), item].slice(-200);
+  s.set({ outsideMail: { ...s.outsideMail, [charId]: box } });
+  s.log(`${m.source === "vector" ? "Vector" : "Discord"}: a message for ${s.character(charId)?.short ?? charId} is waiting (they answer when they're next here).`);
+}
+
+/** What's waiting for a character voiced from outside; `take` clears what's returned. */
+export function outsideInbox(charId: string, take = false): OutsideMail[] {
+  const s = desk();
+  const box = s.outsideMail[charId] ?? [];
+  if (take && box.length) s.set({ outsideMail: { ...s.outsideMail, [charId]: [] } });
+  return box;
+}
+
+/** A character voiced from outside answers in a bridge chat (marked with their name, since the bridge speaks for
+ *  everyone with one identity). It shows in the room too. */
+export async function replyAsOutside(charId: string, source: "discord" | "vector", chatId: string, text: string, replyTo?: string) {
+  const s = desk();
+  const c = s.character(charId);
+  if (!c?.outside) throw new Error("That character isn't voiced from outside.");
+  const io = bridgeOut.get(source);
+  if (!io) throw new Error(`The ${source === "vector" ? "Vector" : "Discord"} bridge hasn't had a message since the desktop opened, so there's no way back yet.`);
+  const clean = text.trim().slice(0, 7900);
+  if (!clean) throw new Error("Say something.");
+  await io.send(chatId, `${c.short}: ${clean}`, replyTo);
+  s.post({ kind: "character", who: c.id, name: c.short, text: clean, source, bridge: { chatId, msgId: replyTo, author: c.id, isGroup: true } });
+  // what was answered leaves the inbox
+  if (replyTo) s.set({ outsideMail: { ...s.outsideMail, [charId]: (s.outsideMail[charId] ?? []).filter((x) => x.msgId !== replyTo) } });
+}
+
 /** A message arrived from Discord or Vector. It shows in the room; a character may answer back there. */
 export async function receive(m: Incoming, io: BridgeIO) {
+  bridgeOut.set(m.source, io);
   const s = desk();
   const role = bridgeRole(m.source, m.authorId);
   const blocked = s.weigh(m.text, m.source, role);

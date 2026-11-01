@@ -304,6 +304,8 @@ export type NotesPrefs = {
 export const NOTES_DEFAULT: NotesPrefs = { templates: "Templates", daily: "Daily", dailyFormat: "YYYY-MM-DD", dailyTemplate: "", view: "split", panel: true, seeded: false };
 
 /** One character's own settings. Anything left out follows the shared defaults. */
+export type OutsideMail = { id: string; source: "discord" | "vector"; chatId: string; msgId?: string; author: string; text: string; at: number; isGroup: boolean };
+
 export type CharPrefs = {
   look: Look;
   connection?: string;
@@ -526,6 +528,9 @@ export type State = {
   sshHosts: SshHost[];
   sshOn: boolean;
   inbox: InboxItem[];
+  /** Bridge messages (Vector, Discord) for characters voiced from outside, waiting until whoever speaks for them reads
+   *  them through the inbound API (/v1/inbox) and answers (/v1/reply). By character id. */
+  outsideMail: Record<string, OutsideMail[]>;
   libView: LibView;
   libSort: LibSort;
   libSection: LibSection;
@@ -728,6 +733,7 @@ const INITIAL: State = {
   sshHosts: [],
   sshOn: false,
   inbox: [],
+  outsideMail: {},
   libView: "grid",
   libSort: "name",
   libSection: "all",

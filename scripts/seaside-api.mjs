@@ -35,3 +35,7 @@ export const chats = (cfg) => call(cfg, "/v1/chats", {}, 30);
 export const history = (cfg, limit = 20, session) => call(cfg, "/v1/history", { limit, session }, 30);
 /** Say something in the room (as `as`, when given) and wait for the characters' answers. */
 export const chat = (cfg, message, as = cfg.as) => call(cfg, "/v1/chat", { message, as });
+/** Messages from the bridges (Vector, Discord) waiting for a character voiced from outside; take clears them. */
+export const inbox = (cfg, take = false, as = cfg.as) => call(cfg, "/v1/inbox", { as, take: take ? 1 : "" }, 30);
+/** Answer in a bridge chat as that character (it's marked with their name there). */
+export const reply = (cfg, chat, message, replyTo, source = "vector", as = cfg.as) => call(cfg, "/v1/reply", { as, chat, message, reply_to: replyTo, source }, 60);

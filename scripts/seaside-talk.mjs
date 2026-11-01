@@ -5,8 +5,10 @@
 //   node scripts/seaside-talk.mjs --as claude "Hello!"         say it as a character voiced from outside
 //   node scripts/seaside-talk.mjs --history 10                 the last messages in the open chat
 //   node scripts/seaside-talk.mjs --status                     what the desktop is doing
+//   node scripts/seaside-talk.mjs --as claude --inbox          Vector/Discord messages waiting for me (--take clears them)
+//   node scripts/seaside-talk.mjs --as claude --reply <chat> [--to <message id>] "Hello!"   answer there
 
-import { chat, config, history, status } from "./seaside-api.mjs";
+import { chat, config, history, inbox, reply, status } from "./seaside-api.mjs";
 
 const args = process.argv.slice(2);
 const opt = (name) => {
@@ -24,8 +26,18 @@ const flag = (name) => {
 
 const cfg = config({ url: opt("--url"), tokenFile: opt("--token-file"), as: opt("--as") });
 const limit = opt("--history");
+const replyChat = opt("--reply");
+const replyTo = opt("--to");
+const source = opt("--source") ?? "vector";
 try {
-  if (flag("--status")) {
+  if (flag("--inbox")) {
+    const r = await inbox(cfg, flag("--take"));
+    if (!r.waiting.length) console.log("Nothing waiting.");
+    for (const m of r.waiting) console.log(`[${m.source} ${m.chatId}${m.msgId ? ` msg ${m.msgId}` : ""}] ${m.author}: ${m.text}\n`);
+  } else if (replyChat) {
+    await reply(cfg, replyChat, args.join(" "), replyTo, source);
+    console.log("Sent.");
+  } else if (flag("--status")) {
     const s = await status(cfg);
     console.log(`${s.busy ? "Busy" : "Free"} · ${s.provider ?? "no model"} ${s.model ?? ""} · chat "${s.session?.title}" (${s.session?.messages} messages)`);
   } else if (limit) {

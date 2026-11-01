@@ -1136,7 +1136,7 @@ export function deskServer() {
     configureServer(server) {
       server.httpServer?.on("upgrade", pictureSocket);
       // the full browser closes with the desktop, so its profile is free next time
-      server.httpServer?.once("close", () => (void engine.close(), stdio.closeAll()));
+      server.httpServer?.once("close", () => (void engine.close(), stdio.closeAll(), inbound.close()));
       // (a listener here replaces Node's own exit on Ctrl+C, so it exits itself once the engine is closed)
       for (const sig of ["SIGINT", "SIGTERM"]) process.once(sig, () => (stdio.closeAll(), void Promise.resolve(engine.close()).finally(() => process.exit(130))));
       server.middlewares.use(handle);

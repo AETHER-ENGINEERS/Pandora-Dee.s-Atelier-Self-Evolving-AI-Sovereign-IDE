@@ -5,7 +5,7 @@ import http from "node:http";
 import crypto from "node:crypto";
 
 const API = 1;
-const ROUTES = ["/v1/status", "/v1/chats", "/v1/history", "/v1/chat", "/v1/flows", "/v1/flow"];
+const ROUTES = ["/v1/status", "/v1/chats", "/v1/history", "/v1/chat", "/v1/inbox", "/v1/reply", "/v1/flows", "/v1/flow"];
 
 let server = null;
 let cfg = { on: false, port: 8787, lan: false, token: "" };
@@ -69,6 +69,12 @@ function handle(req, res) {
   const seconds = Math.min(1800, Math.max(1, Number(params.timeout) || 300));
   const timer = setTimeout(() => {
     waiting.delete(id);
+    // never picked up by the desktop's page: it's dropped, so it can't run later behind the caller's back
+    const queued = jobs.findIndex((j) => j.id === id);
+    if (queued >= 0) {
+      jobs.splice(queued, 1);
+      return fail(res, 503, "not_taken", "The desktop didn't pick this up in time, so nothing was done. Is its page open?");
+    }
     fail(res, 504, "timeout", "Still working: the answer will appear in the desktop. Check /v1/status and /v1/history.");
   }, seconds * 1000);
   waiting.set(id, (status, body) => {
@@ -101,6 +107,8 @@ export const inbound = {
   /** The desktop asks for the next request (waits up to 25 seconds). */
   next() {
     lastPoll = Date.now();
+    // not listening (the server restarted since the page set it up): the page sets it up again
+    if (!server) return Promise.resolve({ idle: true, off: true });
     const job = jobs.shift();
     if (job) return Promise.resolve(job);
     return new Promise((resolve) => {
@@ -120,4 +128,13 @@ export const inbound = {
     return true;
   },
   status: () => ({ on: cfg.on, listening: Boolean(server), port: cfg.port, lan: cfg.lan }),
+  /** When the desktop's server stops or restarts (Vite restarts it when a server file changes): free the port, so
+   *  the restarted server listens with its own code (the desktop page sets it up again by itself). */
+  close() {
+    if (!server) return;
+    server.closeAllConnections?.();
+    server.close();
+    server = null;
+    cfg = { ...cfg, on: false };
+  },
 };
