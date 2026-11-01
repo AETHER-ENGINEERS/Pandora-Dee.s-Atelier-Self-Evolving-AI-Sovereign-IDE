@@ -61,6 +61,9 @@ test("replies lose their own name prefix and anything written for others", () =>
   assert.equal(tidyReply(fae, "Test: hi", room), "hi");
   // but only at the very start: the name later in the line stays
   assert.equal(tidyReply(fae, "Hello, Fae: that's me.", room), "Hello, Fae: that's me.");
+  // opening as someone else is speaking for them: nothing is posted (Test Fae wrote "Dee: …")
+  assert.equal(tidyReply(fae, "Dee: It's great to hear that.", room), "");
+  assert.equal(tidyReply(fae, "**Jade:** hi", room), "");
 });
 
 test("each character sees itself as the assistant and others by name", () => {

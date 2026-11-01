@@ -326,6 +326,8 @@ export function tidyReply(me: Character, raw: string, room: Character[]): string
   const own = [...new Set([me.name, me.short, ...words])].sort((x, y) => y.length - x.length).map(escape).join("|");
   text = text.replace(new RegExp(`^\\s*\\**(${own})\\**\\s*:\\s*\\**\\s*`, "i"), "");
   const others = room.filter((c) => c.id !== me.id).flatMap((c) => [c.name, c.short]).map(escape);
+  // a reply that opens as someone else ("Dee: …") is written for them, not by this character: it's a pass
+  if (others.length && new RegExp(`^\\s*\\**(${others.join("|")})\\**\\s*:`, "i").test(text)) return "";
   if (others.length) {
     const cut = text.search(new RegExp(`\\n\\s*\\**(${others.join("|")})\\**\\s*:`, "i"));
     if (cut > 0) text = text.slice(0, cut);
