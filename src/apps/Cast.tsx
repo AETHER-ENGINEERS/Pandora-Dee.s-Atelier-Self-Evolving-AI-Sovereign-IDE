@@ -228,6 +228,23 @@ function Profile({ c, onBack }: { c: Character; onBack: () => void }) {
               <span>Traits (comma separated)</span>
               <input className="input" value={c.traits.join(", ")} onChange={(e) => desk().updateCharacter(c.id, { traits: e.target.value.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 5) })} />
             </div>
+            <div className="field">
+              <span>Voiced from outside</span>
+              <label className="check" style={{ padding: 0 }}>
+                <input
+                  type="checkbox"
+                  checked={Boolean(c.outside)}
+                  onChange={(e) => desk().updateCharacter(c.id, { outside: e.target.checked ? { by: c.outside?.by || "another program" } : undefined })}
+                />
+                <span>
+                  Someone outside the desktop speaks for {c.short} (another AI or program, through the inbound API with <code>as={c.id}</code>). {c.short} is in the room like
+                  anyone, but never answers on a model here.
+                </span>
+              </label>
+              {c.outside ? (
+                <input className="input" value={c.outside.by} placeholder="Who speaks for them" onChange={(e) => desk().updateCharacter(c.id, { outside: { by: e.target.value } })} aria-label="Who speaks for them" />
+              ) : null}
+            </div>
             <div className="row">
               <button className="btn" onClick={() => picRef.current?.click()}>
                 Picture from this device…

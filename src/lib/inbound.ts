@@ -2,7 +2,7 @@
 
 import { desk } from "./store.ts";
 import { allowed } from "./privacy.ts";
-import { isRunning, say } from "./agent.ts";
+import { isRunning, say, speakAs } from "./agent.ts";
 import { chatList, currentChat, loadChat } from "./chats.ts";
 
 type Job = { id: string; route: string; params: Record<string, string> };
@@ -43,9 +43,18 @@ async function handle(job: Job) {
     if (message.startsWith("/") && !message.startsWith("/skill:")) return reply(job.id, 400, err("slash", "Only /skill:name commands are accepted here."));
     if (isRunning()) return reply(job.id, 409, err("busy", "The characters are in the middle of something. Try again shortly."));
     if (!connection()) return reply(job.id, 503, err("no_model", "No AI connection is set up."));
+    // `as`: a character voiced from outside (by id or name) says it, instead of an anonymous caller
+    let as = "";
+    if (p.as) {
+      const want = String(p.as).trim().toLowerCase();
+      const c = s.allCharacters().find((x) => x.outside && (x.id === want || x.name.toLowerCase() === want || x.short.toLowerCase() === want));
+      if (!c) return reply(job.id, 404, err("unknown_character", "No character voiced from outside has that id or name (Characters → profile → Voiced from outside)."));
+      if (!s.roomCharacters().some((x) => x.id === c.id)) s.join(c.id);
+      as = c.id;
+    }
     const started = Date.now();
     const before = s.messages.length;
-    const run = say(message, "API");
+    const run = as ? speakAs(as, message) : say(message, "API");
     if (p.wait === "0") {
       void run;
       return reply(job.id, 202, { ok: true, accepted: true, session: { id: s.chatId } });
@@ -55,7 +64,7 @@ async function handle(job: Job) {
     } catch (e) {
       return reply(job.id, 502, err("agent", e instanceof Error ? e.message : String(e)));
     }
-    const fresh = desk().messages.slice(before).filter((m) => m.kind === "character" && !m.pass);
+    const fresh = desk().messages.slice(before).filter((m) => m.kind === "character" && !m.pass && m.who !== as);
     const text = fresh.map((m) => (fresh.length > 1 ? `${m.name}: ${m.text}` : m.text)).join("\n\n");
     const tools = p.tools === "0" ? undefined : fresh.flatMap((m) => (m.tools ?? []).map((t) => ({ name: t.name, ok: t.ok, note: t.note })));
     return reply(job.id, 200, {

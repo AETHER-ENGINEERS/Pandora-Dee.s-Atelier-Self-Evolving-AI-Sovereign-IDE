@@ -32,6 +32,9 @@ export type Character = {
   files: Record<string, string>;
   /** Her Classic settings (Pandora Dee / Jade Vault), kept whole so a backup goes back to Classic losing nothing. */
   classic?: ClassicKeep;
+  /** Voiced from outside the desktop: someone (another program, another AI) speaks for this character through the
+   *  inbound API (/v1/chat with `as`). They're in the room like anyone, but never take a turn on a model here. */
+  outside?: { by: string };
 };
 
 /** What a Classic backup carries besides files: which app and folder she lives in, her settings, and her app's other saved state. */

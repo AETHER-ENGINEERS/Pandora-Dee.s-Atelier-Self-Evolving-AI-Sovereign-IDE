@@ -154,6 +154,8 @@ async function focusFor(charId: string, history: Message[]) {
 async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
   const s = desk();
   if (s.toddler) throw new Error("The AI is resting: toddler mode is on.");
+  // voiced from outside (through the inbound API): they speak when they're spoken for, never on a model here
+  if (me.outside) return { text: "", ok: true };
   const room = s.roomCharacters();
   const signal = opts.signal ?? controller!.signal;
   const history = opts.history ?? s.messages;
@@ -356,7 +358,7 @@ async function rounds(lastSpeaker: string, alone = false): Promise<boolean> {
   roundFailed = false;
   for (let round = 0; round < 8; round++) {
     const s = desk();
-    const room = s.roomCharacters();
+    const room = s.roomCharacters().filter((c) => !c.outside);
     const order = alone && room.length === 1 ? room : [...room.filter((c) => c.id !== last)];
     let anyone = false;
     for (const c of order) {
@@ -410,7 +412,8 @@ async function guard(focus: string) {
 async function respond(msg: Message, instruction?: string) {
   const s = desk();
   if (s.toddler) return s.notice("The characters are resting: toddler mode is on.");
-  const room = s.roomCharacters();
+  // who can answer: not the one who just spoke, and not those voiced from outside (they speak through the API)
+  const room = s.roomCharacters().filter((c) => !c.outside && c.id !== msg.who);
   if (!room.length) {
     s.notice("Nobody's in the room yet. Open Characters and invite someone.");
     return;
@@ -428,6 +431,21 @@ async function respond(msg: Message, instruction?: string) {
     }
     if (desk().freeTalk && last) await rounds(last);
   });
+}
+
+/** A character voiced from outside says something in the room (through the inbound API): it's posted as theirs, and
+ *  the others answer it as they would anyone (whoever's named, else whoever's in focus; free talk carries on). */
+export async function speakAs(charId: string, text: string) {
+  const s = desk();
+  const c = s.character(charId);
+  if (!c?.outside) throw new Error("That character isn't voiced from outside.");
+  const clean = text.trim();
+  if (!clean) return;
+  const blocked = s.weigh(clean, "desk", "keyholder");
+  const id = s.post({ kind: "character", who: c.id, name: c.short, text: clean, source: "desk" });
+  if (blocked) return s.notice(blocked);
+  const msg = desk().messages.find((m) => m.id === id);
+  if (msg) await respond(msg);
 }
 
 /** Someone at this computer said something in the room (or a program, through the inbound API, as `from`). */
@@ -479,7 +497,7 @@ export async function editAndResend(id: string, text: string): Promise<string> {
 export async function remark(instruction: string): Promise<boolean> {
   const s = desk();
   if (running || s.flood.shut) return false;
-  const room = s.roomCharacters();
+  const room = s.roomCharacters().filter((x) => !x.outside);
   const c = room.find((x) => x.id === s.focus) ?? room[0];
   if (!c) return false;
   await withRun(async () => {
@@ -493,7 +511,7 @@ export async function remark(instruction: string): Promise<boolean> {
 export async function heartbeat(charId: string, instruction: string): Promise<boolean> {
   const s = desk();
   const c = s.character(charId);
-  if (!c || running || s.flood.shut || s.toddler) return false;
+  if (!c || c.outside || running || s.flood.shut || s.toddler) return false;
   await withRun(async () => {
     await takeTurn(c, { scope: "locksmith", instruction, helper: true });
   });
