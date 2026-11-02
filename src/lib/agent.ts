@@ -204,7 +204,8 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
   });
   const base: Turn[] = [
     { role: "system", content: sys },
-    ...transcriptFor(me, history, s.chat.historyLimit, bridge?.chatId, { stamp: s.chat.stampTimes, after: bridge ? undefined : meta?.summaryUpTo }),
+    // a game turn reads only the last few lines, so the game (and its guide) isn't drowned out by the chat
+    ...transcriptFor(me, history, opts.game ? Math.min(6, s.chat.historyLimit) : s.chat.historyLimit, bridge?.chatId, { stamp: s.chat.stampTimes, after: bridge ? undefined : meta?.summaryUpTo }),
   ];
   if (opts.images?.length) {
     const lastUser = [...base].reverse().find((t) => t.role === "user");
@@ -555,6 +556,18 @@ bridge.watch((scope, row) => {
   }, 1500);
 });
 
+/** How to play a game, for the characters: a guide in the vault (Games/guides/<game>.md, which people and characters
+ *  can write and improve), else one that comes with the desktop (public/game-guides/), else nothing. */
+export async function gameGuide(slug: string): Promise<string> {
+  const name = `${slug.replace(/[^\w.-]+/g, "-").toLowerCase()}.md`;
+  for (const url of [`/api/vault/file?path=${encodeURIComponent(`Games/guides/${name}`)}`, `/game-guides/${name}`]) {
+    const r = await fetch(url).catch(() => null);
+    const text = r?.ok && !/html/i.test(r.headers.get("content-type") ?? "") ? (await r.text()).trim() : "";
+    if (text) return text.slice(0, 6000);
+  }
+  return "";
+}
+
 export async function gameTurn() {
   const s = desk();
   const g = s.game;
@@ -562,16 +575,20 @@ export async function gameTurn() {
   if (s.flood.shut) return s.notice("The flood gate is shut, so the characters are resting.");
   const players = g.players.map((id) => s.character(id)).filter((c): c is Character => Boolean(c));
   if (!players.length) return s.notice("No characters are playing. Tap their names above the game to add them.");
+  const guide = await gameGuide(g.slug);
+  const how = guide ? `\n\nHow to play it (the game's guide):\n${guide}` : "";
   await withRun(async () => {
     for (const c of players) {
       if (controller?.signal.aborted) return;
+      // each player knows their own seat: first in the list plays first
+      const seat = `\nYou're player ${players.indexOf(c) + 1} of ${players.length}: ${players.map((p, i) => `${i + 1} ${p.short}`).join(", ")}.`;
       await takeTurn(c, {
         scope: "locksmith",
         game: true,
         instruction:
           g.kind === "xdc"
-            ? `[Game] You're playing the Vector app "${g.title}" together, as a real player. Check app_updates to see the state, and if it's your turn make your move with app_send_update. Then say a short, playful line about it.`
-            : `[Game] You're playing "${g.title}" together. The game screen is described in your context. Say what you'd do next, or react to what's happening. Short and playful; the human has the controls.`,
+            ? `[Game] You're playing the Vector app "${g.title}" together, as a real player. Act first, talk after: start your reply with the tool call itself (app_updates to see the state; app_send_update to make your move when it's your turn), not with words about calling it. Once your move is sent, say one short, playful line about it.${seat}${how}`
+            : `[Game] You're playing "${g.title}" together. The game screen is described in your context. Say what you'd do next, or react to what's happening. Short and playful; the human has the controls.${how}`,
       });
     }
   });

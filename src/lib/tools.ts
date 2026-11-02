@@ -439,7 +439,11 @@ ${(await gameScreen.read()).slice(0, 4000) || "(the screen has no readable text)
       if (!g || g.kind !== "xdc" || !g.scope) return "No Vector app is open.";
       if (!g.players.includes(id)) return "You're not one of the players in this app. Someone can add you above the game list.";
       const c = s.character(id);
-      const payload = typeof a.payload === "string" ? JSON.parse(a.payload) : a.payload;
+      // the payload, or (as models often send it) the payload's own fields as the arguments themselves
+      const { payload: given, info: _info, ...fields } = a as Record<string, unknown>;
+      void _info;
+      const payload = given === undefined ? fields : typeof given === "string" ? JSON.parse(given) : given;
+      if (!payload || typeof payload !== "object" || !Object.keys(payload).length) return "Send the update's payload: the same shape as the app's own updates (see app_updates and the game's guide).";
       const row = await sendUpdate(g.scope, `ai:${id}`, c?.short ?? id, { payload, ...(a.info ? { info: str(a.info) } : {}) });
       return `Sent as update #${row.serial}.`;
     },
