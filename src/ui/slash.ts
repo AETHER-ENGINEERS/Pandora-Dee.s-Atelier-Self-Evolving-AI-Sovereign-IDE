@@ -18,8 +18,8 @@ export type Command = { name: string; args?: string; help: string };
 
 export const COMMANDS: Command[] = [
   { name: "help", help: "List these commands" },
-  { name: "new", args: "[title]", help: "Start a new chat (this one is saved)" },
-  { name: "chats", help: "List saved chats" },
+  { name: "new", args: "[title]", help: "Start a new branch (this one is saved)" },
+  { name: "chats", help: "List the branches (saved chats)" },
   { name: "open", args: "<number>", help: "Switch to a saved chat from /chats" },
   { name: "rename", args: "<title>", help: "Rename this chat" },
   { name: "clear", help: "Clear this chat's messages" },

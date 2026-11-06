@@ -29,7 +29,7 @@ import { stopSpeaking, speak } from "../lib/voice.ts";
 import { MicButton } from "../ui/Mic.tsx";
 import { voiceFor } from "../lib/prefs.ts";
 import { isImage, type Attachment, type Message } from "../lib/room.ts";
-import { chatList, deleteChat, newChat, renameChat, switchChat, titleFrom } from "../lib/chats.ts";
+import { chatList, deleteChat, isUntitled, newChat, renameChat, switchChat, titleFrom } from "../lib/chats.ts";
 import { openMenu, openMenuAt, type MenuItem } from "../ui/ContextMenu.tsx";
 import { characterMenu, messageMenu } from "../ui/menus.ts";
 import { askUser } from "../ui/Ask.tsx";
@@ -57,9 +57,9 @@ export function chatMenu(): MenuItem[] {
   const list = chatList();
   const report = (why: string) => why && s.notice(why);
   return [
-    { label: "New chat", hint: "/new", run: () => void newChat().then(report) },
+    { label: "New branch", hint: "/new", run: () => void newChat().then(report) },
     { sep: true },
-    { heading: "Saved chats" },
+    { heading: "Branches" },
     ...list.slice(0, 40).map((c) => ({
       label: `${c.title}${c.count ? ` · ${c.count}` : ""}`,
       checked: c.id === s.chatId,
@@ -67,18 +67,18 @@ export function chatMenu(): MenuItem[] {
     })),
     { sep: true },
     {
-      label: "Rename this chat…",
+      label: "Rename this branch…",
       run: async () => {
         const cur = list.find((c) => c.id === s.chatId);
-        const t = await askText("Name this chat", cur?.title ?? "");
+        const t = await askText("Name this branch", cur?.title ?? "");
         if (t) renameChat(s.chatId, t);
       },
     },
     {
-      label: "Delete this chat…",
+      label: "Delete this branch…",
       danger: true,
       run: () =>
-        void askUser("Delete this chat?", "Its messages are removed from this computer. Journals and memories the characters wrote stay.", "Delete", "Keep it").then(
+        void askUser("Delete this branch?", "Its messages are removed from this computer. Journals and memories the characters wrote stay.", "Delete", "Keep it").then(
           (ok) => ok && void deleteChat(desk().chatId).then(report),
         ),
     },
@@ -141,7 +141,7 @@ export function RoomApp() {
   const noConnection = !s.model.connections.some((c) => c.enabled);
   const retryId = busy ? null : retryTarget(s.messages);
   const meta = s.chats.find((c) => c.id === s.chatId);
-  const title = meta && meta.title !== "New chat" ? meta.title : titleFrom(s.messages);
+  const title = meta && !isUntitled(meta.title) ? meta.title : titleFrom(s.messages);
   const hints = suggest(draft);
 
   useEffect(() => {
@@ -243,11 +243,11 @@ export function RoomApp() {
       }}
     >
       <div className="room-bar">
-        <button className="chat-title" onClick={(e) => openMenuAt(e.currentTarget, chatMenu())} data-tip="Saved chats: switch, start a new one, rename" aria-label={`Chat: ${title}. Saved chats`}>
+        <button className="chat-title" onClick={(e) => openMenuAt(e.currentTarget, chatMenu())} data-tip="Branches: switch, start a new one, rename" aria-label={`Chat: ${title}. Saved chats`}>
           <span className="t">{title}</span>
           <ChevronDown size={13} />
         </button>
-        <button className="icon-btn" data-tip="New chat (this one is saved)" aria-label="New chat" disabled={busy} onClick={() => void newChat().then((why) => why && desk().notice(why))}>
+        <button className="icon-btn" data-tip="New branch (this one is saved)" aria-label="New branch" disabled={busy} onClick={() => void newChat().then((why) => why && desk().notice(why))}>
           <Plus size={16} />
         </button>
         <span className="bar-sep" />

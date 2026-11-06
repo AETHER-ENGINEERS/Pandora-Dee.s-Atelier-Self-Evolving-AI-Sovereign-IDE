@@ -7,7 +7,10 @@ import { endOfChat, isRunning } from "./agent.ts";
 
 const DIR = ".pandora/chats";
 const fileOf = (id: string) => `${DIR}/${id}.json`;
-const UNTITLED = "New chat";
+// A new chat is a new branch (Pandora Dee Fae's Vault Tree): chats are branches, what grows from them are leaves.
+const UNTITLED = "New branch";
+/** Untitled, under either name ("New chat" is what older chats were saved as). */
+export const isUntitled = (t: string) => t === UNTITLED || t === "New chat";
 
 async function writeChat(meta: ChatMeta, messages: Message[]) {
   await fetch(`/api/vault/file?path=${encodeURIComponent(fileOf(meta.id))}`, { method: "PUT", body: JSON.stringify({ meta, messages }) });
@@ -40,7 +43,7 @@ export function currentChat(): ChatMeta {
   const meta = s.chats.find((c) => c.id === s.chatId) ?? { id: s.chatId, title: UNTITLED, created: Date.now(), updated: Date.now(), count: 0 };
   return {
     ...meta,
-    title: meta.title === UNTITLED ? titleFrom(s.messages) : meta.title,
+    title: isUntitled(meta.title) ? titleFrom(s.messages) : meta.title,
     count: s.messages.length,
     updated: s.messages[s.messages.length - 1]?.at ?? meta.updated,
   };
