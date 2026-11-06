@@ -121,12 +121,12 @@ test("backups drop secrets and get a free id", () => {
 
 import { scopedPrompt, isPass as passes } from "./room.ts";
 
-test("someone who isn't the locksmith never gets the locksmith's memory or journal", () => {
+test("someone else on a bridge never gets their person's memory or journal", () => {
   const files = { "SOUL.md": "# Dee\nI'm Dee.", "MEMORY.md": "- The locksmith's door code is 1234", "journal/2026-10-25.md": "Private day" };
   const p = scopedPrompt({ me: dee, files, via: "Discord", locksmithName: "Alex", who: "Sam", role: "public", now: new Date(2026, 9, 26) });
   assert.match(p, /I'm Dee/);
   assert.match(p, /notify_locksmith/);
-  assert.match(p, /Alex, your locksmith/);
+  assert.match(p, /alongside \{\{PERSON_NAME\}\}/);
   assert.doesNotMatch(p, /door code|Private day/);
 });
 

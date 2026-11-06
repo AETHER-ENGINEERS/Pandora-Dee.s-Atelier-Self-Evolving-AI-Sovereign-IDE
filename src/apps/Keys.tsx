@@ -14,7 +14,7 @@ export function KeysApp() {
   const names = Object.keys(s.env).sort();
   const save = (k: string, v: string) => desk().set({ env: { ...desk().env, [k]: v } });
 
-  if (!isKeyholder) return <div className="empty">Only the keyholder can see or change keys.</div>;
+  if (!isKeyholder) return <div className="empty">Only accounts with full access can see or change keys.</div>;
 
   return (
     <div className="section">

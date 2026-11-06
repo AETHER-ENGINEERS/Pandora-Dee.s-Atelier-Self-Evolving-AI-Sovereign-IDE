@@ -82,7 +82,7 @@ export async function notifyLocksmith(a: Record<string, unknown>, ctx: TurnCtx) 
   if (!msg) throw new Error("notify_locksmith needs a message.");
   const via = ctx.source === "desk" ? "desk" : ctx.source;
   await fileInInbox({ from: ctx.senderName || str(a.from), where: ctx.chatId ? (ctx.isGroup ? `channel ${ctx.chatId}` : "a DM") : "the desktop", via, text: msg, urgent: Boolean(a.urgent), note: "passed on" });
-  return "Passed on to your locksmith.";
+  return "Passed on.";
 }
 
 // ---------- vector ----------
@@ -96,8 +96,9 @@ export async function vectorTool(a: Record<string, unknown>, ctx: TurnCtx): Prom
   const here = ctx.source === "vector" ? ctx.chatId : undefined;
   const target = () => {
     const raw = str(a.to ?? a.chat_id ?? a.chat ?? "here");
-    const t = raw === "here" ? here : (raw === "locksmith" || raw === "owner") ? desk().bridges.vector.owner : raw;
-    if (!t) throw new Error('Say who to send to: an npub, a channel id, "locksmith", or "here".');
+    // "partner" (and Classic's "owner", and "locksmith") mean the person the character works with
+    const t = raw === "here" ? here : ["partner", "me", "locksmith", "owner"].includes(raw.toLowerCase()) ? desk().bridges.vector.owner : raw;
+    if (!t) throw new Error('Say who to send to: an npub, a channel id, "partner", or "here".');
     if (role === "public" && t !== here) throw new Error("In this chat you can only write to this chat.");
     return t;
   };
@@ -121,7 +122,7 @@ export async function vectorTool(a: Record<string, unknown>, ctx: TurnCtx): Prom
       await call("delete_message", { chat_id: target(), message_id: str(a.message_id) });
       return "Deleted.";
     case "send_file": {
-      if (role !== "locksmith") throw new Error("Only your locksmith can have files sent.");
+      if (role !== "locksmith") throw new Error("Only the person you work with can have files sent.");
       const to = target();
       const f = await readAnyFile(ctx.charId, str(a.path));
       if (f.bytes.length > 25 * 1048576) throw new Error("Files over 25 MB aren't sent.");
@@ -129,7 +130,7 @@ export async function vectorTool(a: Record<string, unknown>, ctx: TurnCtx): Prom
       return `Sent ${f.name}.`;
     }
     case "download": {
-      if (role !== "locksmith") throw new Error("Only your locksmith can have files downloaded.");
+      if (role !== "locksmith") throw new Error("Only the person you work with can have files downloaded.");
       const d = parseJson<{ base64?: string; name?: string; size?: number }>(await call("download_attachment", { message_id: str(a.message_id), index: Number(a.index) || 0 }), {});
       if (!d.base64) throw new Error("The download failed.");
       const day = new Date().toISOString().slice(0, 10);
@@ -200,7 +201,7 @@ export async function vectorTool(a: Record<string, unknown>, ctx: TurnCtx): Prom
       joinedApps.delete(str(a.topic));
       return await call("xdc_leave", { topic: str(a.topic) });
     case "raw":
-      if (role !== "locksmith") throw new Error("Only your locksmith can do that.");
+      if (role !== "locksmith") throw new Error("Only the person you work with can do that.");
       return clip(await call(str(a.tool), (a.args as Record<string, unknown>) ?? {}));
     default:
       throw new Error(`Unknown Vector action "${act}".`);
@@ -222,11 +223,11 @@ export async function discordTool(a: Record<string, unknown>, ctx: TurnCtx): Pro
   const where = (): Record<string, string> => {
     const to = str(a.to ?? a.chat_id ?? "here");
     if (to === "here" || to === here) {
-      if (!here) throw new Error('Say where: a channel id, a user id (for a DM), "locksmith", or "here".');
+      if (!here) throw new Error('Say where: a channel id, a user id (for a DM), "partner", or "here".');
       return { chat_id: here };
     }
     if (role === "public") throw new Error("In this chat you can only write to this chat.");
-    if (to === "locksmith" || to === "owner") return { user_id: desk().bridges.discord.owner };
+    if (["partner", "me", "locksmith", "owner"].includes(to.toLowerCase())) return { user_id: desk().bridges.discord.owner };
     if (a.user_id) return { user_id: str(a.user_id) };
     return { chat_id: to };
   };
@@ -254,13 +255,13 @@ export async function discordTool(a: Record<string, unknown>, ctx: TurnCtx): Pro
       await call("delete_message", { ...where(), message_id: str(a.message_id) });
       return "Deleted.";
     case "send_file": {
-      if (role !== "locksmith") throw new Error("Only your locksmith can have files sent.");
+      if (role !== "locksmith") throw new Error("Only the person you work with can have files sent.");
       const f = await readAnyFile(ctx.charId, str(a.path));
       await call("send_file_bytes", { ...where(), name: f.name, base64: bytesToB64(f.bytes) });
       return `Sent ${f.name}.`;
     }
     case "download": {
-      if (role !== "locksmith") throw new Error("Only your locksmith can have files downloaded.");
+      if (role !== "locksmith") throw new Error("Only the person you work with can have files downloaded.");
       const d = parseJson<{ base64?: string; name?: string }>(await call("download_attachment", { message_id: str(a.message_id), index: Number(a.index) || 0 }), {});
       if (!d.base64) throw new Error("The download failed.");
       const day = new Date().toISOString().slice(0, 10);

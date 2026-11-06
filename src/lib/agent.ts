@@ -1,5 +1,6 @@
 // Runs the room: who answers, in what order, through which connection, with which tools.
 
+import { relFor, withRel } from "./people.ts";
 import type { Character } from "./characters.ts";
 import { desk, type OutsideMail } from "./store.ts";
 import { credential, explainError, listModels, pickModel, scopeOf, streamOnce, type Connection, type Turn } from "./model.ts";
@@ -178,7 +179,9 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
     senderName: opts.replyTo?.name,
     loaded: new Set(),
   };
-  const sys = bridge && opts.scope !== "locksmith"
+  // the People layer: names for whoever the turn is with (the bridge's own person, or who's signed in here)
+  const rel = bridge ? relFor(s.bridges[bridge.source].owner, s.bridges[bridge.source].ownerName) : relFor(s.session ?? "", s.session ?? "");
+  const sys0 = bridge && opts.scope !== "locksmith"
     ? scopedPrompt({
         me,
         files: s.filesOf(me.id),
@@ -202,6 +205,7 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
     memoryFocus: await focusFor(me.id, history),
     around: catsNote(s.cats.list, s.cats.on),
   });
+  const sys = withRel(sys0, rel);
   const base: Turn[] = [
     { role: "system", content: sys },
     // a game turn reads only the last few lines, so the game (and its guide) isn't drowned out by the chat
@@ -213,7 +217,7 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
   }
   if (bridge) {
     // Attached to the message being answered, so it stays the last thing the model reads.
-    const note = `\n\n(Your plain-text answer is sent to this ${bridge.source === "vector" ? "Vector" : "Discord"} chat as a reply. Answer NO_REPLY to stay silent.${opts.scope === "locksmith" ? " This is your locksmith: you have every tool." : " Pass anything your locksmith should know on with notify_locksmith."})`;
+    const note = withRel(`\n\n(Your plain-text answer is sent to this ${bridge.source === "vector" ? "Vector" : "Discord"} chat as a reply. Answer NO_REPLY to stay silent.${opts.scope === "locksmith" ? " This is {{PERSON_NAME}}: you have every tool." : " Pass anything {{PERSON_NAME}} should know on with notify_locksmith."})`, rel);
     const lastUser = [...base].reverse().find((t) => t.role === "user");
     if (lastUser && lastUser.role === "user") lastUser.content += note;
     else base.push({ role: "user", content: note.trim() });
@@ -248,7 +252,7 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
         let reasoning = "";
         let result;
         try {
-          result = await streamOnce(conn, model, keyFor(conn), turns, step < ai.maxSteps ? tools : [], ai.temperature, (piece) => {
+          result = await streamOnce(conn, model, keyFor(conn), turns, step < ai.maxSteps ? tools.map((t) => ({ ...t, description: withRel(t.description, rel) })) : [], ai.temperature, (piece) => {
             streamed += piece;
             const parts = splitThink(shown + streamed);
             setBusy(me.id, parts.text.trim() ? "typing" : "thinking");
@@ -524,7 +528,7 @@ export async function heartbeat(charId: string, instruction: string): Promise<bo
 export async function letThemTalk() {
   const s = desk();
   if (s.flood.shut) {
-    s.notice("The flood gate is shut, so the characters are resting. The keyholder can reopen it in Sentry.");
+    s.notice("The flood gate is shut, so the characters are resting. An account with full access can reopen it in Sentry.");
     return;
   }
   if (s.toddler) return s.notice("The characters are resting: toddler mode is on.");

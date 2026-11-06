@@ -1,4 +1,8 @@
 import { viewH, viewW } from "../lib/zoom.ts";
+import { dossiers, PEOPLE_DIR } from "../lib/people.ts";
+import { dossierTemplate, REL_DEFAULT } from "../lib/peopleCore.ts";
+import { freePath, loadNotes, safeTitle, useNotes, writeNote } from "../lib/notes.ts";
+import { openNote } from "../ui/noteNav.ts";
 import { memoryApi, pageMemory, unloadMinimized, type ServerMemory } from "../lib/memory.ts";
 import { EngineVoicePicker, ListeningSettings, VoiceEnginesEditor } from "../ui/VoiceEngines.tsx";
 import { remoteFor } from "../lib/prefs.ts";
@@ -9,7 +13,7 @@ import { CAT_COATS, desk, uid, useDesk, type Account, type Cat } from "../lib/st
 import { credential, listModels, explainError, pickModel, PRESETS, sampleRequest, scopeOf, SCOPE_LABEL, type Connection } from "../lib/model.ts";
 import { AicordSignIn } from "../ui/AicordSignIn.tsx";
 import { ViaPicker } from "../ui/Via.tsx";
-import { askUser } from "../ui/Ask.tsx";
+import { askText, askUser } from "../ui/Ask.tsx";
 import { copyText } from "../lib/clipboard.ts";
 import { allowed, FEATURES, MODES, type Feature, type Mode } from "../lib/privacy.ts";
 import { canSeal, matches, seal, shrinkPicture } from "../lib/secure.ts";
@@ -525,7 +529,7 @@ function PrivacySection() {
         Privacy <Sensitive />
       </h2>
       <p className="lead small">Everything that could leave this computer starts off. Each feature asks you to read what it shares before it can be turned on. The bar at the top always shows “Local only” or that something is going out.</p>
-      {!keyholder ? <div className="note warn small">Only the keyholder can change privacy.</div> : null}
+      {!keyholder ? <div className="note warn small">Only accounts with full access can change privacy.</div> : null}
       <fieldset disabled={!keyholder} style={{ border: 0, padding: 0, margin: 0 }}>
         <h4>What may leave this computer</h4>
         <div style={{ display: "grid", gap: 6, marginBottom: 14 }}>
@@ -675,14 +679,14 @@ function AccountsSection() {
       <FromOtherDevices />
       {keyholder ? (
         <>
-          <h4 style={{ marginTop: 16 }}>{first ? "Create the keyholder account" : "Add an account"}</h4>
+          <h4 style={{ marginTop: 16 }}>{first ? "Create the first account (full access)" : "Add an account"}</h4>
           <div className="row">
             <input className="input" style={{ maxWidth: 200 }} placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
             {!first ? (
               <select className="select" style={{ width: 150 }} value={role} onChange={(e) => setRole(e.target.value as Role)}>
                 <option value="resident">Resident</option>
                 <option value="general">Guest</option>
-                <option value="keyholder">Keyholder</option>
+                <option value="keyholder">Full access</option>
               </select>
             ) : null}
             <input className="input" style={{ maxWidth: 200 }} type="password" placeholder="Password (optional)" value={pass} onChange={(e) => setPass(e.target.value)} />
@@ -1342,6 +1346,60 @@ function ConversationSection() {
           Export JSONL
         </button>
         {status ? <span className="small muted">{status}</span> : null}
+      </div>
+      <PeopleSettings />
+    </>
+  );
+}
+
+/** The People layer: names first; these labels only when there's no name to use (peopleCore.ts). */
+function PeopleSettings() {
+  const p = useDesk((s) => s.people);
+  const session = useDesk((s) => s.session);
+  const texts = useNotes((s) => s.texts);
+  const set = (patch: Partial<typeof p>) => desk().set({ people: { ...desk().people, ...patch } });
+  const list = dossiers();
+  void texts;
+  const make = async () => {
+    const name = await askText("Whose dossier?", session ?? "", { body: "Their name, as the characters should say it. Their handles (npub, Discord id) can be added in the note.", yes: "Make it" });
+    if (!name?.trim()) return;
+    await loadNotes();
+    const path = freePath(PEOPLE_DIR, safeTitle(name.trim()));
+    await writeNote(path, dossierTemplate(name.trim(), p.personLabel));
+    openNote({ target: path });
+  };
+  return (
+    <>
+      <h4 style={{ marginTop: 18 }}>People</h4>
+      <p className="small muted">
+        The characters call people by their names. A person's dossier (a note in Vault › {PEOPLE_DIR}) holds their name, the handles they're known by and
+        their label. These labels are only for when there's no name to use.
+      </p>
+      <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+        <label className="field" style={{ maxWidth: 200 }}>
+          <span>A person, by default</span>
+          <input className="input" value={p.personLabel} placeholder={REL_DEFAULT.personLabel} onChange={(e) => set({ personLabel: e.target.value })} />
+        </label>
+        <label className="field" style={{ maxWidth: 280 }}>
+          <span>Someone else</span>
+          <input className="input" value={p.peerLabel} placeholder={REL_DEFAULT.peerLabel} onChange={(e) => set({ peerLabel: e.target.value })} />
+        </label>
+        <label className="field" style={{ maxWidth: 200 }}>
+          <span>The household</span>
+          <input className="input" value={p.companyLabel} placeholder={REL_DEFAULT.companyLabel} onChange={(e) => set({ companyLabel: e.target.value })} />
+        </label>
+      </div>
+      <div className="row" style={{ gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <button className="btn small" onClick={() => void make()}>
+          <Plus size={13} /> A dossier for someone
+        </button>
+        {list.length ? (
+          <span className="small faint">
+            {list.length} dossier{list.length === 1 ? "" : "s"}: {list.map((d) => `${d.name}${d.label ? ` (${d.label})` : ""}`).join(", ")}
+          </span>
+        ) : (
+          <span className="small faint">No dossiers yet.</span>
+        )}
       </div>
     </>
   );

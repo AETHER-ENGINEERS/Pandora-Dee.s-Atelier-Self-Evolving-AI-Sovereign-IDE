@@ -179,7 +179,7 @@ const EMBEDDINGS: Tool = {
     if (action === "status") {
       const s = await memoryStatus(id);
       return (
-        `Vector memory is ${vectors ? "on" : "off (keyword search only; your locksmith can switch it on in Cast → your AI → Memory)"}. Embedding model: ${s.model || s.want}${s.dim ? ` (${s.dim} numbers per text)` : " (nothing embedded yet)"} via ${s.via}.\n` +
+        `Vector memory is ${vectors ? "on" : "off (keyword search only; it can be switched on in Characters → your profile → memory)"}. Embedding model: ${s.model || s.want}${s.dim ? ` (${s.dim} numbers per text)` : " (nothing embedded yet)"} via ${s.via}.\n` +
         (s.collections.length ? s.collections.map((c) => `- ${c.name}: ${c.chunks} texts, ${c.embedded} embedded`).join("\n") : "The index is empty.") +
         (s.error ? `\nLast problem: ${s.error}` : "")
       );
@@ -490,7 +490,7 @@ const HTTP: Tool = {
 const VECTOR_TOOL: Tool = {
   name: "vector",
   description:
-    'Vector messenger, where you are a bot account. Message people and channels, reply, react, show typing, send or download files, read chats, see profiles, manage communities (join with an invite link, accept invites, leave, invite, moderate) and play Mini Apps (xdc_apps → xdc_join → xdc_read / xdc_send → xdc_leave). "to" takes an npub, a channel id, "locksmith", or "here" (the chat you are answering). raw calls any vector-agent tool (locksmith only).',
+    'Vector messenger, where you are a bot account. Message people and channels, reply, react, show typing, send or download files, read chats, see profiles, manage communities (join with an invite link, accept invites, leave, invite, moderate) and play Mini Apps (xdc_apps → xdc_join → xdc_read / xdc_send → xdc_leave). "to" takes an npub, a channel id, "partner" ({{PERSON_NAME}}), or "here" (the chat you are answering). raw calls any vector-agent tool (locksmith only).',
   parameters: {
     type: "object",
     properties: {
@@ -521,7 +521,7 @@ const VECTOR_TOOL: Tool = {
 const DISCORD_TOOL: Tool = {
   name: "discord",
   description:
-    'Discord, where you are a bot account. Message people (DM by user id) and channels, reply, react, show typing, send or download files, read channels, look people up, list servers and channels, and (for admins) kick, ban, unban or leave servers. A plain answer in a Discord chat is already sent as a reply: use this for anything else. "to" takes a channel id, "locksmith" or "here". Messages never ping @everyone, @here or roles.',
+    'Discord, where you are a bot account. Message people (DM by user id) and channels, reply, react, show typing, send or download files, read channels, look people up, list servers and channels, and (for admins) kick, ban, unban or leave servers. A plain answer in a Discord chat is already sent as a reply: use this for anything else. "to" takes a channel id, "partner" ({{PERSON_NAME}}) or "here". Messages never ping @everyone, @here or roles.',
   parameters: {
     type: "object",
     properties: {
@@ -567,7 +567,7 @@ const DISCORD_HISTORY: Tool = {
 
 const NOTIFY: Tool = {
   name: "notify_locksmith",
-  description: "Secretary: pass a message on to your locksmith (the person who holds the keys to your tools). It goes into their inbox and, depending on their setting, straight to them on Vector or Discord. Use it whenever someone asks you to tell them something, or something needs their attention.",
+  description: "Pass a message on to {{PERSON_NAME}}. It goes into their inbox and, depending on their setting, straight to them on Vector or Discord. Use it whenever someone asks you to tell them something, or something needs their attention.",
   parameters: obj({ message: { type: "string", description: "A clear summary: who, and what they want" }, urgent: { type: "boolean", description: "Only when it truly is" } }, ["message"]),
   run: async (_id, a, ctx) => notifyLocksmith(a, ctx),
 };
@@ -762,7 +762,7 @@ function notePathForWrite(raw: string): string {
 const NOTES_TOOLS: Tool[] = [
   {
     name: "note_read",
-    description: "Read one of your locksmith's notes (the shared vault), by path or name. Long notes come in parts: use offset to read on.",
+    description: "Read a note in the shared vault ({{PERSON_NAME}}'s and yours), by path or name. Long notes come in parts: use offset to read on.",
     parameters: obj({ path: { type: "string", description: "e.g. Projects/Plan.md, or just Plan" }, offset: { type: "number", description: "Character to start from (for long notes)" } }, ["path"]),
     run: async (_id, a) => {
       await loadNotes();
@@ -815,7 +815,7 @@ const NOTES_TOOLS: Tool[] = [
   },
   {
     name: "notes_search",
-    description: 'Search your locksmith\'s notes. Ranked by name, then how often the words appear, then how many notes link there. Search "#tag" for a tag. Returns paths with a snippet.',
+    description: 'Search the shared notes. Ranked by name, then how often the words appear, then how many notes link there. Search "#tag" for a tag. Returns paths with a snippet.',
     parameters: obj({ query: { type: "string", description: "Words, or #tag" }, limit: { type: "number", description: "Most results (default 10)" } }, ["query"]),
     run: async (_id, a) => {
       await loadNotes();
@@ -843,7 +843,7 @@ const NOTES_TOOLS: Tool[] = [
   },
   {
     name: "open_note",
-    description: "Show a note to your locksmith: it opens in their Notes window.",
+    description: "Show a note to {{PERSON_NAME}}: it opens in their Notes window.",
     parameters: obj({ path: { type: "string", description: "The note" } }, ["path"]),
     run: async (_id, a) => {
       await loadNotes();
@@ -901,7 +901,7 @@ const CATS_TOOL: Tool = {
 const MUSIC_TOOL: Tool = {
   name: "music",
   description:
-    "The desktop's music player. now: what's playing; play / pause / next / previous; skip_album / skip_artist: past the rest of this album or artist in the list; search: songs in the library (title, artist, album, genre); play_song: play matching songs (query); queue: add matching songs after the current one; stations: saved radio stations; play_station: a saved station by name. Only when your locksmith asks, or clearly would like it.",
+    "The desktop's music player. now: what's playing; play / pause / next / previous; skip_album / skip_artist: past the rest of this album or artist in the list; search: songs in the library (title, artist, album, genre); play_song: play matching songs (query); queue: add matching songs after the current one; stations: saved radio stations; play_station: a saved station by name. Only when {{PERSON_NAME}} asks, or clearly would like it.",
   parameters: obj(
     {
       action: { type: "string", description: "now, play, pause, next, previous, skip_album, skip_artist, search, play_song, queue, stations or play_station" },
@@ -961,7 +961,7 @@ const SIZES: Record<string, [number, number]> = { square: [1024, 1024], portrait
 const MAKE_PICTURE: Tool = {
   name: "make_picture",
   description:
-    "Make a picture with the desktop's picture engine. Describe it fully (subject, setting, light, style). It's saved in the vault; show it in your reply with the Markdown the result gives you. Only when your locksmith asks, or clearly would like one.",
+    "Make a picture with the desktop's picture engine. Describe it fully (subject, setting, light, style). It's saved in the vault; show it in your reply with the Markdown the result gives you. Only when {{PERSON_NAME}} asks, or clearly would like one.",
   parameters: obj(
     {
       prompt: { type: "string", description: "What the picture shows, in detail" },
@@ -984,7 +984,7 @@ const MAKE_PICTURE: Tool = {
 const MAKE_SONG: Tool = {
   name: "make_song",
   description:
-    "Make a song with the desktop's song engine. Give a title, a style line (genre, mood, instruments, vocals) and lyrics with [Verse] / [Chorus] / [Bridge] tags. It takes a few minutes and runs in the background; it lands in the music library and Music → Make a song. Only when your locksmith asks.",
+    "Make a song with the desktop's song engine. Give a title, a style line (genre, mood, instruments, vocals) and lyrics with [Verse] / [Chorus] / [Bridge] tags. It takes a few minutes and runs in the background; it lands in the music library and Music → Make a song. Only when {{PERSON_NAME}} asks.",
   parameters: obj(
     {
       title: { type: "string", description: "The song's title" },

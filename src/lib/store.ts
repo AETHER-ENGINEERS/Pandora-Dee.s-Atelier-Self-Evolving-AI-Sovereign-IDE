@@ -1,4 +1,5 @@
 import { viewH, viewW } from "./zoom.ts";
+import { REL_DEFAULT, type RelLabels } from "./peopleCore.ts";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { BUILT_IN, DEFAULT_ROOM, type Character, type Look } from "./characters.ts";
@@ -517,6 +518,8 @@ export type State = {
   cats: { on: boolean; size: number; list: Cat[]; follow: boolean };
   /** Memory on this device (Settings → Memory; off until switched on). */
   memory: { unloadMinimizedMin: number; freeHiddenMin: number };
+  /** How the characters refer to people when there's no name to use (the People layer, lib/peopleCore.ts). */
+  people: RelLabels;
   /** Where each character stands in the scene, as shares of the screen (feet position). */
   spots: Record<string, { x: number; y: number }>;
   web: WebPrefs;
@@ -724,6 +727,7 @@ const INITIAL: State = {
   touch: { edgeSwipe: true, doubleTapScene: true, longPress: true },
   cats: CATS_DEFAULT,
   memory: { unloadMinimizedMin: 0, freeHiddenMin: 0 },
+  people: { ...REL_DEFAULT },
   spots: {},
   web: { search: "auto", searx: "" },
   net: { via: "desktop" },
@@ -885,10 +889,10 @@ export const useDesk = create<Store>()(
       },
       weigh: (text, source, role) => {
         const s = get();
-        if (role !== "keyholder" && !s.wake[source].includes(role)) return "Your account can't wake the characters from here. The keyholder can change that in Sentry.";
+        if (role !== "keyholder" && !s.wake[source].includes(role)) return "Your account can't wake the characters from here. An account with full access can change that in Sentry.";
         if (s.flood.shut) {
           if (role === "keyholder") return "";
-          return "The flood gate is shut, so the characters aren't reading or acting. The keyholder can reopen it in Sentry.";
+          return "The flood gate is shut, so the characters aren't reading or acting. An account with full access can reopen it in Sentry.";
         }
         if (!s.flood.armed) return "";
         const j = judge(s.flood.recent, text, now());
@@ -896,7 +900,7 @@ export const useDesk = create<Store>()(
           set({ flood: { ...s.flood, shut: true, reason: j.trip, at: now(), recent: [] } });
           s.log(`Flood gate shut: ${j.trip}`);
           s.openApp("sentry");
-          return `Flood gate shut: ${j.trip} The characters stopped and general access is off. The keyholder can still talk with them, and can reopen the gate in Sentry.`;
+          return `Flood gate shut: ${j.trip} The characters stopped and general access is off. Accounts with full access can still talk with them, and can reopen the gate in Sentry.`;
         }
         set({ flood: { ...s.flood, recent: j.recent } });
         return "";
@@ -911,7 +915,7 @@ export const useDesk = create<Store>()(
         })),
       reopenGate: () => {
         set((s) => ({ flood: { ...s.flood, shut: false, reason: "", recent: [] } }));
-        get().log("Flood gate reopened by the keyholder.");
+        get().log(`Flood gate reopened${get().session ? ` by ${get().session}` : ""}.`);
       },
       log: (line) => set((s) => ({ sentryLog: [`${new Date().toLocaleString()} · ${line}`, ...s.sentryLog].slice(0, 200) })),
       say: (text) => {
@@ -948,6 +952,7 @@ export const useDesk = create<Store>()(
           model: { ...MODEL_DEFAULT, ...(p.model ?? {}) },
           cats: { ...CATS_DEFAULT, ...(p.cats ?? {}) },
           memory: { unloadMinimizedMin: 0, freeHiddenMin: 0, ...(p.memory ?? {}) },
+          people: { ...REL_DEFAULT, ...(p.people ?? {}) },
           privacy: { ...PRIVACY_DEFAULT, ...(p.privacy ?? {}), streamer: { ...PRIVACY_DEFAULT.streamer, ...(p.privacy?.streamer ?? {}) } },
           bridges: {
             discord: { ...BRIDGE_DEFAULT("discord"), ...(p.bridges?.discord ?? {}) },

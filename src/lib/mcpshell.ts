@@ -75,7 +75,7 @@ export async function mcpCommand(argv: string[], charId: string): Promise<{ out:
       const j = readHers(charId);
       if (!(name in j.mcpServers!)) {
         const shared = desk().mcp.some((m) => !m.owner && m.name === name);
-        return ok(shared ? `mcp: ${name} is one of the desktop's shared servers; the keyholder changes those in Connections.` : `mcp: no server called ${name} in your mcp.json`, 1);
+        return ok(shared ? `mcp: ${name} is one of the desktop's shared servers; they're changed in Connections, by an account with full access.` : `mcp: no server called ${name} in your mcp.json`, 1);
       }
       delete j.mcpServers![name];
       writeHers(charId, j);

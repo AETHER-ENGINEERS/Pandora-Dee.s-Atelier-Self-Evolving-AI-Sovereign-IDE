@@ -8,7 +8,7 @@ import { RiskDialog, Seg, Sensitive } from "../ui/common.tsx";
 import type { Source } from "../lib/room.ts";
 
 const ROLES: { id: Role; label: string }[] = [
-  { id: "keyholder", label: "Keyholder" },
+  { id: "keyholder", label: "Full access" },
   { id: "resident", label: "Residents" },
   { id: "general", label: "Everyone else" },
 ];
@@ -30,7 +30,7 @@ export function SentryApp() {
       <h2>Flood gate</h2>
       <p className="lead small">
         Paces what reaches the characters so their effort (and your tokens) isn't spent answering everything at once. A burst of messages, the same message again and again, or one
-        huge paste (often just someone sharing enthusiastically) shuts the gate: the characters rest, and only the keyholder can wake them until the keyholder reopens it.
+        huge paste (often just someone sharing enthusiastically) shuts the gate: the characters rest, and only accounts with full access can wake them, until one of them reopens it.
       </p>
       <div className="row" style={{ marginBottom: 10 }}>
         {s.flood.shut ? <span className="pill bad">Shut</span> : s.flood.armed ? <span className="pill good">On guard</span> : <span className="pill warn">Off</span>}
@@ -45,7 +45,7 @@ export function SentryApp() {
       <label className="check">
         <input type="checkbox" checked={s.flood.armed} disabled={!keyholder} onChange={(e) => desk().set({ flood: { ...s.flood, armed: e.target.checked } })} />
         <span>
-          Watch for floods (recommended). It shuts on {FLOOD_RULES.join("; ")}.{!keyholder ? " Only the keyholder can change this." : ""}
+          Watch for floods (recommended). It shuts on {FLOOD_RULES.join("; ")}.{!keyholder ? " Only accounts with full access can change this." : ""}
         </span>
       </label>
       <h4 style={{ marginTop: 16 }}>Who can wake the characters</h4>

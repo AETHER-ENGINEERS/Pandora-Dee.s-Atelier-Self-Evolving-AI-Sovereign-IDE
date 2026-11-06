@@ -179,7 +179,7 @@ function BridgePanel({ id }: { id: BridgeId }) {
       <div className="divider" />
       <h4>People</h4>
       <label className="field">
-        <span>Your own {idLabel}: you're their locksmith, holding the keys to every tool</span>
+        <span>Your own {idLabel}: the characters know you here, and every tool is yours to use through them</span>
         <input className="input mono" value={b.owner} onChange={(e) => patch({ owner: e.target.value.trim() })} />
       </label>
       <label className="field">
@@ -271,7 +271,7 @@ function BridgePanel({ id }: { id: BridgeId }) {
       )}
 
       <div className="divider" />
-      <h4>Secretary</h4>
+      <h4>Messages for you</h4>
       <label className="field">
         <span>Messages for you</span>
         <Seg
