@@ -119,6 +119,45 @@ function featureFor(c: Connection): Feature | null {
   return scope === "device" ? null : scope === "network" ? "network-models" : "online-models";
 }
 
+/** The heart's keeper (server/heart.mjs): the characters keep running while the desktop on this computer is closed. */
+function KeepRunning() {
+  const [st, setSt] = useState<{ keep: boolean; keeper: boolean; canChange: boolean } | null>(null);
+  const [err, setErr] = useState("");
+  const load = () =>
+    fetch("/api/heart/config")
+      .then((r) => r.json())
+      .then(setSt)
+      .catch(() => setSt(null));
+  useEffect(() => {
+    void load();
+    const t = window.setInterval(() => void load(), 15_000);
+    return () => window.clearInterval(t);
+  }, []);
+  if (!st) return null;
+  const toggle = async (keep: boolean) => {
+    setErr("");
+    const r = await fetch("/api/heart/config", { method: "POST", body: JSON.stringify({ keep }) });
+    if (!r.ok) setErr(((await r.json().catch(() => ({}))) as { error?: string }).error ?? `The desktop answered ${r.status}.`);
+    void load();
+  };
+  return (
+    <>
+      <h4 style={{ marginTop: 14 }}>Keep them running</h4>
+      <label className="check">
+        <input type="checkbox" checked={st.keep} disabled={!st.canChange} onChange={(e) => void toggle(e.target.checked)} />
+        <span>When the desktop on this computer is closed, keep the characters going: their heartbeats, Vector and Discord, and the inbound API</span>
+      </label>
+      <p className="small faint">
+        A minute after the desktop closes, this computer opens it again out of sight, with everything as you left it, and the characters carry on. When you open the desktop, it hands back what happened and steps aside. The
+        copy it starts from is kept sealed on this computer. With accounts, use "Always remember" so it can open.{" "}
+        {st.keep ? (st.keeper ? "Running now, out of sight." : "Ready.") : ""}
+      </p>
+      {!st.canChange ? <p className="note small">This is set on the desktop's own computer.</p> : null}
+      {err ? <p className="small" style={{ color: "var(--warn)" }}>{err}</p> : null}
+    </>
+  );
+}
+
 function AiSection() {
   const s = useDesk();
   const m = s.model;
@@ -1312,6 +1351,8 @@ function ConversationSection() {
           <input value={c.compactModel} placeholder="e.g. qwen3:4b" onChange={(e) => set({ compactModel: e.target.value })} />
         </label>
       ) : null}
+
+      <KeepRunning />
 
       <h4 style={{ marginTop: 14 }}>When a chat ends</h4>
       <p className="small faint">A chat ends when you start a new one or switch to another. This runs in the background and uses the AI connection.</p>

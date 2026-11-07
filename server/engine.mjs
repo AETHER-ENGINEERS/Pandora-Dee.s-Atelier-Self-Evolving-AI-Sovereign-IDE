@@ -817,5 +817,6 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
   /** For memory.mjs: running or not, how many are watching, and when it was last used. */
   const activity = () => ({ running: Boolean(ctx), viewers: clients.size + sockets.size, lastUse });
 
-  return { cmd, stream, attachSocket, status, installedEngines, downloaded, forgetLast, close, restart, hold, activity };
+  // pick: which Chromium-family browser this computer has (the heart's keeper runs the desktop in it, headless)
+  return { cmd, stream, attachSocket, status, installedEngines, downloaded, forgetLast, close, restart, hold, activity, pick };
 }

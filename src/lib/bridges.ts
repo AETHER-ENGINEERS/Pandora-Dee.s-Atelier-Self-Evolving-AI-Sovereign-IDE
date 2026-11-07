@@ -7,6 +7,7 @@ import { parseJson } from "./mcp.ts";
 import { bridgeRole, receive, wakeForApp, type BridgeIO, type Incoming } from "./agent.ts";
 import { allowed } from "./privacy.ts";
 import { fileInInbox, joinedApps } from "./messengers.ts";
+import { holdsHeart } from "./heart.ts";
 
 const timers = new Map<BridgeId, number>();
 const polling = new Set<BridgeId>();
@@ -113,7 +114,8 @@ async function vectorEvents() {
 }
 
 async function pollOnce(id: BridgeId) {
-  if (polling.has(id)) return;
+  // one page answers for everyone: the one holding the heart (lib/heart.ts)
+  if (polling.has(id) || !holdsHeart()) return;
   const c = links.client(`bridge:${id}`);
   if (!c) return;
   if (!allowed(desk().privacy, "bridges")) {

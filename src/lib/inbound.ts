@@ -4,6 +4,7 @@ import { desk } from "./store.ts";
 import { allowed } from "./privacy.ts";
 import { isRunning, outsideInbox, replyAsOutside, say, speakAs } from "./agent.ts";
 import { chatList, currentChat, loadChat } from "./chats.ts";
+import { holdsHeart } from "./heart.ts";
 
 type Job = { id: string; route: string; params: Record<string, string> };
 
@@ -116,6 +117,11 @@ export async function applyInbound() {
     void (async () => {
       while (wanted && desk().api.on) {
         try {
+          // one page answers: the one holding the heart (lib/heart.ts)
+          if (!holdsHeart()) {
+            await new Promise((x) => setTimeout(x, 3000));
+            continue;
+          }
           const r = await fetch("/api/inbound/next");
           const job = (await r.json()) as Job & { idle?: boolean; off?: boolean };
           // the desktop's server restarted (Vite does, when a server file changes): set the API up there again

@@ -76,6 +76,9 @@ export function createResidentKeys({ dataDir, master }) {
   };
 
   return {
+    /** Seal and open anything else that holds keys (the heart's copy of the desktop) under the same master key. */
+    seal: (obj) => seal(masterKey(), obj),
+    open: (text) => unseal(masterKey(), text),
     /** Every character's key names (no values). */
     names() {
       if (!fs.existsSync(dir())) return {};

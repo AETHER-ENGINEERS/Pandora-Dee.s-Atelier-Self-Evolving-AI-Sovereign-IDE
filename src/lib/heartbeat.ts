@@ -5,6 +5,7 @@
 
 import { desk } from "./store.ts";
 import { heartbeat as beat } from "./agent.ts";
+import { holdsHeart } from "./heart.ts";
 
 export type Heartbeat = { on: boolean; everyMin: number; from: string; to: string; prompt: string };
 export const HEARTBEAT_DEFAULT: Heartbeat = { on: false, everyMin: 30, from: "08:00", to: "22:00", prompt: "" };
@@ -42,7 +43,7 @@ export function startHeartbeat() {
 
 async function tick() {
   const s = desk();
-  if (s.toddler || s.flood.shut || (s.accounts.length && !s.session)) return;
+  if (s.toddler || s.flood.shut || (s.accounts.length && !s.session) || !holdsHeart()) return;
   for (const c of s.allCharacters()) {
     const hb = s.charPrefs[c.id]?.heartbeat;
     if (!hb?.on || !within(hb.from, hb.to)) continue;

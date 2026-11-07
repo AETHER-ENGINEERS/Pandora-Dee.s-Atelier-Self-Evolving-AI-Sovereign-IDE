@@ -23,6 +23,7 @@ import { createUngoogled, DOWNLOADS } from "./ungoogled.mjs";
 import { createVecMem } from "./vecmem.mjs";
 import { createMcpStdio } from "./mcpstdio.mjs";
 import { createResidentKeys } from "./residentKeys.mjs";
+import { createHeart } from "./heart.mjs";
 import { createTheater, PIECE_MAX } from "./theater.mjs";
 import { createPairs, pairedCors } from "./pairs.mjs";
 import { acceptSocket } from "./wsframes.mjs";
@@ -172,6 +173,25 @@ export function deskServer() {
   };
   const stdioPrint = (b) => createHash("sha256").update(JSON.stringify([String(b.command || ""), (b.args ?? []).map(String), String(b.cwd || ""), Object.entries(b.env ?? {}).map(([k, v]) => [k, String(v)]).sort()])).digest("hex").slice(0, 32);
   const engine = createEngine({ dataDir: () => dataDir, getChoice: () => readConfig().browserEngine, deskPorts: () => [...deskPorts] });
+  // the heart (heart.mjs): one page does the background work; with "keep them running" on, the keeper opens the
+  // desktop headless, in its own profile, while the desktop on this computer is closed
+  const heart = createHeart({
+    dataDir: () => dataDir,
+    seal: (o) => residentKeys.seal(o),
+    open: (s) => residentKeys.open(s),
+    launch: async (url) => {
+      const eng = engine.pick();
+      if (!eng) throw new Error("no Chromium-family browser on this computer (Edge, Chrome, Brave or Chromium)");
+      const { chromium } = await import("playwright-core");
+      const profile = path.join(dataDir, "heart", "profile");
+      fs.mkdirSync(profile, { recursive: true });
+      const ctx = await chromium.launchPersistentContext(profile, { executablePath: eng.path, headless: true, chromiumSandbox: true, args: ["--no-first-run", "--no-default-browser-check"] });
+      const page = ctx.pages()[0] ?? (await ctx.newPage());
+      await page.goto(url);
+      return { close: () => ctx.close() };
+    },
+  });
+  setInterval(() => dataDir && void heart.tick(), 10_000).unref?.();
   // memory on this computer: what's in use, the browser engine sleeping when idle, regular clean-ups (see memory.mjs)
   const memory = createMemory({ engine, readConfig, writeConfig });
   const beats = new Map(); // character heartbeats: when each was last taken (account|character → time)
@@ -786,6 +806,28 @@ export function deskServer() {
         }
       } catch (e) {
         return send(res, e?.status ?? 400, { error: e instanceof Error ? e.message : String(e) });
+      }
+    }
+    // the heart (heart.mjs): which page does the background work, and the keeper's copy of the desktop
+    if (parts[0] === "heart") {
+      try {
+        const here = onThisPc(req);
+        if (parts[1] === "beat" && m === "POST") {
+          const b = JSON.parse((await readBody(req, 10_000)).toString("utf8") || "{}");
+          return send(res, 200, heart.beat(String(b.page || ""), { onPc: here, keeper: Boolean(b.keeper), port: req.socket.localPort }));
+        }
+        if (parts[1] === "config" && m === "GET") return send(res, 200, { ...heart.status(), canChange: here });
+        if (!here) return send(res, 403, { error: "Keeping them running is set up on the desktop's own computer." });
+        if (parts[1] === "config" && m === "POST") return send(res, 200, heart.setConfig(JSON.parse((await readBody(req, 10_000)).toString("utf8") || "{}")));
+        if (parts[1] === "state" && m === "GET") return send(res, 200, await heart.get({ forKeeper: url.searchParams.get("keeper") === "1", since: Number(url.searchParams.get("since")) || 0 }));
+        // PUT from the page, POST from sendBeacon as the page closes
+        if (parts[1] === "state" && (m === "PUT" || m === "POST")) {
+          const b = JSON.parse((await readBody(req, 200_000_000)).toString("utf8") || "{}");
+          return send(res, 200, heart.put(String(b.page || ""), String(b.blob ?? ""), Boolean(b.final)));
+        }
+        return send(res, 404, { error: "Not found" });
+      } catch (e) {
+        return send(res, e.status || 500, { error: e.message });
       }
     }
     // heartbeats: each character's beat goes to the first device that asks for it (several can be open at once)
