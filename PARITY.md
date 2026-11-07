@@ -153,6 +153,12 @@ an enhanced build adds is **off until you turn it on** in that app's Config, so 
 behaves like the original it is built from. They are built from the upstream sources with patches and a script
 kept outside this repo (a separate `classic-enhanced` folder: `build.sh --install`, patches in `patches/`).
 
+**Pandora Dee 2.10.1** and **Jade Vault 2.25.0-enhanced** are the newest, and the defaults. They're built from the
+AETHER-ENGINEERS forks' main branches (`scripts/build-web.sh`, then `dist/pandora-dee.html` and `dist/jade-vault.html`).
+Both add the People layer (names, not ranks), the Vault Tree (a new chat is a new branch), the context guard's
+"exceeded max context length by N tokens" fix and the Storybook (Config → Memory, off until switched on). Pandora
+2.10.1 also starts new installs from the clean stock SOUL; Jade 2.25.0-enhanced carries Lucky's 2.23.0–2.25.0.
+
 **Pandora Dee 2.9.9.2-jv2.22.1-enhanced** is the same build carried forward to Jade Vault 2.22.1: Jade's 2.21–2.22.1
 additions are in (the onnx tool sits under the local-models switch with look and litert; the usb tool has its own
 switch; both start off), while Pandora keeps her own way of saving settings in IndexedDB. The earlier
