@@ -17,7 +17,8 @@ function cleanHeaders(h = {}) {
 
 function begin(res, status, headers) {
   const keep = {};
-  for (const [k, v] of Object.entries(headers)) if (KEEP.includes(k.toLowerCase())) keep[k.toLowerCase()] = v;
+  // and a provider's rate-limit headers, so a character can see her limits coming (lib/meterCore.ts)
+  for (const [k, v] of Object.entries(headers)) if (KEEP.includes(k.toLowerCase()) || /^x-ratelimit-/i.test(k)) keep[k.toLowerCase()] = v;
   res.writeHead(200, {
     "Content-Type": "application/octet-stream",
     "Cache-Control": "no-store",

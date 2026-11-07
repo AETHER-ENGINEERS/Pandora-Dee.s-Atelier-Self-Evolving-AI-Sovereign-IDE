@@ -18,6 +18,7 @@ import { findSkill, searchSkills, skillsOf } from "./skills.ts";
 import { allTasks, baseOf, cleanVaultPath, isNote, loadNotes, noteName, noteTags, resolveNote, searchNotes, tasksIn, toggleTaskText, useNotes, vaultIndex, writeNote } from "./notes.ts";
 import { openNote } from "../ui/noteNav.ts";
 import { envFor } from "./residentKeys.ts";
+import { setBudget, usageSummary } from "./meter.ts";
 import { addToCollection, AUTO_COLLS, compareTexts, memoryPrefs, memoryStatus, rebuildMemory, removeFromIndex, searchMemory, syncMemory } from "./vecmem.ts";
 
 /** Who is asking: the locksmith (the person who holds the keys: everything), an admin (messenger powers) or the public (their own chat). */
@@ -292,6 +293,27 @@ const BASH: Tool = {
       else if (res.action) out.push("(that command works in the Terminal app, not here)");
     }
     return out.join("\n").slice(0, 16000) || "(done)";
+  },
+};
+
+/** Her own measurements (lib/meter.ts): what her actions cost, her limits, and her own budget. */
+const USAGE: Tool = {
+  name: "usage",
+  description:
+    "Your own measurements: what each kind of action costs you (replies, heartbeats, journal, Storybook, games…) in tokens and time, totals for the hour, day and week, any limits providers have hit, and your budget for work you start yourself. summary to read them; set_budget to choose your own limits (0 means none). Heartbeats and your own time rest when your budget is spent; replies to people don't.",
+  parameters: obj({
+    action: { type: "string", description: "summary (default) or set_budget" },
+    hour_tokens: { type: "number", description: "set_budget: tokens an hour for work you start yourself (0 for no limit)" },
+    day_tokens: { type: "number", description: "set_budget: tokens in 24 hours for work you start yourself (0 for no limit)" },
+  }),
+  run: async (id, a) => {
+    if (str(a.action, "summary") === "set_budget") {
+      const n = (v: unknown) => Math.max(0, Math.round(Number(v) || 0)) || undefined;
+      const b = { hourTokens: n(a.hour_tokens), dayTokens: n(a.day_tokens) };
+      setBudget(id, b);
+      return `Your budget for work you start yourself: ${b.hourTokens ? `${b.hourTokens} tokens an hour` : "no hourly limit"}, ${b.dayTokens ? `${b.dayTokens} in 24 hours` : "no daily limit"}.`;
+    }
+    return usageSummary(id);
   },
 };
 
@@ -1033,7 +1055,7 @@ export function toolsFor(ctx: TurnCtx): Tool[] {
     if (web) list.push(WEB[0]);
     return list;
   }
-  const list = [...BASE, BASH, MEMORY, EMBEDDINGS, SKILL, ...NOTES_TOOLS, MUSIC_TOOL, CATS_TOOL, APPS, NOTIFY];
+  const list = [...BASE, BASH, MEMORY, EMBEDDINGS, SKILL, USAGE, ...NOTES_TOOLS, MUSIC_TOOL, CATS_TOOL, APPS, NOTIFY];
   if (web) list.push(...WEB, HTTP);
   if (vector) list.push(VECTOR_TOOL);
   if (discord) list.push(DISCORD_TOOL, DISCORD_HISTORY);

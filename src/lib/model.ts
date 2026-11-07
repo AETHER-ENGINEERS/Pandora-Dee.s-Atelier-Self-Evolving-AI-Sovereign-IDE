@@ -110,7 +110,18 @@ export type Turn =
 export type ToolSpec = { name: string; description: string; parameters: Record<string, unknown> };
 
 /** `thinking`: what a reasoning model sent as its reasoning (apart from the reply). */
-export type StreamResult = { text: string; toolCalls: ToolCall[]; thinking: string };
+/** What a call cost: the server's own counts when it reports them, else an estimate (four characters a token). */
+export type CallUsage = { prompt: number; output: number; ms: number; estimated: boolean; limits?: Record<string, string> };
+export type StreamResult = { text: string; toolCalls: ToolCall[]; thinking: string; usage?: CallUsage };
+
+/** The rate-limit headers a provider sends (OpenAI, Groq, OpenRouter and others), so a character can see her limits coming. */
+function limitHeaders(h: Headers) {
+  const out: Record<string, string> = {};
+  h.forEach((v, k) => {
+    if (/^x-ratelimit-|^retry-after$/i.test(k)) out[k.toLowerCase()] = v;
+  });
+  return Object.keys(out).length ? out : undefined;
+}
 
 function base(url: string) {
   return url.trim().replace(/\/+$/, "");
@@ -351,12 +362,23 @@ export async function streamOnce(
   }
 
   const ollama = c.kind === "ollama";
+  const started = Date.now();
   const url = ollama ? `${base(c.baseUrl)}/api/chat` : `${base(c.baseUrl)}/chat/completions`;
   const toolDefs = tools.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.parameters } }));
+  // OpenAI-style servers report what a call cost only when asked (stream_options); a server that refuses the
+  // question gets the request again without it
+  const askUsage = !ollama && !noUsageFrom.has(c.id);
   const body = ollama
     ? { model, messages: toOllama(turns), stream: true, options: { temperature, ...(extra.numCtx ? { num_ctx: extra.numCtx } : {}) }, ...(toolDefs.length ? { tools: toolDefs } : {}), ...(extra.think ? { think: true } : {}) }
-    : { model, messages: toOpenAI(turns), stream: true, temperature, ...(toolDefs.length ? { tools: toolDefs } : {}) };
+    : { model, messages: toOpenAI(turns), stream: true, temperature, ...(toolDefs.length ? { tools: toolDefs } : {}), ...(askUsage ? { stream_options: { include_usage: true } } : {}) };
   const res = await outbound(url, { method: "POST", headers: authHeaders(c.kind, key), body: JSON.stringify(body), signal }, c.via);
+  if (askUsage && res.status === 400) {
+    const err = await failure(res.clone(), c.label);
+    if (/stream_options|include_usage/i.test(err.message)) {
+      noUsageFrom.add(c.id);
+      return streamOnce(c, model, key, turns, tools, temperature, onToken, signal, extra);
+    }
+  }
   if (!res.ok || !res.body) {
     if (res.status === 404 && ollama) throw new Error(`${c.label} doesn't have the model "${model}". Get it with: ollama pull ${model}`);
     if (res.status === 400 && toolDefs.length) {
@@ -374,6 +396,7 @@ export async function streamOnce(
   const calls: ToolCall[] = [];
   const partial = new Map<number, { id: string; name: string; args: string }>();
   let thinking = "";
+  let counted: { prompt: number; output: number } | null = null;
   const think = (piece: string | undefined | null) => {
     if (!piece) return;
     thinking += piece;
@@ -398,8 +421,12 @@ export async function streamOnce(
         const row = JSON.parse(line) as {
           message?: { content?: string; thinking?: string; tool_calls?: { function?: { name?: string; arguments?: unknown } }[] };
           error?: string;
+          done?: boolean;
+          prompt_eval_count?: number;
+          eval_count?: number;
         };
         if (row.error) throw new Error(row.error);
+        if (row.done && (row.prompt_eval_count || row.eval_count)) counted = { prompt: row.prompt_eval_count ?? 0, output: row.eval_count ?? 0 };
         think(row.message?.thinking);
         take(row.message?.content);
         for (const tc of row.message?.tool_calls ?? []) {
@@ -412,8 +439,10 @@ export async function streamOnce(
         const row = JSON.parse(data) as {
           choices?: { delta?: { content?: string | null; reasoning_content?: string | null; reasoning?: string | null; tool_calls?: { index?: number; id?: string; function?: { name?: string; arguments?: string } }[] } }[];
           error?: { message?: string };
+          usage?: { prompt_tokens?: number; completion_tokens?: number } | null;
         };
         if (row.error) throw new Error(row.error.message ?? "The model returned an error.");
+        if (row.usage && (row.usage.prompt_tokens || row.usage.completion_tokens)) counted = { prompt: row.usage.prompt_tokens ?? 0, output: row.usage.completion_tokens ?? 0 };
         const delta = row.choices?.[0]?.delta;
         think(delta?.reasoning_content ?? delta?.reasoning);
         take(delta?.content);
@@ -431,16 +460,28 @@ export async function streamOnce(
   for (const p of [...partial.entries()].sort((a, b) => a[0] - b[0]).map((e) => e[1])) {
     if (p.name) calls.push({ id: p.id || newCallId(), name: p.name, args: parseArgs(p.args) });
   }
+  const usage: CallUsage = counted
+    ? { ...counted, ms: Date.now() - started, estimated: false, limits: limitHeaders(res.headers) }
+    : {
+        prompt: Math.ceil((JSON.stringify(turns).length + JSON.stringify(toolDefs).length) / 4),
+        output: Math.ceil((text.length + thinking.length + JSON.stringify(calls).length) / 4),
+        ms: Date.now() - started,
+        estimated: true,
+        limits: limitHeaders(res.headers),
+      };
   // no calls came as calls: the model may have written them as text (GLM on Ollama does)
   if (!calls.length && tools.length) {
     const found = textToolCalls(text, tools.map((t) => t.name));
     if (found.calls.length) {
       for (const c of found.calls) calls.push({ id: newCallId(), ...c });
-      return { text: found.rest, toolCalls: calls, thinking };
+      return { text: found.rest, toolCalls: calls, thinking, usage };
     }
   }
-  return { text, toolCalls: calls, thinking };
+  return { text, toolCalls: calls, thinking, usage };
 }
+
+/** Connections that refused to be asked what a call cost (their calls are estimated). */
+const noUsageFrom = new Set<string>();
 
 /** A one-message chat request to this connection, exactly as the desktop would send it (for "Copy as…"). */
 export function sampleRequest(c: Connection, key: string, model = c.model || "MODEL"): { url: string; method: string; headers: Record<string, string>; body: string } {

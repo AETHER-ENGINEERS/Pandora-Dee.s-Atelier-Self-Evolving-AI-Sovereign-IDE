@@ -34,6 +34,8 @@ import { compact, shouldCompact } from "./context.ts";
 import { fitTurns, isCtxError, learnLimit, learnedLimit, sizeOf } from "./ctxfit.ts";
 import { bookFor, bookHeader, parseScene, redactKeys, sceneText } from "./storybook.ts";
 import { allKeyValues, envFor } from "./residentKeys.ts";
+import { isLimitError, recordLimit, recordUsage } from "./meter.ts";
+import type { UsageKind } from "./meterCore.ts";
 import { record } from "./trajectories.ts";
 import { isImage, splitThink, type Attachment } from "./room.ts";
 
@@ -146,6 +148,8 @@ type TurnOpts = {
   helper?: boolean;
   /** A game turn: only the tools for playing. */
   game?: boolean;
+  /** What kind of action this is, for her measurements (lib/meterCore.ts). */
+  kind?: UsageKind;
 };
 
 /** Which memory lines go in the prompt: all of them, or the ones that fit (by keywords; by meaning too with her vector memory). */
@@ -156,6 +160,14 @@ async function focusFor(charId: string, history: Message[]) {
   const query = history.filter((m) => !m.pass && !m.quiet).slice(-8).map((m) => m.text).join("\n");
   const k = mp?.rag ? (mp.ragK ?? 8) : s.chat.memoryTopK;
   return { query, k, keep: mp?.rag ? await memoryForPrompt(charId, query, k) : undefined };
+}
+
+/** What kind of action a turn is, for her measurements: as told, else from what it's doing. */
+function kindOf(opts: TurnOpts): UsageKind {
+  if (opts.kind) return opts.kind;
+  if (opts.game) return "game";
+  if (opts.replyTo?.source === "vector" || opts.replyTo?.source === "discord") return "bridge";
+  return opts.helper ? "helper" : "reply";
 }
 
 async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
@@ -293,6 +305,7 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
           }
           throw e;
         }
+        recordUsage(me.id, kindOf(opts), conn.label, result.usage);
         thought = [thought, result.thinking.trim()].filter(Boolean).join("\n\n");
         if (!result.toolCalls.length) {
           final = shown + result.text;
@@ -343,6 +356,7 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
       return { text: pass ? "" : text, ok: true };
     } catch (e) {
       lastErr = explainError(e, conn);
+      if (isLimitError(lastErr)) recordLimit(me.id, conn.label, lastErr);
       if (signal.aborted) break;
       // rest it, and say so once, when another connection is there to take over
       const first = !isResting(conn.id);
@@ -539,7 +553,7 @@ export async function heartbeat(charId: string, instruction: string): Promise<bo
   const c = s.character(charId);
   if (!c || c.outside || running || s.flood.shut || s.toddler) return false;
   await withRun(async () => {
-    await takeTurn(c, { scope: "locksmith", instruction, helper: true });
+    await takeTurn(c, { scope: "locksmith", instruction, helper: true, kind: "heartbeat" });
   });
   return true;
 }
@@ -621,16 +635,16 @@ export async function gameTurn() {
  * Ask one character to do something privately (journal, memory). The reply isn't posted in the room.
  * With `history` (a chat that has ended) it runs alongside the room instead of taking it over.
  */
-export async function privately(charId: string, instruction: string, history?: Message[]): Promise<string> {
+export async function privately(charId: string, instruction: string, history?: Message[], kind: UsageKind = "helper"): Promise<string> {
   const c = desk().character(charId);
   if (!c) return "";
   if (history) {
-    const r = await takeTurn(c, { scope: "locksmith", instruction, silent: true, history, signal: new AbortController().signal, helper: true });
+    const r = await takeTurn(c, { scope: "locksmith", instruction, silent: true, history, signal: new AbortController().signal, helper: true, kind });
     return r.text;
   }
   let out = "";
   await withRun(async () => {
-    const r = await takeTurn(c, { scope: "locksmith", instruction, silent: true, helper: true });
+    const r = await takeTurn(c, { scope: "locksmith", instruction, silent: true, helper: true, kind });
     out = r.text;
   });
   return out;
@@ -643,6 +657,7 @@ export async function writeJournal(charId: string, history?: Message[]) {
     charId,
     "[Desk] Write today's quest-journal entry about this conversation, in your own voice: what happened with the people you were with, the humour that fit, and the clear next step. Use the journal_write tool if you have it. If you don't, reply with the title on the first line, then the story, then a final line starting with Next:",
     history,
+    "journal",
   );
   const after = JSON.stringify(desk().filesOf(charId));
   if (before !== after) return "Journal entry written.";
@@ -663,6 +678,7 @@ export async function reflect(charId: string, history?: Message[]) {
     charId,
     "[Desk] Look back over this conversation. If anything changed how you work or what you've learned about yourself, keep up to three short lines with the remember tool. People appear only inside the observation, never as the subject. If nothing is worth keeping, say so in one line.",
     history,
+    "memory",
   );
   if (desk().filesOf(charId)["MEMORY.md"] !== before) return "Memory updated.";
   return text ? `Nothing kept. ${text.slice(0, 160)}` : "Nothing kept.";
@@ -688,6 +704,7 @@ What you thought and didn't say: what you noticed, felt and chose, and why. This
 Write only what's new since the book so far. If nothing new happened, reply with exactly: NOTHING NEW
 Keys, passwords and tokens never go in the book.${tail ? `\n\nThe book so far:\n${tail}` : ""}`,
     history,
+    "storybook",
   );
   const scene = parseScene(text);
   if (!scene) return /^\s*NOTHING NEW/i.test(text) ? "Nothing new for the book." : "No scene was written.";

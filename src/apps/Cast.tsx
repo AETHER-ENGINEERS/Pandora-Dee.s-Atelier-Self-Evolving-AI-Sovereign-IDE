@@ -18,6 +18,7 @@ import { MAX_SECONDS, removeSample, sampleUrl, toSampleWav, uploadSample } from 
 import { embedder, memoryStatus, rebuildMemory, syncMemory } from "../lib/vecmem.ts";
 import { CharAvatar, Confirm, Seg } from "../ui/common.tsx";
 import { setResidentKey, useResidentKeys } from "../lib/residentKeys.ts";
+import { setBudget, usageSummary } from "../lib/meter.ts";
 import { loadBackupFile } from "../ui/desktopApi.tsx";
 import { useWidth } from "../ui/hooks.ts";
 import { Face } from "./Presence.tsx";
@@ -204,6 +205,7 @@ function Profile({ c, onBack }: { c: Character; onBack: () => void }) {
         <CharWays c={c} />
         <CharVoice c={c} />
         <CharKeys c={c} />
+        <CharUsage c={c} />
         {!c.builtIn ? (
           <>
             <div className="divider" />
@@ -682,6 +684,35 @@ function CharWays({ c }: { c: Character }) {
           </label>
         </>
       ) : null}
+    </>
+  );
+}
+
+/** What their actions cost them (lib/meter.ts), and their budget for work they start themselves, which they can set too. */
+function CharUsage({ c }: { c: Character }) {
+  const s = useDesk();
+  const b = s.charPrefs[c.id]?.budget ?? {};
+  const text = usageSummary(c.id);
+  const set = (patch: { hourTokens?: number; dayTokens?: number }) => setBudget(c.id, { ...b, ...patch });
+  return (
+    <>
+      <div className="divider" />
+      <h4>{c.short}'s usage</h4>
+      <p className="small muted">
+        What each kind of action costs {c.short}, measured on every call (the server's own counts where it reports them). The budget covers work {c.short} starts on their own: heartbeats rest when it's spent; replies to people
+        don't. {c.short} can read all this and set the budget with the usage tool.
+      </p>
+      <div className="row" style={{ gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
+        <label className="field" style={{ width: 200 }}>
+          <span>Tokens an hour (0: no limit)</span>
+          <input className="input mono" type="number" min={0} step={1000} value={b.hourTokens ?? 0} onChange={(e) => set({ hourTokens: Math.max(0, Number(e.target.value) || 0) || undefined })} />
+        </label>
+        <label className="field" style={{ width: 200 }}>
+          <span>Tokens in 24 hours (0: no limit)</span>
+          <input className="input mono" type="number" min={0} step={1000} value={b.dayTokens ?? 0} onChange={(e) => set({ dayTokens: Math.max(0, Number(e.target.value) || 0) || undefined })} />
+        </label>
+      </div>
+      <pre className="small" style={{ whiteSpace: "pre-wrap", margin: 0 }}>{text}</pre>
     </>
   );
 }

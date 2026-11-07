@@ -1,5 +1,6 @@
 import { viewH, viewW } from "./zoom.ts";
 import { REL_DEFAULT, type RelLabels } from "./peopleCore.ts";
+import type { Ledger } from "./meterCore.ts";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { BUILT_IN, DEFAULT_ROOM, type Character, type Look } from "./characters.ts";
@@ -346,6 +347,8 @@ export type CharPrefs = {
   storybook?: boolean;
   /** Classic's helper model (auxProv/auxModel): what her background work runs on (journal, memory, heartbeat). */
   helper?: { connection?: string; model?: string };
+  /** Her own budget for work she starts herself (heartbeats, her own time), in tokens: lib/meterCore.ts. She can set it with the usage tool. */
+  budget?: { hourTokens?: number; dayTokens?: number };
   /** Classic's heartbeat: she checks in on her own, every so often, within her hours (lib/heartbeat.ts). */
   heartbeat?: { on: boolean; everyMin: number; from: string; to: string; prompt: string };
 };
@@ -481,6 +484,8 @@ export type State = {
   custom: Character[];
   files: Record<string, Record<string, string>>;
   charPrefs: Record<string, CharPrefs>;
+  /** Each character's measurements: what every model call cost her (lib/meterCore.ts). */
+  meter: Record<string, Ledger>;
   // room
   members: string[];
   focus: string;
@@ -699,6 +704,7 @@ const INITIAL: State = {
   custom: [],
   files: builtInFiles(),
   charPrefs: {},
+  meter: {},
   members: [...DEFAULT_ROOM],
   focus: DEFAULT_ROOM[0],
   messages: [],

@@ -6,6 +6,7 @@
 import { desk } from "./store.ts";
 import { heartbeat as beat } from "./agent.ts";
 import { holdsHeart } from "./heart.ts";
+import { canStartOwnWork, usageLine } from "./meter.ts";
 
 export type Heartbeat = { on: boolean; everyMin: number; from: string; to: string; prompt: string };
 export const HEARTBEAT_DEFAULT: Heartbeat = { on: false, everyMin: 30, from: "08:00", to: "22:00", prompt: "" };
@@ -29,7 +30,7 @@ export function promptFor(charId: string) {
   const own = desk().charPrefs[charId]?.heartbeat?.prompt?.trim();
   const file = (desk().filesOf(charId)["HEARTBEAT.md"] ?? "").trim();
   const text = (own || file || DEFAULT_PROMPT).slice(0, 4000);
-  return `[Heartbeat] ${text}\n\nIf there's nothing worth doing or saying right now, answer (pass).`;
+  return `[Heartbeat] ${text}\n\n${usageLine(charId)}\n\nIf there's nothing worth doing or saying right now, answer (pass).`;
 }
 
 const last = new Map<string, number>();
@@ -47,6 +48,8 @@ async function tick() {
   for (const c of s.allCharacters()) {
     const hb = s.charPrefs[c.id]?.heartbeat;
     if (!hb?.on || !within(hb.from, hb.to)) continue;
+    // her own budget for work she starts herself (lib/meter.ts): a spent budget means this beat rests
+    if (!canStartOwnWork(c.id).ok) continue;
     const every = Math.max(5, hb.everyMin || 30) * 60_000;
     if (Date.now() - (last.get(c.id) ?? 0) < every) continue;
     // one device takes each beat
