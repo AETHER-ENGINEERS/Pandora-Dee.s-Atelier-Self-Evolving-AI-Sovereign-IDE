@@ -78,11 +78,12 @@ export async function newChat(title = ""): Promise<string> {
   if (why) return why;
   const s = desk();
   const leaving = s.messages;
+  const branch = currentChat();
   if (leaving.length) await saveOpenChat();
   const id = uid();
   const meta: ChatMeta = { id, title: title.trim() || UNTITLED, created: Date.now(), updated: Date.now(), count: 0 };
   desk().set({ chats: [...desk().chats.filter((c) => c.count > 0 || c.id !== s.chatId || leaving.length), meta], chatId: id, messages: [] });
-  if (leaving.length) endOfChat(leaving);
+  if (leaving.length) endOfChat(leaving, { id: branch.id, title: branch.title });
   return "";
 }
 
@@ -92,12 +93,13 @@ export async function switchChat(id: string): Promise<string> {
   const why = busyReason();
   if (why) return why;
   const leaving = s.messages;
+  const branch = currentChat();
   if (leaving.length) await saveOpenChat();
   const messages = await loadChat(id);
   // An empty chat that was never used isn't worth keeping.
   const keep = desk().chats.filter((c) => c.id !== s.chatId || leaving.length);
   desk().set({ chatId: id, messages, chats: keep });
-  if (leaving.length) endOfChat(leaving);
+  if (leaving.length) endOfChat(leaving, { id: branch.id, title: branch.title });
   return "";
 }
 

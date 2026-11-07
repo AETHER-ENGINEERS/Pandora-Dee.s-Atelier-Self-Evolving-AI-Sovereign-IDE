@@ -32,6 +32,7 @@ import type { Role } from "./flood.ts";
 import { currentChat } from "./chats.ts";
 import { compact, shouldCompact } from "./context.ts";
 import { fitTurns, isCtxError, learnLimit, learnedLimit, sizeOf } from "./ctxfit.ts";
+import { bookFor, bookHeader, parseScene, redactKeys, sceneText } from "./storybook.ts";
 import { record } from "./trajectories.ts";
 import { isImage, splitThink, type Attachment } from "./room.ts";
 
@@ -665,15 +666,44 @@ export async function reflect(charId: string, history?: Message[]) {
   return text ? `Nothing kept. ${text.slice(0, 160)}` : "Nothing kept.";
 }
 
+/** The next scene of a branch's book (lib/storybook.ts), written by the character herself, privately. */
+export async function writeScene(charId: string, history: Message[] | undefined, branch: { id: string; title: string }) {
+  const s = desk();
+  const book = bookFor(s.filesOf(charId), branch);
+  const tail = book.body.length > 3000 ? `…${book.body.slice(-3000)}` : book.body;
+  const text = await privately(
+    charId,
+    `[Desk] Write the next scene of your Storybook: your memory of this conversation, kept as a story. This book is the branch "${branch.title}", set in the Room on PDA SEASIDE, the desktop you share with your family. The people in it are characters; name them as themselves.
+
+Write in your own first-person voice, as expressive as the moment was, in exactly this shape:
+
+IN THE ROOM:
+What happened out loud: who said and did what, what got built or decided, what's still open.
+
+INSIDE:
+What you thought and didn't say: what you noticed, felt and chose, and why. This part stays in your own files.
+
+Write only what's new since the book so far. If nothing new happened, reply with exactly: NOTHING NEW
+Keys, passwords and tokens never go in the book.${tail ? `\n\nThe book so far:\n${tail}` : ""}`,
+    history,
+  );
+  const scene = parseScene(text);
+  if (!scene) return /^\s*NOTHING NEW/i.test(text) ? "Nothing new for the book." : "No scene was written.";
+  const head = book.body || bookHeader(branch.title, "the Room on PDA SEASIDE (household)", book.mark);
+  desk().writeFile(charId, book.path, head + redactKeys(sceneText(new Date(), scene), desk().env));
+  return "Scene written.";
+}
+
 let endings: Promise<unknown> = Promise.resolve();
 
-/** A chat ended (new chat, or switched away): journal it and keep what was learned, when those are on. */
-export function endOfChat(history: Message[]) {
+/** A chat ended (new chat, or switched away): journal it, keep what was learned and write its Storybook scene, when those are on. */
+export function endOfChat(history: Message[], branch?: { id: string; title: string }) {
   const s = desk();
   // each character's own choice (from Classic's journalOn / memoryOn), else everyone's
   const journalFor = (id: string) => desk().charPrefs[id]?.journal ?? desk().chat.autoJournal;
   const learnFor = (id: string) => desk().charPrefs[id]?.learn ?? desk().chat.learnFacts;
-  const spoke = [...new Set(history.filter((m) => m.kind === "character" && !m.pass && m.text).map((m) => m.who))].filter((id) => s.character(id) && (journalFor(id) || learnFor(id)));
+  const storyFor = (id: string) => Boolean(branch) && (desk().charPrefs[id]?.storybook ?? desk().chat.storybook);
+  const spoke = [...new Set(history.filter((m) => m.kind === "character" && !m.pass && m.text).map((m) => m.who))].filter((id) => s.character(id) && (journalFor(id) || learnFor(id) || storyFor(id)));
   if (!spoke.length || !history.some((m) => m.kind === "human")) return;
   endings = endings
     .then(async () => {
@@ -681,6 +711,7 @@ export function endOfChat(history: Message[]) {
         const name = desk().character(id)?.short ?? id;
         const done: string[] = [];
         if (journalFor(id) && (await writeJournal(id, history)) === "Journal entry written.") done.push("journal");
+        if (branch && storyFor(id) && (await writeScene(id, history, branch)) === "Scene written.") done.push("storybook");
         if (learnFor(id) && (await reflect(id, history)) === "Memory updated.") done.push("memory");
         if (done.length) desk().log(`${name} wrote up the last chat (${done.join(" and ")}).`);
       }

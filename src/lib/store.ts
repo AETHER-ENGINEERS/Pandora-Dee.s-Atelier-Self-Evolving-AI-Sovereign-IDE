@@ -255,6 +255,8 @@ export type ChatPrefs = {
   autoJournal: boolean;
   /** ...and keep what they learned in memory. */
   learnFacts: boolean;
+  /** ...and write the chat as the next scene of its branch's book, in two voices (lib/storybook.ts). */
+  storybook: boolean;
   /** Log each reply for fine-tuning (kept on this computer). */
   trajectories: boolean;
   /** With many skills: hide the list and let characters look skills up with find. */
@@ -280,6 +282,7 @@ export const CHAT_DEFAULT: ChatPrefs = {
   stampTimes: false,
   autoJournal: false,
   learnFacts: false,
+  storybook: false,
   trajectories: false,
   skillRouter: false,
   thinking: "collapsed",
@@ -339,6 +342,8 @@ export type CharPrefs = {
   /** Classic's journalOn and memoryOn: after a chat, she writes in her journal / keeps what she learned. Unset: everyone's. */
   journal?: boolean;
   learn?: boolean;
+  /** Classic's Storybook: after a chat, she writes its next scene. Unset: everyone's. */
+  storybook?: boolean;
   /** Classic's helper model (auxProv/auxModel): what her background work runs on (journal, memory, heartbeat). */
   helper?: { connection?: string; model?: string };
   /** Classic's heartbeat: she checks in on her own, every so often, within her hours (lib/heartbeat.ts). */

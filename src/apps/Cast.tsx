@@ -614,6 +614,12 @@ function CharWays({ c }: { c: Character }) {
           <span>{c.short} keeps what was learned</span>
         </label>
       </Own>
+      <Own label="After a chat: the Storybook" own={p.storybook !== undefined} shared={onOff(s.chat.storybook)} onReset={() => unset("storybook")}>
+        <label className="check" style={{ padding: 0 }}>
+          <input type="checkbox" checked={p.storybook ?? s.chat.storybook} onChange={(e) => set({ storybook: e.target.checked })} />
+          <span>{c.short} writes its next scene in their Storybook</span>
+        </label>
+      </Own>
       <Own label="Helper model (journal, memory, heartbeat)" own={Boolean(p.helper?.connection)} shared={`${c.short}'s own AI`} onReset={() => unset("helper")}>
         <div className="row" style={{ gap: 6 }}>
           <select className="select" value={p.helper?.connection ?? ""} onChange={(e) => (e.target.value ? set({ helper: { connection: e.target.value } }) : unset("helper"))}>

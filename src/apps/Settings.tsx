@@ -1323,6 +1323,10 @@ function ConversationSection() {
         <input type="checkbox" checked={c.learnFacts} onChange={(e) => set({ learnFacts: e.target.checked })} />
         <span>…and keeps anything they learned in their memory</span>
       </label>
+      <label className="check">
+        <input type="checkbox" checked={c.storybook} onChange={(e) => set({ storybook: e.target.checked })} />
+        <span>…and writes it as the next scene of that branch's book in their Storybook, in two voices: what happened in the room, and their own thoughts inside</span>
+      </label>
 
       <h4 style={{ marginTop: 14 }}>Skills</h4>
       <label className="check">
