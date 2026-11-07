@@ -191,6 +191,76 @@ function startFresh(profile, keepHistory = true) {
     }
 }
 
+// CAPTCHAs and other are-you-human checks, by where they come from: these are for a person to answer.
+const CHECKS = /recaptcha|hcaptcha|challenges\.cloudflare\.com|turnstile|arkoselabs|funcaptcha|geetest/i;
+
+/** The page as a character reads it: title, address, its text, and a numbered list of the things on it she can use. */
+export async function readPage(page, max) {
+  // a page still arriving (or moving on, mid-read) is read once it settles
+  for (let tries = 0; ; tries++) {
+    await settle(page);
+    try {
+      return await readSettled(page, max);
+    } catch (e) {
+      if (tries >= 2 || !/context was destroyed|navigat/i.test(String(e?.message))) throw e;
+      await new Promise((r) => setTimeout(r, 700));
+    }
+  }
+}
+
+async function readSettled(page, max) {
+  const info = await page.evaluate((max) => {
+    const seen = (el) => {
+      const r = el.getBoundingClientRect();
+      const st = getComputedStyle(el);
+      return r.width > 0 && r.height > 0 && st.visibility !== "hidden" && st.display !== "none";
+    };
+    const pick = 'a[href], button, input:not([type=hidden]), textarea, select, summary, [role=button], [role=link], [role=checkbox], [role=tab], [role=menuitem], [contenteditable="true"]';
+    for (const el of document.querySelectorAll("[data-pdd-ref]")) el.removeAttribute("data-pdd-ref");
+    const items = [];
+    let n = 0;
+    for (const el of document.querySelectorAll(pick)) {
+      if (items.length >= 150 || !seen(el)) continue;
+      const ref = String(++n);
+      el.setAttribute("data-pdd-ref", ref);
+      const tag = el.tagName.toLowerCase();
+      const type = el.getAttribute("type") || "";
+      const label = (el.getAttribute("aria-label") || el.labels?.[0]?.innerText || el.getAttribute("placeholder") || el.innerText || (type === "password" ? "" : el.value) || el.getAttribute("title") || el.getAttribute("name") || "")
+        .trim()
+        .replace(/\s+/g, " ")
+        .slice(0, 80);
+      const href = tag === "a" ? ` → ${(el.getAttribute("href") || "").slice(0, 80)}` : "";
+      items.push(`[${ref}] ${tag}${type ? `:${type}` : ""} ${label}${href}`);
+    }
+    const check = Boolean(document.querySelector(".g-recaptcha, .h-captcha, .cf-turnstile, [data-sitekey]"));
+    return { title: document.title, url: location.href, items, check, text: (document.body?.innerText || "").replace(/\n{3,}/g, "\n\n").slice(0, max) };
+  }, max);
+  const check = info.check || page.frames().some((f) => CHECKS.test(f.url()));
+  return { title: info.title, url: info.url, items: info.items, text: info.text, humanCheck: check };
+}
+
+/** Act on a numbered thing from readPage: click, type (fill), select; or press a key, or scroll the page. */
+export async function actOnPage(page, b) {
+  const action = String(b.action || "");
+  if (action === "scroll") return await page.mouse.wheel(0, b.down === false ? -700 : 700), { ok: true };
+  if (action === "press") return await page.keyboard.press(String(b.key || "Enter")), await settle(page), { ok: true };
+  const ref = String(b.ref ?? "").replace(/\D/g, "");
+  const el = page.locator(`[data-pdd-ref="${ref}"]`).first();
+  if (!ref || !(await el.count())) throw Object.assign(new Error("That number isn't on the page any more: read the page again."), { status: 404 });
+  if (action === "click") await el.click({ timeout: 8000 });
+  else if (action === "type") {
+    // a password goes in only from her own keys ({{NAME}}, filled on the desktop), never as typed text
+    if ((await el.getAttribute("type")) === "password" && !b.fromKey) throw Object.assign(new Error("Passwords go in only as {{NAME}} from your keys."), { status: 400 });
+    await el.fill(String(b.text ?? ""), { timeout: 8000 });
+    if (b.submit) await el.press("Enter");
+  } else if (action === "select") await el.selectOption(String(b.value ?? ""), { timeout: 8000 });
+  else throw Object.assign(new Error(`Unknown action: ${action}`), { status: 400 });
+  await settle(page);
+  return { ok: true };
+}
+
+const settle = (page) => page.waitForLoadState("domcontentloaded", { timeout: 8000 }).catch(() => undefined);
+
 export function createEngine({ dataDir, getChoice, deskPorts }) {
   let ctx = null; // the running engine (a persistent context: its own profile)
   let starting = null;
@@ -738,6 +808,11 @@ export function createEngine({ dataDir, getChoice, deskPorts }) {
       return { ok: true };
     }
     if (op === "text") return await t.cdp.send("Input.insertText", { text: String(b.text || "") }), { ok: true };
+    // a character using the browser (the browser tool in lib/tools.ts): the page as text, with a number for each thing
+    // she can use; acting on those numbers; a picture of it for a model that can see
+    if (op === "read") return await readPage(t.page, Math.max(500, Math.min(20_000, Number(b.max) || 6000)));
+    if (op === "act") return await actOnPage(t.page, b);
+    if (op === "shot") return { jpeg: (await t.page.screenshot({ type: "jpeg", quality: 60 })).toString("base64") };
     throw Object.assign(new Error(`Unknown request: ${op}`), { status: 400 });
   }
 

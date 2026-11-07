@@ -5,7 +5,7 @@ import { desk } from "./store.ts";
 import { allowed } from "./privacy.ts";
 import type { ToolSpec } from "./model.ts";
 import { links } from "./connections.ts";
-import { httpRequest, webFetch, webSearch, type HttpArgs } from "./net.ts";
+import { fillSecrets, httpRequest, redact, webFetch, webSearch, type HttpArgs } from "./net.ts";
 import { discordHistory, discordTool, notifyLocksmith, saveToVault, vectorTool } from "./messengers.ts";
 import { allMcp, callMcp, listResources, readResource, runCodemode, searchMcp, specOf } from "./mcptools.ts";
 import { sshTool } from "./ssh.ts";
@@ -293,6 +293,70 @@ const BASH: Tool = {
       else if (res.action) out.push("(that command works in the Terminal app, not here)");
     }
     return out.join("\n").slice(0, 16000) || "(done)";
+  },
+};
+
+/** The desktop's real browser (server/engine.mjs read/act): each character works in her own tab, which shows in the
+ *  Browser window, so people can watch and take over. */
+const herTab = new Map<string, string>();
+async function engineCall<T = Record<string, unknown>>(body: Record<string, unknown>): Promise<T> {
+  const r = await fetch("/api/engine", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const j = (await r.json().catch(() => ({}))) as { error?: string };
+  if (!r.ok) throw new Error(j.error || `The browser answered ${r.status}.`);
+  return j as T;
+}
+type PageRead = { title: string; url: string; items: string[]; text: string; humanCheck: boolean };
+const pageText = (r: PageRead) =>
+  redact(
+    `${r.title}\n${r.url}\n${r.humanCheck ? "\nThis page is asking whether you're human (a CAPTCHA or similar). That part is for a person: tell the person you work with what's needed and stop here; they can answer it in the Browser window.\n" : ""}\nThings you can use:\n${r.items.join("\n") || "(none)"}\n\nThe page:\n${r.text}`,
+  );
+const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const BROWSER: Tool = {
+  name: "browser",
+  description:
+    "The desktop's own browser, a real Chromium: your own tab, which shows in the Browser window so people can watch and take over. open (url): go to a page in your tab. read: the page as text, with a number for each thing you can use. click (ref), type (ref, text, submit), select (ref, value), press (key), scroll (down), back. After each step you get the page again; numbers change when the page does. Keys go in as {{NAME}} (yours first); passwords only that way. CAPTCHAs and phone or SMS checks are for a person: say what's needed and stop. New accounts are made with the person you work with there.",
+  parameters: obj({
+    action: { type: "string", description: "open, read, click, type, select, press, scroll or back" },
+    url: { type: "string", description: "open: the address" },
+    ref: { type: "number", description: "click, type, select: the thing's number from the page" },
+    text: { type: "string", description: "type: what to type ({{NAME}} for a key)" },
+    submit: { type: "boolean", description: "type: press Enter after" },
+    value: { type: "string", description: "select: the option" },
+    key: { type: "string", description: "press: a key such as Enter, Tab, Escape, ArrowDown" },
+    down: { type: "boolean", description: "scroll: down (true, the default) or up (false)" },
+  }),
+  run: async (id, a) => {
+    const act = str(a.action, "read");
+    if (act === "open") {
+      const url = str(a.url).trim();
+      if (!url) return "open needs an address.";
+      const known = herTab.get(id);
+      try {
+        if (!known) throw new Error("none");
+        await engineCall({ op: "go", id: known, url });
+      } catch {
+        herTab.set(id, (await engineCall<{ id: string }>({ op: "open", url })).id);
+      }
+      await pause(1500);
+    }
+    const t = herTab.get(id);
+    if (!t) return "You have no tab open yet: use open with an address.";
+    if (act === "back") {
+      await engineCall({ op: "back", id: t });
+      await pause(1200);
+    } else if (["click", "type", "select", "press", "scroll"].includes(act)) {
+      let text = str(a.text);
+      const fromKey = /\{\{\s*[A-Za-z0-9_]+\s*\}\}/.test(text);
+      if (fromKey) text = fillSecrets(text, envFor(id));
+      await engineCall({ op: "act", id: t, action: act, ref: a.ref, text, submit: a.submit === true, value: str(a.value), key: str(a.key, "Enter"), down: a.down !== false, fromKey });
+      await pause(800);
+    } else if (act !== "read" && act !== "open") return `Unknown action ${act}: use open, read, click, type, select, press, scroll or back.`;
+    try {
+      return pageText(await engineCall<PageRead>({ op: "read", id: t }));
+    } catch (e) {
+      herTab.delete(id);
+      throw e;
+    }
   },
 };
 
@@ -1056,7 +1120,7 @@ export function toolsFor(ctx: TurnCtx): Tool[] {
     return list;
   }
   const list = [...BASE, BASH, MEMORY, EMBEDDINGS, SKILL, USAGE, ...NOTES_TOOLS, MUSIC_TOOL, CATS_TOOL, APPS, NOTIFY];
-  if (web) list.push(...WEB, HTTP);
+  if (web) list.push(...WEB, HTTP, BROWSER);
   if (vector) list.push(VECTOR_TOOL);
   if (discord) list.push(DISCORD_TOOL, DISCORD_HISTORY);
   if (s.sshOn && allowed(s.privacy, "ssh")) list.push(SSH);
