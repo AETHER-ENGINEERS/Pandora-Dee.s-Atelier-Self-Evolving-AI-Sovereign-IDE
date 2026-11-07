@@ -19,6 +19,7 @@ import { embedder, memoryStatus, rebuildMemory, syncMemory } from "../lib/vecmem
 import { CharAvatar, Confirm, Seg } from "../ui/common.tsx";
 import { setResidentKey, useResidentKeys } from "../lib/residentKeys.ts";
 import { setBudget, usageSummary } from "../lib/meter.ts";
+import { OWN_DEFAULT } from "../lib/ownTimeCore.ts";
 import { loadBackupFile } from "../ui/desktopApi.tsx";
 import { useWidth } from "../ui/hooks.ts";
 import { Face } from "./Presence.tsx";
@@ -590,6 +591,8 @@ function CharWays({ c }: { c: Character }) {
   const conns = s.model.connections.filter((x) => x.enabled);
   const hb = p.heartbeat ?? { on: false, everyMin: 30, from: "08:00", to: "22:00", prompt: "" };
   const setHb = (patch: Partial<typeof hb>) => set({ heartbeat: { ...hb, ...patch } });
+  const own = p.ownTime ?? OWN_DEFAULT;
+  const setOwn = (patch: Partial<typeof own>) => set({ ownTime: { ...own, ...patch } });
   const hasFile = Boolean((s.filesOf(c.id)["HEARTBEAT.md"] ?? "").trim());
   const onOff = (v: boolean) => (v ? "on" : "off");
   return (
@@ -683,6 +686,28 @@ function CharWays({ c }: { c: Character }) {
             />
           </label>
         </>
+      ) : null}
+      <div className="field">
+        <span>Time of their own</span>
+        <label className="check" style={{ padding: 0 }}>
+          <input type="checkbox" checked={own.on} onChange={(e) => setOwn({ on: e.target.checked })} />
+          <span>
+            When the house has been quiet a while, {c.short} gets time of their own: their curiosity, their projects, the games, their notes. What {c.short} does and thinks goes in their Storybook, under "My own time". It
+            stays within {c.short}'s budget (below), at most ten times an hour and thirty a day, and pauses if it goes round the same thought.
+          </span>
+        </label>
+      </div>
+      {own.on ? (
+        <div className="row" style={{ gap: 8, flexWrap: "wrap", alignItems: "end" }}>
+          <label className="field" style={{ maxWidth: 220 }}>
+            <span>After quiet for (minutes)</span>
+            <Num min={5} max={1440} step={5} value={own.quietMin} onChange={(n) => setOwn({ quietMin: n })} />
+          </label>
+          <label className="field" style={{ maxWidth: 220 }}>
+            <span>At most every (minutes)</span>
+            <Num min={15} max={1440} step={5} value={own.everyMin} onChange={(n) => setOwn({ everyMin: n })} />
+          </label>
+        </div>
       ) : null}
     </>
   );

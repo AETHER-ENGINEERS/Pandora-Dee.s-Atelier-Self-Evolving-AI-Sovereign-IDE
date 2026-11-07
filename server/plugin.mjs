@@ -816,6 +816,11 @@ export function deskServer() {
           const b = JSON.parse((await readBody(req, 10_000)).toString("utf8") || "{}");
           return send(res, 200, heart.beat(String(b.page || ""), { onPc: here, keeper: Boolean(b.keeper), port: req.socket.localPort }));
         }
+        if (parts[1] === "leave" && m === "POST") {
+          const b = JSON.parse((await readBody(req, 10_000)).toString("utf8") || "{}");
+          heart.leave(String(b.page || ""));
+          return send(res, 200, { ok: true });
+        }
         if (parts[1] === "config" && m === "GET") return send(res, 200, { ...heart.status(), canChange: here });
         if (!here) return send(res, 403, { error: "Keeping them running is set up on the desktop's own computer." });
         if (parts[1] === "config" && m === "POST") return send(res, 200, heart.setConfig(JSON.parse((await readBody(req, 10_000)).toString("utf8") || "{}")));

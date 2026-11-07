@@ -74,6 +74,14 @@ test("off means no keeper, and switching off closes one", async () => {
   assert.equal(launched[0].closed, true);
 });
 
+test("a page that leaves lets go at once; a reloaded page takes the heart straight away", () => {
+  const { h } = setup();
+  h.beat("old", { onPc: true, port: 1 });
+  assert.equal(h.beat("new", { onPc: true, port: 1 }).hold, false, "the old page still holds it");
+  h.leave("old");
+  assert.equal(h.beat("new", { onPc: true, port: 1 }).hold, true);
+});
+
 test("a page that doesn't hold the heart can't overwrite the copy", () => {
   const { h } = setup();
   h.setConfig({ keep: true });

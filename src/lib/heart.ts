@@ -71,7 +71,15 @@ export function startHeart() {
   void beat();
   window.setInterval(() => void beat(), 10_000);
   // the last word as this page closes
-  window.addEventListener("pagehide", () => {
+  let left = false;
+  const leave = () => {
+    if (left) return;
+    left = true;
     if (hold && keep && !isKeeper) navigator.sendBeacon("/api/heart/state", JSON.stringify({ page, blob: localStorage.getItem(KEY) ?? "", final: false }));
-  });
+    // and let go of the heart now, so another page (or this one, reloaded) takes it at once
+    if (!isKeeper) navigator.sendBeacon("/api/heart/leave", JSON.stringify({ page }));
+  };
+  // some browsers skip pagehide on a reload; beforeunload covers those
+  window.addEventListener("pagehide", leave);
+  window.addEventListener("beforeunload", leave);
 }

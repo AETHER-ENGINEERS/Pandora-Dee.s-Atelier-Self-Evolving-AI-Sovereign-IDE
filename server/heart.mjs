@@ -83,6 +83,11 @@ export function createHeart({ dataDir, seal, open, launch, now = Date.now }) {
       return { hold: h === id, keep: config().keep, handBack: k && Boolean(keeper?.handingBack) };
     },
 
+    /** A page closing or reloading lets go at once, so the heart doesn't sit with it for the last seconds of its beat. */
+    leave(id) {
+      if (!pages.get(id)?.keeper) pages.delete(id);
+    },
+
     /** The page holding the heart saves the desktop's state (the keeper's last save hands it back). */
     put(id, blob, final) {
       if (!config().keep) return { ok: false, why: "off" };

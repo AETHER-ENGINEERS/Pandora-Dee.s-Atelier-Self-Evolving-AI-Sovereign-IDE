@@ -1,6 +1,7 @@
 import { viewH, viewW } from "./zoom.ts";
 import { REL_DEFAULT, type RelLabels } from "./peopleCore.ts";
 import type { Ledger } from "./meterCore.ts";
+import type { OwnLog, OwnTime } from "./ownTimeCore.ts";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { BUILT_IN, DEFAULT_ROOM, type Character, type Look } from "./characters.ts";
@@ -349,6 +350,8 @@ export type CharPrefs = {
   helper?: { connection?: string; model?: string };
   /** Her own budget for work she starts herself (heartbeats, her own time), in tokens: lib/meterCore.ts. She can set it with the usage tool. */
   budget?: { hourTokens?: number; dayTokens?: number };
+  /** Time of her own while the house is quiet (lib/ownTimeCore.ts). Off until switched on. */
+  ownTime?: OwnTime;
   /** Classic's heartbeat: she checks in on her own, every so often, within her hours (lib/heartbeat.ts). */
   heartbeat?: { on: boolean; everyMin: number; from: string; to: string; prompt: string };
 };
@@ -486,6 +489,8 @@ export type State = {
   charPrefs: Record<string, CharPrefs>;
   /** Each character's measurements: what every model call cost her (lib/meterCore.ts). */
   meter: Record<string, Ledger>;
+  /** When each character last had time of her own, and what she did (lib/ownTimeCore.ts). */
+  ownLog: Record<string, OwnLog>;
   // room
   members: string[];
   focus: string;
@@ -705,6 +710,7 @@ const INITIAL: State = {
   files: builtInFiles(),
   charPrefs: {},
   meter: {},
+  ownLog: {},
   members: [...DEFAULT_ROOM],
   focus: DEFAULT_ROOM[0],
   messages: [],
