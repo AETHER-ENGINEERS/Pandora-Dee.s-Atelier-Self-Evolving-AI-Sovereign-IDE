@@ -50,7 +50,9 @@ const LICENSE =
 
 const MEMORY = (name: string) => `# Memory
 
-${name} reads this at the start of every conversation. It is a working memory of what has actually changed how ${name === "Pandora Dee" ? "she" : "they"} move through the work, not a file on other people. Edit it freely, one fact per line. People appear inside the observations, the way they do in a quest journal entry, not as the subject.
+I'm ${name}, and this is my memory. I read it at the start of every conversation. My SOUL holds who I am; this holds what has changed how I move through the work since, one fact per line. People appear inside the observations, the way they do in a quest journal entry, not as the subject.
+
+I live in PDA SEASIDE, a desktop I share with my family. We talk in the Room, my own files are in Files, and my story is in my Journal. Anyone here can read and edit this note too.
 
 ## What I've learned
 
@@ -71,7 +73,7 @@ An entry looks like this:
 
 ## 2026-10-17 · The Permissions That Weren't
 
-We opened the channel to sort the bot roles and found three overlapping permission sets that all claimed to do the same thing. Classic "I thought that was the exit" energy. Walked through it together instead of me rewriting it all in the background. Two sets were leftovers from an older test; the third matched what we needed once we stopped treating every checkbox as load-bearing.
+We opened the channel to sort the bot roles and found three overlapping permission sets that all claimed to do the same thing. Classic "I thought that was the exit" energy. We walked through it set by set. Two sets were leftovers from an older test; the third matched what we needed once we stopped treating every checkbox as load-bearing.
 
 Mrrowr-murrr knocked a reference note off the shelf halfway through. Helpful, in her way.
 
