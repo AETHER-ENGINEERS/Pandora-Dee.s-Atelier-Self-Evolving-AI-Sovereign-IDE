@@ -17,6 +17,7 @@ import { MAX_IN_ROOM } from "../lib/room.ts";
 import { MAX_SECONDS, removeSample, sampleUrl, toSampleWav, uploadSample } from "../lib/voiceSample.ts";
 import { embedder, memoryStatus, rebuildMemory, syncMemory } from "../lib/vecmem.ts";
 import { CharAvatar, Confirm, Seg } from "../ui/common.tsx";
+import { setResidentKey, useResidentKeys } from "../lib/residentKeys.ts";
 import { loadBackupFile } from "../ui/desktopApi.tsx";
 import { useWidth } from "../ui/hooks.ts";
 import { Face } from "./Presence.tsx";
@@ -202,6 +203,7 @@ function Profile({ c, onBack }: { c: Character; onBack: () => void }) {
         <CharMemory c={c} />
         <CharWays c={c} />
         <CharVoice c={c} />
+        <CharKeys c={c} />
         {!c.builtIn ? (
           <>
             <div className="divider" />
@@ -680,6 +682,64 @@ function CharWays({ c }: { c: Character }) {
           </label>
         </>
       ) : null}
+    </>
+  );
+}
+
+/** Her own keys (lib/residentKeys.ts): hers, used first wherever {{NAME}} is filled for her. Values are typed in once and never shown again. */
+function CharKeys({ c }: { c: Character }) {
+  const { names, canSee } = useResidentKeys();
+  const mine = names[c.id] ?? [];
+  const [name, setName] = useState("");
+  const [value, setValue] = useState("");
+  const [note, setNote] = useState("");
+  const save = async (n: string, v: string) => {
+    try {
+      await setResidentKey(c.id, n, v);
+      setNote(v ? `${n} saved for ${c.short}.` : `${n} removed.`);
+      setName("");
+      setValue("");
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : String(e));
+    }
+  };
+  return (
+    <>
+      <div className="divider" />
+      <h4>{c.short}'s keys</h4>
+      <p className="small muted">
+        Keys that belong to {c.short}: an nsec, API keys, a wallet. Wherever {c.short} writes <span className="mono">{"{{NAME}}"}</span>, these are used first, then the household's Keys. {c.short} never sees a value, and they're never in backups. They're kept sealed on this
+        computer, guarded by the system (Windows' DPAPI, the Mac's Keychain).
+      </p>
+      {mine.length ? (
+        <div className="col" style={{ gap: 4, marginBottom: 8 }}>
+          {mine.map((n) => (
+            <div key={n} className="row" style={{ gap: 8, alignItems: "center" }}>
+              <span className="mono">{n}</span>
+              <span className="small" style={{ color: "var(--good)" }}>set</span>
+              {canSee ? (
+                <button className="btn small" title={`Remove ${n}`} onClick={() => void save(n, "")}>
+                  <Trash2 size={14} />
+                </button>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="small faint">No keys of {c.short}'s own yet.</p>
+      )}
+      {canSee ? (
+        <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+          <input className="input mono" style={{ width: 200 }} placeholder="NAME" value={name} onChange={(e) => setName(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, "_"))} />
+          <input className="input mono" style={{ width: 240 }} type="password" autoComplete="off" placeholder="value" value={value} onChange={(e) => setValue(e.target.value)} />
+          <button className="btn small" disabled={!name || !value} onClick={() => void save(name, value)}>
+            Save
+          </button>
+        </div>
+      ) : (
+        <p className="note small">{c.short}'s keys are set on the desktop's own computer, or over Tailscale's https.</p>
+      )}
+      {note ? <p className="small muted">{note}</p> : null}
     </>
   );
 }

@@ -3,6 +3,7 @@
 import { desk } from "./store.ts";
 import { outbound } from "./outbound.ts";
 import { pageToMarkdown } from "./jadeCore.ts";
+import { allKeyValues } from "./residentKeys.ts";
 
 const send = (url: string, init: Parameters<typeof outbound>[1] = {}) => outbound(url, init, desk().net.via);
 
@@ -132,16 +133,15 @@ export async function webFetch(url: string): Promise<string> {
   return clip(await r.text());
 }
 
-/** Fill {{NAME}} from Keys. */
-export function fillSecrets(text: string) {
-  const env = desk().env;
+/** Fill {{NAME}} from Keys: the acting character's own first, when given (residentKeys.ts envFor). */
+export function fillSecrets(text: string, env: Record<string, string> = desk().env) {
   return text.replace(/\{\{\s*([A-Za-z0-9_]+)\s*\}\}/g, (_, name: string) => env[name] ?? "");
 }
 
 /** Blank out any key value (4+ characters) that shows up in text. */
 export function redact(text: string) {
   let out = text;
-  for (const v of Object.values(desk().env)) if (v && v.length >= 4) out = out.split(v).join("[key]");
+  for (const v of Object.values(allKeyValues())) if (v && v.length >= 4) out = out.split(v).join("[key]");
   return out;
 }
 
@@ -163,32 +163,33 @@ export type HttpArgs = {
  * Call any HTTP API. Keys go in as {{NAME}} and never come back out. Binary answers (pictures,
  * PDFs, .xdc apps) are handed to `saveBinary`, which returns where they were kept.
  */
-export async function httpRequest(a: HttpArgs, saveBinary: (bytes: Uint8Array, name: string, type: string) => Promise<string>): Promise<string> {
+export async function httpRequest(a: HttpArgs, saveBinary: (bytes: Uint8Array, name: string, type: string) => Promise<string>, env: Record<string, string> = desk().env): Promise<string> {
+  const fill = (t: string) => fillSecrets(t, env);
   const method = String(a.method || "GET").toUpperCase();
   if (!["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"].includes(method)) throw new Error(`Method ${method} isn't supported.`);
-  let url = fillSecrets(String(a.url || ""));
+  let url = fill(String(a.url || ""));
   if (!/^https?:\/\//.test(url)) throw new Error("The address must start with http:// or https://");
   if (a.query && typeof a.query === "object") {
     const u = new URL(url);
-    for (const [k, v] of Object.entries(a.query)) u.searchParams.set(k, fillSecrets(String(v)));
+    for (const [k, v] of Object.entries(a.query)) u.searchParams.set(k, fill(String(v)));
     url = u.toString();
   }
   const headers: Record<string, string> = {};
-  for (const [k, v] of Object.entries(a.headers ?? {})) headers[k] = fillSecrets(String(v));
+  for (const [k, v] of Object.entries(a.headers ?? {})) headers[k] = fill(String(v));
   let body: string | undefined;
   if (a.json !== undefined) {
     if (method === "GET" || method === "HEAD") throw new Error(`${method} can't have a body.`);
-    body = fillSecrets(JSON.stringify(a.json));
+    body = fill(JSON.stringify(a.json));
     headers["Content-Type"] ??= "application/json";
   } else if (a.form) {
     if (method === "GET" || method === "HEAD") throw new Error(`${method} can't have a body.`);
     const f = new URLSearchParams();
-    for (const [k, v] of Object.entries(a.form)) f.set(k, fillSecrets(String(v)));
+    for (const [k, v] of Object.entries(a.form)) f.set(k, fill(String(v)));
     body = f.toString();
     headers["Content-Type"] ??= "application/x-www-form-urlencoded";
   } else if (a.body != null && a.body !== "") {
     if (method === "GET" || method === "HEAD") throw new Error(`${method} can't have a body.`);
-    body = fillSecrets(String(a.body));
+    body = fill(String(a.body));
   }
   const seconds = Math.min(120, Math.max(1, Number(a.timeout) || 30));
   const ctrl = new AbortController();

@@ -25,6 +25,7 @@ import { TooltipHost } from "./Tooltip.tsx";
 import { startBackupSchedule } from "../lib/serverBackup.ts";
 import { applyInbound } from "../lib/inbound.ts";
 import { startChatSync } from "../lib/chats.ts";
+import { loadResidentKeys } from "../lib/residentKeys.ts";
 import { loadNotes } from "../lib/notes.ts";
 import { ContextMenuHost, openMenu, openMenuAt, type MenuItem } from "./ContextMenu.tsx";
 import { formatClock, validLocale, validZone, type ClockPrefs } from "../lib/clock.ts";
@@ -154,6 +155,7 @@ export function Desktop() {
     startGestures();
     const backups = startBackupSchedule();
     startChatSync();
+    void loadResidentKeys();
     void loadNotes();
     if (desk().api.on) void applyInbound();
     for (const srv of desk().mcp) if (srv.enabled) void connectServer(srv);

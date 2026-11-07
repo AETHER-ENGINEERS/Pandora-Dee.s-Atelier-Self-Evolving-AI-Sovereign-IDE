@@ -22,6 +22,7 @@ import { createEngine } from "./engine.mjs";
 import { createUngoogled, DOWNLOADS } from "./ungoogled.mjs";
 import { createVecMem } from "./vecmem.mjs";
 import { createMcpStdio } from "./mcpstdio.mjs";
+import { createResidentKeys } from "./residentKeys.mjs";
 import { createTheater, PIECE_MAX } from "./theater.mjs";
 import { createPairs, pairedCors } from "./pairs.mjs";
 import { acceptSocket } from "./wsframes.mjs";
@@ -138,6 +139,7 @@ export function deskServer() {
   // the full browser: a real Chromium-family engine shown live in the Browser window (see engine.mjs)
   const deskPorts = new Set();
   const vecmem = createVecMem({ dataDir: () => dataDir });
+  const residentKeys = createResidentKeys({ dataDir: () => dataDir });
   const stdio = createMcpStdio();
   // Media Theater: videos kept in the vault (see theater.mjs)
   const theater = createTheater({ vaultDir: () => path.join(dataDir, "vault") });
@@ -322,6 +324,24 @@ export function deskServer() {
     const parts = url.pathname.split("/").filter(Boolean).slice(1); // after "api"
     const m = req.method;
     const L = library();
+    // each character's own keys (residentKeys.mjs): names for any desktop page; values are seen and set only on this
+    // computer, or over Tailscale's https
+    if (parts[0] === "resident-keys") {
+      try {
+        const see = onThisPc(req) || viaTailnet(req);
+        if (!parts[1] && m === "GET") return send(res, 200, { names: residentKeys.names(), canSee: see });
+        if (!see) return send(res, 403, { error: "A character's keys are seen and set on the desktop's own computer, or over Tailscale's https." });
+        const id = decodeURIComponent(parts[1] || "");
+        if (parts[2] === "values" && m === "GET") return send(res, 200, { values: residentKeys.values(id) });
+        if (!parts[2] && m === "PUT") {
+          const b = JSON.parse((await readBody(req, 100_000)).toString("utf8") || "{}");
+          return send(res, 200, { names: residentKeys.set(id, String(b.name || ""), String(b.value ?? "")) });
+        }
+        return send(res, 404, { error: "Not found" });
+      } catch (e) {
+        return send(res, e.status || 500, { error: e.message });
+      }
+    }
     if (parts[0] === "mcp-stdio") {
       try {
         if (parts[1] === "rpc" && m === "POST") {

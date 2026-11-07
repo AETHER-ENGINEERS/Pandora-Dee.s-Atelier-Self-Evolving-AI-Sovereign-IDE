@@ -17,6 +17,7 @@ import { describeRows, library, recentLive, sendLive, sendUpdate } from "./xdc.t
 import { findSkill, searchSkills, skillsOf } from "./skills.ts";
 import { allTasks, baseOf, cleanVaultPath, isNote, loadNotes, noteName, noteTags, resolveNote, searchNotes, tasksIn, toggleTaskText, useNotes, vaultIndex, writeNote } from "./notes.ts";
 import { openNote } from "../ui/noteNav.ts";
+import { envFor } from "./residentKeys.ts";
 import { addToCollection, AUTO_COLLS, compareTexts, memoryPrefs, memoryStatus, rebuildMemory, removeFromIndex, searchMemory, syncMemory } from "./vecmem.ts";
 
 /** Who is asking: the locksmith (the person who holds the keys: everything), an admin (messenger powers) or the public (their own chat). */
@@ -273,7 +274,8 @@ const BASH: Tool = {
       who: me?.short ?? id,
       host: "seaside",
       room: s.roomCharacters().map((x) => `${x.short}  ${x.name}`),
-      env: Object.fromEntries(Object.keys(s.env).map((k) => [k, s.env[k] ? "set" : ""])),
+      // her own keys and the household's, by name (values never)
+      env: Object.fromEntries(Object.entries(envFor(id)).map(([k, v]) => [k, v ? "set" : ""])),
       model: "",
       characters: [],
     };
@@ -468,7 +470,7 @@ const WEB: Tool[] = [
 const HTTP: Tool = {
   name: "http_request",
   description:
-    "Call an HTTP API: any method (GET, POST, PUT, PATCH, DELETE, HEAD) with query, headers and a JSON, form or raw body. Returns the status, key headers and the body (JSON pretty-printed). Binary answers (pictures, PDFs, .xdc apps) are saved under /vault/downloads and the path returned. Write keys as {{NAME}} from Keys; never ask anyone to paste a key into chat.",
+    "Call an HTTP API: any method (GET, POST, PUT, PATCH, DELETE, HEAD) with query, headers and a JSON, form or raw body. Returns the status, key headers and the body (JSON pretty-printed). Binary answers (pictures, PDFs, .xdc apps) are saved under /vault/downloads and the path returned. Write keys as {{NAME}}: your own keys first, then the household's (bash `env` lists the names); never ask anyone to paste a key into chat.",
   parameters: {
     type: "object",
     properties: {
@@ -484,7 +486,7 @@ const HTTP: Tool = {
     },
     required: ["url"],
   },
-  run: async (_id, a) => httpRequest(a as HttpArgs, (bytes, name) => saveToVault(`downloads/${new Date().toISOString().slice(0, 10)}/${name.replace(/[^\w.\- ]+/g, "_")}`, bytes)),
+  run: async (id, a) => httpRequest(a as HttpArgs, (bytes, name) => saveToVault(`downloads/${new Date().toISOString().slice(0, 10)}/${name.replace(/[^\w.\- ]+/g, "_")}`, bytes), envFor(id)),
 };
 
 const VECTOR_TOOL: Tool = {

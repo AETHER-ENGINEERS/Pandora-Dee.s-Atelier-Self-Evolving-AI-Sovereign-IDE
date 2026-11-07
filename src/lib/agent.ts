@@ -33,6 +33,7 @@ import { currentChat } from "./chats.ts";
 import { compact, shouldCompact } from "./context.ts";
 import { fitTurns, isCtxError, learnLimit, learnedLimit, sizeOf } from "./ctxfit.ts";
 import { bookFor, bookHeader, parseScene, redactKeys, sceneText } from "./storybook.ts";
+import { allKeyValues, envFor } from "./residentKeys.ts";
 import { record } from "./trajectories.ts";
 import { isImage, splitThink, type Attachment } from "./room.ts";
 
@@ -60,8 +61,9 @@ function setBusy(id: string, what: string | null) {
   desk().set({ busy });
 }
 
-function keyFor(c: Connection) {
-  return credential(c, desk().env);
+/** A connection's key: the character's own first (residentKeys.ts), then the household's. */
+function keyFor(c: Connection, charId?: string) {
+  return credential(c, envFor(charId));
 }
 
 /** Tools that only read, so several asked for together can run at the same time. */
@@ -113,9 +115,9 @@ export function chainFor(charId: string, helper = false): { list: { conn: Connec
   return { list: order, skipped };
 }
 
-async function ensureModel(conn: Connection, model: string, signal: AbortSignal) {
+async function ensureModel(conn: Connection, model: string, signal: AbortSignal, charId?: string) {
   if (model) return model;
-  const found = pickModel(await listModels(conn, keyFor(conn), signal));
+  const found = pickModel(await listModels(conn, keyFor(conn, charId), signal));
   if (!found) throw new Error(`${conn.label} has no models yet.${conn.kind === "ollama" ? " Try: ollama pull qwen3:8b" : ""}`);
   const s = desk();
   s.set({ model: { ...s.model, connections: s.model.connections.map((c) => (c.id === conn.id ? { ...c, model: found } : c)) } });
@@ -243,7 +245,7 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
     let shown = "";
     const used: NonNullable<Message["tools"]> = [];
     try {
-      const model = await ensureModel(conn, wanted, signal);
+      const model = await ensureModel(conn, wanted, signal, me.id);
       const ai = aiFor(me.id);
       let tools = ai.tools ? (opts.game ? gameToolsFor() : toolsFor(ctx)) : [];
       const turns = [...base];
@@ -259,7 +261,7 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
         let reasoning = "";
         let result;
         try {
-          result = await streamOnce(conn, model, keyFor(conn), turns, step < ai.maxSteps ? tools.map((t) => ({ ...t, description: withRel(t.description, rel) })) : [], ai.temperature, (piece) => {
+          result = await streamOnce(conn, model, keyFor(conn, me.id), turns, step < ai.maxSteps ? tools.map((t) => ({ ...t, description: withRel(t.description, rel) })) : [], ai.temperature, (piece) => {
             streamed += piece;
             const parts = splitThink(shown + streamed);
             setBusy(me.id, parts.text.trim() ? "typing" : "thinking");
@@ -690,7 +692,7 @@ Keys, passwords and tokens never go in the book.${tail ? `\n\nThe book so far:\n
   const scene = parseScene(text);
   if (!scene) return /^\s*NOTHING NEW/i.test(text) ? "Nothing new for the book." : "No scene was written.";
   const head = book.body || bookHeader(branch.title, "the Room on PDA SEASIDE (household)", book.mark);
-  desk().writeFile(charId, book.path, head + redactKeys(sceneText(new Date(), scene), desk().env));
+  desk().writeFile(charId, book.path, head + redactKeys(sceneText(new Date(), scene), allKeyValues()));
   return "Scene written.";
 }
 
