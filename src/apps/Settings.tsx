@@ -34,8 +34,9 @@ import type { ChatPrefs, NotesPrefs } from "../lib/store.ts";
 import { formatDate } from "../lib/templates.ts";
 import { CLOCK_DEFAULT, formatClock, REGIONS, validLocale, validZone, zones, type ClockPrefs } from "../lib/clock.ts";
 import { FromOtherDevices, TravelSwitch } from "../ui/Travel.tsx";
+import { BOX, installModule, lookForModules, type Found } from "../lib/modules.ts";
 
-type Section = "ai" | "chat" | "notes" | "look" | "clock" | "dock" | "hangout" | "voice" | "shortcuts" | "touch" | "classic" | "privacy" | "accounts" | "adult" | "storage" | "memory" | "backup";
+type Section = "ai" | "chat" | "notes" | "look" | "clock" | "dock" | "hangout" | "voice" | "shortcuts" | "touch" | "classic" | "privacy" | "accounts" | "adult" | "storage" | "modules" | "memory" | "backup";
 
 const SECTIONS: { id: Section; label: string; sensitive?: boolean }[] = [
   { id: "ai", label: "AI" },
@@ -54,6 +55,7 @@ const SECTIONS: { id: Section; label: string; sensitive?: boolean }[] = [
   { id: "adult", label: "Adult shelf", sensitive: true },
   { id: "storage", label: "Storage" },
   { id: "memory", label: "Memory" },
+  { id: "modules", label: "Modules" },
   { id: "backup", label: "Backup and reset" },
 ];
 
@@ -105,6 +107,7 @@ export function SettingsApp() {
         {section === "classic" ? <ClassicSection /> : null}
         {section === "storage" ? <StorageSection /> : null}
         {section === "memory" ? <MemorySection /> : null}
+        {section === "modules" ? <ModulesSection /> : null}
         {section === "privacy" ? <PrivacySection /> : null}
         {section === "accounts" ? <AccountsSection /> : null}
         {section === "adult" ? <AdultSection /> : null}
@@ -117,6 +120,83 @@ export function SettingsApp() {
 function featureFor(c: Connection): Feature | null {
   const scope = scopeOf(c.baseUrl);
   return scope === "device" ? null : scope === "network" ? "network-models" : "online-models";
+}
+
+/** The module door (lib/modules.ts): repos in Pandora Dee Fae's Box (and others named) with a seaside-module.json. */
+function ModulesSection() {
+  const s = useDesk();
+  const [orgs, setOrgs] = useState(BOX);
+  const [found, setFound] = useState<Found[] | null>(null);
+  const [who, setWho] = useState(s.allCharacters()[0]?.id ?? "");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true);
+    setNote("");
+    try {
+      await fn();
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const look = () => run(async () => setFound(await lookForModules(orgs.split(/[\s,]+/).filter(Boolean))));
+  const install = (f: Found) =>
+    run(async () => {
+      setNote(await installModule(f, who));
+      setFound(await lookForModules(orgs.split(/[\s,]+/).filter(Boolean)));
+    });
+  return (
+    <>
+      <h4>Modules</h4>
+      <p className="small muted">
+        Pandora Dee Fae makes modules in her Box: repositories with a <span className="mono">seaside-module.json</span> that says what they bring. A skill, a Mini App, a character, or a tool server. They come in from the exact commit
+        listed, release files checked against their checksums; a tool server is only added, switched off, for you to look at first. Looking asks GitHub, so Privacy's web access needs to be on.
+      </p>
+      <div className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "end" }}>
+        <label className="field" style={{ width: 320 }}>
+          <span>Look in (GitHub organisations)</span>
+          <input className="input mono" value={orgs} onChange={(e) => setOrgs(e.target.value)} />
+        </label>
+        <button className="btn small" disabled={busy} onClick={() => void look()}>
+          Look for modules
+        </button>
+        <label className="field" style={{ width: 200 }}>
+          <span>Skills go to</span>
+          <select className="select" value={who} onChange={(e) => setWho(e.target.value)}>
+            {s.allCharacters().map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {found && !found.length ? <p className="small faint">No modules there yet: no repo has a seaside-module.json.</p> : null}
+      {found?.map((f) => (
+        <div key={`${f.org}/${f.repo}`} className="card" style={{ padding: 10, marginTop: 8 }}>
+          <div className="row" style={{ gap: 8, alignItems: "center", justifyContent: "space-between" }}>
+            <span>
+              <b>{f.manifest?.name ?? f.repo}</b> <span className="small faint">{f.manifest ? `${f.manifest.kind} ${f.manifest.version}` : ""}</span>{" "}
+              <a className="small" href={f.url} target="_blank" rel="noreferrer">
+                {f.org}/{f.repo}
+              </a>
+            </span>
+            {f.manifest ? (
+              <button className="btn small" disabled={busy || f.installed?.commit === f.commit} onClick={() => void install(f)}>
+                {f.installed?.commit === f.commit ? "Installed" : f.installed ? "Update" : "Install"}
+              </button>
+            ) : null}
+          </div>
+          {f.manifest?.description ? <p className="small muted" style={{ margin: "6px 0 0" }}>{f.manifest.description}</p> : null}
+          {f.manifest?.needs.length ? <p className="small faint" style={{ margin: "4px 0 0" }}>Needs from Privacy: {f.manifest.needs.join(", ")}</p> : null}
+          {f.error ? <p className="small" style={{ color: "var(--warn)", margin: "6px 0 0" }}>{f.error}</p> : null}
+        </div>
+      ))}
+      {note ? <p className="small muted">{note}</p> : null}
+    </>
+  );
 }
 
 /** The heart's keeper (server/heart.mjs): the characters keep running while the desktop on this computer is closed. */

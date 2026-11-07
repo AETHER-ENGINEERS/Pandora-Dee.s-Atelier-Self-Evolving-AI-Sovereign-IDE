@@ -25,6 +25,7 @@ import { createMcpStdio } from "./mcpstdio.mjs";
 import { createResidentKeys } from "./residentKeys.mjs";
 import { createHeart } from "./heart.mjs";
 import { createBodies } from "./bodies.mjs";
+import { createModules } from "./modules.mjs";
 import { createTheater, PIECE_MAX } from "./theater.mjs";
 import { createPairs, pairedCors } from "./pairs.mjs";
 import { acceptSocket } from "./wsframes.mjs";
@@ -143,6 +144,7 @@ export function deskServer() {
   const vecmem = createVecMem({ dataDir: () => dataDir });
   const residentKeys = createResidentKeys({ dataDir: () => dataDir });
   const bodies = createBodies({ dataDir: () => dataDir });
+  const modules = createModules({ dataDir: () => dataDir, importXdc: (bytes, name) => library().importAny(bytes, name) });
   const stdio = createMcpStdio();
   // Media Theater: videos kept in the vault (see theater.mjs)
   const theater = createTheater({ vaultDir: () => path.join(dataDir, "vault") });
@@ -346,6 +348,19 @@ export function deskServer() {
     const parts = url.pathname.split("/").filter(Boolean).slice(1); // after "api"
     const m = req.method;
     const L = library();
+    // the module door (modules.mjs): looking in the Box and bringing modules in, from this computer or Tailscale's https
+    if (parts[0] === "modules") {
+      try {
+        if (!onThisPc(req) && !viaTailnet(req)) return send(res, 403, { error: "Modules are brought in on the desktop's own computer." });
+        const b = m === "POST" ? JSON.parse((await readBody(req, 100_000)).toString("utf8") || "{}") : {};
+        if (parts[1] === "installed" && m === "GET") return send(res, 200, modules.installed());
+        if (parts[1] === "look" && m === "POST") return send(res, 200, await modules.look((Array.isArray(b.orgs) ? b.orgs : []).map(String).slice(0, 10)));
+        if (parts[1] === "install" && m === "POST") return send(res, 200, await modules.install(String(b.org || ""), String(b.repo || ""), String(b.commit || "")));
+        return send(res, 404, { error: "Not found" });
+      } catch (e) {
+        return send(res, e.status && e.status < 600 ? e.status : 500, { error: e.message });
+      }
+    }
     // each character's files on disk, for her other bodies (bodies.mjs): only from this computer or Tailscale's https
     if (parts[0] === "bodies") {
       try {
