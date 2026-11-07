@@ -8,7 +8,7 @@ const API = 1;
 const ROUTES = ["/v1/status", "/v1/chats", "/v1/history", "/v1/chat", "/v1/inbox", "/v1/reply", "/v1/flows", "/v1/flow"];
 
 let server = null;
-let cfg = { on: false, port: 8787, lan: false, token: "" };
+let cfg = { on: false, port: 15700, lan: false, token: "" };   // 8787 belongs to the Vector bridge (see store.ts)
 const jobs = [];
 const waiting = new Map();
 let pollers = [];

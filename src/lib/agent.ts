@@ -31,6 +31,7 @@ import { gameScreen } from "./bus.ts";
 import type { Role } from "./flood.ts";
 import { currentChat } from "./chats.ts";
 import { compact, shouldCompact } from "./context.ts";
+import { fitTurns, isCtxError, learnLimit, learnedLimit, sizeOf } from "./ctxfit.ts";
 import { record } from "./trajectories.ts";
 import { isImage, splitThink, type Attachment } from "./room.ts";
 
@@ -245,6 +246,11 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
       const ai = aiFor(me.id);
       let tools = ai.tools ? (opts.game ? gameToolsFor() : toolsFor(ctx)) : [];
       const turns = [...base];
+      const ctxKey = `${conn.id}:${model}`;
+      const toolsJson = () => (tools.length ? JSON.stringify(tools) : "");
+      const known = learnedLimit(ctxKey);
+      if (known) fitTurns(turns, known, toolsJson());
+      let ctxTries = 0;
       let final = "";
       let thought = "";
       for (let step = 0; step <= ai.maxSteps; step++) {
@@ -271,6 +277,16 @@ async function takeTurn(me: Character, opts: TurnOpts): Promise<TurnResult> {
             tools = [];
             step--;
             continue;
+          }
+          // "prompt too long": the connection is fine, the request isn't. Learn the window, trim, try again.
+          const msg = e instanceof Error ? e.message : String(e);
+          if (isCtxError(msg) && ctxTries < 3 && !signal.aborted) {
+            ctxTries++;
+            const limit = learnLimit(ctxKey, msg, sizeOf(turns, toolsJson()));
+            if (fitTurns(turns, limit, toolsJson())) {
+              step--;
+              continue;
+            }
           }
           throw e;
         }

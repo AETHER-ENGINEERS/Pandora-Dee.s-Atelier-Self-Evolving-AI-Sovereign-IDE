@@ -1919,7 +1919,7 @@ function ServerBackup() {
         Backups to your own server <Sensitive />
       </h4>
       <p className="small muted">
-        Works with the backup server from Jade Vault (<span className="mono">jade-backup-server.py</span>): run it on a machine that's always on and paste its address and token here. Encrypted backups are locked here with your passphrase before they leave; there's no way back in if the passphrase is lost.
+        Works with the backup server from Jade Vault (<span className="mono">jade-backup-server.py</span>): run it on a machine that's always on and paste its address and token here. It listens on port 8787 unless told otherwise, the same port as the Vector bridge, so on a computer that runs both, start it with <span className="mono">--port 8790</span>. Encrypted backups are locked here with your passphrase before they leave; there's no way back in if the passphrase is lost.
       </p>
       {!ok ? (
         <div className="note small" style={{ marginBottom: 10 }}>
