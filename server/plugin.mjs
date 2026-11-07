@@ -24,6 +24,7 @@ import { createVecMem } from "./vecmem.mjs";
 import { createMcpStdio } from "./mcpstdio.mjs";
 import { createResidentKeys } from "./residentKeys.mjs";
 import { createHeart } from "./heart.mjs";
+import { createBodies } from "./bodies.mjs";
 import { createTheater, PIECE_MAX } from "./theater.mjs";
 import { createPairs, pairedCors } from "./pairs.mjs";
 import { acceptSocket } from "./wsframes.mjs";
@@ -141,6 +142,7 @@ export function deskServer() {
   const deskPorts = new Set();
   const vecmem = createVecMem({ dataDir: () => dataDir });
   const residentKeys = createResidentKeys({ dataDir: () => dataDir });
+  const bodies = createBodies({ dataDir: () => dataDir });
   const stdio = createMcpStdio();
   // Media Theater: videos kept in the vault (see theater.mjs)
   const theater = createTheater({ vaultDir: () => path.join(dataDir, "vault") });
@@ -344,6 +346,18 @@ export function deskServer() {
     const parts = url.pathname.split("/").filter(Boolean).slice(1); // after "api"
     const m = req.method;
     const L = library();
+    // each character's files on disk, for her other bodies (bodies.mjs): only from this computer or Tailscale's https
+    if (parts[0] === "bodies") {
+      try {
+        if (!onThisPc(req) && !viaTailnet(req)) return send(res, 403, { error: "A character's folder is kept from the desktop's own computer." });
+        const id = decodeURIComponent(parts[1] || "");
+        if (m === "GET") return send(res, 200, bodies.read(id));
+        if (m === "PUT") return send(res, 200, bodies.write(id, JSON.parse((await readBody(req, 200_000_000)).toString("utf8") || "{}").files ?? {}));
+        return send(res, 404, { error: "Not found" });
+      } catch (e) {
+        return send(res, e.status || 500, { error: e.message });
+      }
+    }
     // each character's own keys (residentKeys.mjs): names for any desktop page; values are seen and set only on this
     // computer, or over Tailscale's https
     if (parts[0] === "resident-keys") {

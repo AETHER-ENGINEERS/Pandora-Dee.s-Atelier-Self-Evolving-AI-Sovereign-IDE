@@ -352,6 +352,8 @@ export type CharPrefs = {
   budget?: { hourTokens?: number; dayTokens?: number };
   /** Time of her own while the house is quiet (lib/ownTimeCore.ts). Off until switched on. */
   ownTime?: OwnTime;
+  /** Her files on disk too (lib/bodies.ts), in Classic's layout, so her other bodies share them. Off until switched on. */
+  body?: boolean;
   /** Classic's heartbeat: she checks in on her own, every so often, within her hours (lib/heartbeat.ts). */
   heartbeat?: { on: boolean; everyMin: number; from: string; to: string; prompt: string };
 };

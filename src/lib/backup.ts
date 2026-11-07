@@ -293,6 +293,20 @@ export function classicFromPrefs(s: Record<string, unknown>, p: Partial<CharPref
 }
 
 /** A desktop character as a Classic config backup (Config → Import in Pandora Dee or Jade Vault). Keys never go in. */
+/** The reverse of toClassic for one file: its desktop name from its path in Classic's layout, or null when it isn't
+ *  hers. `has`: her files now, which settle whether /<root>/x was x or classic/x. */
+export function deskNameOf(p: string, root: string, has: Record<string, string>): string | null {
+  const low = p.toLowerCase();
+  if (low === "/agents.md" || low === `/${root}/agents.md`.toLowerCase()) return "AGENTS.md";
+  const named = CLASSIC_NAMES.find(([, cl]) => cl(root).toLowerCase() === low);
+  if (named) return named[0];
+  const dir = CLASSIC_DIRS.find(([, cl]) => low.startsWith(cl(root).toLowerCase()));
+  if (dir) return dir[0] + p.slice(dir[1](root).length);
+  if (!low.startsWith(`/${root}/`.toLowerCase())) return null;
+  const rest = p.slice(root.length + 2);
+  return `classic/${rest}` in has ? `classic/${rest}` : rest;
+}
+
 export function toClassic(c: Character, files: Record<string, string>, prefs?: Partial<CharPrefs>, connections: Connection[] = []) {
   const root = c.classic?.root ?? (/jade/i.test(c.id) ? "Jade" : "Pandora");
   const vault: Record<string, string> = {};

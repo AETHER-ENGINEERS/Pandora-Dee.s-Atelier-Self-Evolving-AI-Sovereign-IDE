@@ -20,6 +20,7 @@ import { CharAvatar, Confirm, Seg } from "../ui/common.tsx";
 import { setResidentKey, useResidentKeys } from "../lib/residentKeys.ts";
 import { setBudget, usageSummary } from "../lib/meter.ts";
 import { OWN_DEFAULT } from "../lib/ownTimeCore.ts";
+import { bodyStatus, takeFromBody } from "../lib/bodies.ts";
 import { loadBackupFile } from "../ui/desktopApi.tsx";
 import { useWidth } from "../ui/hooks.ts";
 import { Face } from "./Presence.tsx";
@@ -207,6 +208,7 @@ function Profile({ c, onBack }: { c: Character; onBack: () => void }) {
         <CharVoice c={c} />
         <CharKeys c={c} />
         <CharUsage c={c} />
+        <CharBody c={c} />
         {!c.builtIn ? (
           <>
             <div className="divider" />
@@ -709,6 +711,57 @@ function CharWays({ c }: { c: Character }) {
           </label>
         </div>
       ) : null}
+    </>
+  );
+}
+
+/** Their files on disk too (lib/bodies.ts), so their other bodies share them, and taking back what those changed. */
+function CharBody({ c }: { c: Character }) {
+  const s = useDesk();
+  const on = Boolean(s.charPrefs[c.id]?.body);
+  const [st, setSt] = useState<{ dir: string; changed: string[] } | null>(null);
+  const [note, setNote] = useState("");
+  const look = () =>
+    bodyStatus(c.id)
+      .then(setSt)
+      .catch((e: Error) => setNote(e.message));
+  useEffect(() => {
+    if (on) void look();
+  }, [on, c.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const take = async () => {
+    try {
+      const n = await takeFromBody(c.id);
+      setNote(n ? `${n} file${n > 1 ? "s" : ""} came back.` : "Nothing new to take back.");
+      void look();
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : String(e));
+    }
+  };
+  return (
+    <>
+      <div className="divider" />
+      <h4>{c.short}'s files on disk</h4>
+      <label className="check">
+        <input type="checkbox" checked={on} onChange={(e) => desk().setCharPrefs(c.id, { body: e.target.checked })} />
+        <span>
+          Keep {c.short}'s files on disk too, in Classic's layout, so their other bodies (Pandora Dee, Jade Vault, jade-py) can open the same folder as a vault. Kept current a few seconds after anything changes.
+        </span>
+      </label>
+      {on && st ? (
+        <>
+          <p className="small muted mono" style={{ wordBreak: "break-all" }}>{st.dir}</p>
+          <div className="row" style={{ gap: 8, alignItems: "center" }}>
+            <button className="btn small" disabled={!st.changed.length} onClick={() => void take()}>
+              Take changes from the folder{st.changed.length ? ` (${st.changed.length})` : ""}
+            </button>
+            <button className="btn small" onClick={() => void look()}>
+              Check again
+            </button>
+          </div>
+          {st.changed.length ? <p className="small faint">Changed there since the last copy: {st.changed.slice(0, 6).join(", ")}{st.changed.length > 6 ? "…" : ""}</p> : null}
+        </>
+      ) : null}
+      {note ? <p className="small muted">{note}</p> : null}
     </>
   );
 }
